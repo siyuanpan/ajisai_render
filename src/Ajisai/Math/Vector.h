@@ -1,0 +1,219 @@
+/*
+Copyright 2021 Siyuan Pan <pansiyuan.cs@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+*/
+
+#ifndef AJISAI_MATH_VECTOR_H_
+#define AJISAI_MATH_VECTOR_H_
+
+#include <cmath>
+#include <type_traits>
+#include <utility>
+
+namespace Ajisai::Math {
+
+namespace Impl {
+template <class T>
+constexpr T repeat(T value, std::size_t) {
+  return value;
+}
+}  // namespace Impl
+
+template <class, std::size_t>
+class Vector;
+
+template <class U, std::size_t size_>
+inline U dot(const Vector<U, size_>& a, const Vector<U, size_>& b) {
+  U out{};
+  for (std::size_t i = 0; i != size_; ++i) {
+    out += a._data[i] * b._data[i];
+  }
+  return out;
+}
+
+template <class T, std::size_t size>
+class Vector {
+  static_assert(size != 0, "Vector cannot have zero size");
+
+ public:
+  //   typedef T Type;
+
+  //   enum : std::size_t { Size = size };
+
+  static Vector<T, size>& from(T* data) {
+    return *reinterpret_cast<Vector<T, size>*>(data);
+  }
+
+  static const Vector<T, size>& from(const T* data) {
+    return *reinterpret_cast<const Vector<T, size>*>(data);
+  }
+
+  constexpr Vector() noexcept : _data{} {}
+
+  template <class... U, class V = typename std::enable_if<
+                            sizeof...(U) + 1 == size, T>::type>
+  constexpr Vector(T first, U... next) noexcept : _data{first, next...} {}
+
+  template <class U, class V = typename std::enable_if<
+                         std::is_same<T, U>::value && size != 1, T>::type>
+  constexpr explicit Vector(U value) noexcept
+      : Vector(std::make_index_sequence<size>{}, value) {}
+
+  constexpr Vector(const Vector<T, size>&) noexcept = default;
+
+  T* data() { return _data; }
+  constexpr const T* data() const { return _data; }
+
+  T& operator[](std::size_t pos) { return _data[pos]; }
+  constexpr T operator[](std::size_t pos) const { return _data[pos]; }
+
+  Vector<T, size>& operator+=(const Vector<T, size>& other) {
+    for (std::size_t i = 0; i != size; ++i) {
+      _data[i] += other._data[i];
+    }
+
+    return *this;
+  }
+
+  Vector<T, size> operator+(const Vector<T, size>& other) const {
+    return Vector<T, size>(*this) += other;
+  }
+
+  Vector<T, size>& operator-=(const Vector<T, size>& other) {
+    for (std::size_t i = 0; i != size; ++i) {
+      _data[i] -= other._data[i];
+    }
+
+    return *this;
+  }
+
+  Vector<T, size> operator-(const Vector<T, size>& other) const {
+    return Vector<T, size>(*this) -= other;
+  }
+
+  Vector<T, size>& operator/=(const Vector<T, size>& other) {
+    for (std::size_t i = 0; i != size; ++i) {
+      _data[i] /= other._data[i];
+    }
+
+    return *this;
+  }
+
+  Vector<T, size> operator/(const Vector<T, size>& other) const {
+    return Vector<T, size>(*this) /= other;
+  }
+
+  Vector<T, size>& operator*=(T scalar) {
+    for (std::size_t i = 0; i != size; ++i) _data[i] *= scalar;
+
+    return *this;
+  }
+
+  Vector<T, size> operator*(T scalar) const {
+    return Vector<T, size>(*this) *= scalar;
+  }
+
+  Vector<T, size> operator/=(T scalar) {
+    for (std::size_t i = 0; i != size; ++i) _data[i] /= scalar;
+
+    return *this;
+  }
+
+  Vector<T, size> operator/(T scalar) const {
+    return Vector<T, size>(*this) /= scalar;
+  }
+
+  T dot() const { return Math::dot(*this, *this); }
+
+  T length() const { return T(std::sqrt(dot())); }
+
+  template <class U = T>
+  typename std::enable_if<std::is_floating_point<U>::value, T>::type invLength()
+      const {
+    return T(1) / length();
+  }
+
+  template <class U = T>
+  typename std::enable_if<std::is_floating_point<U>::value,
+                          Vector<T, size>>::type
+  normalized() const {
+    return (*this) * invLength();
+  }
+
+ protected:
+  T _data[size];
+
+ private:
+  template <class U, std::size_t size_>
+  friend U dot(const Vector<U, size_>&, const Vector<U, size_>&);
+
+  template <std::size_t... sequence>
+  constexpr explicit Vector(std::index_sequence<sequence...>, T value) noexcept
+      : _data{Impl::repeat(value, sequence)...} {}
+};
+
+template <class T, std::size_t size>
+inline Vector<T, size> operator*(typename std::common_type<T>::type scalar,
+                                 const Vector<T, size>& vector) {
+  return vector * scalar;
+}
+
+#define VECTOR_SUBCLASS_OPERATOR_IMPL(Type, size)                             \
+  static Type<T>& from(T* data) { return *reinterpret_cast<Type<T>*>(data); } \
+  static const Type<T>& from(const T* data) {                                 \
+    return *reinterpret_cast<const Type<T>*>(data);                           \
+  }                                                                           \
+  Type<T>& operator+=(const Vector<T, size>& other) {                         \
+    Vector<T, size>::operator+=(other);                                       \
+    return *this;                                                             \
+  }                                                                           \
+  Type<T> operator+(const Vector<T, size>& other) const {                     \
+    return Vector<T, size>::operator+(other);                                 \
+  }                                                                           \
+  Type<T>& operator-=(const Vector<T, size>& other) {                         \
+    Vector<T, size>::operator-=(other);                                       \
+    return *this;                                                             \
+  }                                                                           \
+  Type<T> operator-(const Vector<T, size>& other) const {                     \
+    return Vector<T, size>::operator-(other);                                 \
+  }                                                                           \
+  Type<T>& operator*=(T scalar) {                                             \
+    Vector<T, size>::operator*=(scalar);                                      \
+    return *this;                                                             \
+  }                                                                           \
+  Type<T> operator*(T scalar) const {                                         \
+    return Vector<T, size>::operator*(scalar);                                \
+  }                                                                           \
+  template <class U = T>                                                      \
+  typename std::enable_if<std::is_floating_point<U>::value, Type<T>>::type    \
+  normalized() const {                                                        \
+    return Vector<T, size>::normalized();                                     \
+  }
+
+#define VECTOR_FUNCTION_IMPL(Type, size)                              \
+  template <class T>                                                  \
+  inline Type<T> operator*(typename std::common_type<T>::type number, \
+                           const Type<T>& vector) {                   \
+    return number * static_cast<const Vector<T, size>&>(vector);      \
+  }
+
+}  // namespace Ajisai::Math
+
+#endif
