@@ -1,3 +1,4 @@
+#include <Ajisai/Core/Random.h>
 #include <Ajisai/Math/Math.h>
 
 #include <fstream>
@@ -17,6 +18,7 @@ void split(const std::string& s, char delim, std::vector<std::string>& elems) {
 
 int main(int argc, char** argv) {
   using namespace Ajisai;
+  using namespace Ajisai::Core;
   using namespace Ajisai::Math;
 
   Vector3i v{1, 2, 3};
@@ -54,5 +56,11 @@ int main(int argc, char** argv) {
   split(face, '/', tmp);
   for (auto tt : tmp) {
     std::cout << tt << std::endl;
+  }
+
+  PCG32 pcg32;
+  int count = 20;
+  while (count--) {
+    std::cout << pcg32.next_double() << std::endl;
   }
 }

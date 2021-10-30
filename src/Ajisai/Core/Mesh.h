@@ -70,6 +70,12 @@ class Mesh {
           hit = true;
         }
       }
+      //   auto e1 = v1 - v0;
+      //   auto e2 = v2 - v0;
+      //   auto Ng = Math::cross(e1, e2).normalized();
+      //   auto p = Math::cross(ray.d.normalized(), e2);
+      //   auto det = Math::dot(e1, p);
+      //   if (det > -1e-6f && a < 1e-6f) continue;
     }
 
     return hit;
