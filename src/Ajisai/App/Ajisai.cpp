@@ -28,6 +28,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ryml/ryml.hpp>
 
 #include "Ajisai/Core/Camera.h"
+#include "Ajisai/Core/Emitter.h"
 #include "Ajisai/Core/Film.h"
 #include "Ajisai/Core/Image.hpp"
 #include "Ajisai/Core/Integrator.h"
@@ -197,18 +198,33 @@ void load_scene_file(Ajisai::Core::RenderContext& ctx,
       config["camera"]["Perspective"]["transform"]["target"].as<Vector3f>();
 
   float focus_distance =
-      config["camera"]["Perspective"]["focus_istance"].as<float>();
+      config["camera"]["Perspective"]["focus_distance"].as<float>();
   Vector3f up =
       config["camera"]["Perspective"]["transform"]["up"].as<Vector3f>();
   float fov = config["camera"]["Perspective"]["fov"].as<float>();
   Vector2f res = config["camera"]["Perspective"]["res"].as<Vector2f>();
 
   ctx.camera = std::make_shared<Ajisai::Core::Camera>(
-      origin, target, focus_distance, up, fov, res.aspectRatio());
+      origin, target, focus_distance, up, fov * 3.14159265359f / 180.f,
+      res.aspectRatio());
 
   for (int i = 0; i < config["shape"].size(); ++i) {
     std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>();
     mesh->Load(config["shape"][i]["filename"].as<std::string>());
+    if (config["shape"][i]["transform"].IsDefined()) {
+      mesh->Translate(
+          config["shape"][i]["transform"]["translate"].as<Vector3f>());
+    }
+    if (config["shape"][i]["bsdf"]["type"].as<std::string>() == "diffuse") {
+      mesh->SetMaterial(std::make_shared<Material>(
+          Color3<float>::fromSrgb(
+              config["shape"][i]["bsdf"]["srgb"].as<Vector3f>()),
+          Material::Type::Diffuse));
+    }
+    if (config["shape"][i]["emitter"].IsDefined()) {
+      mesh->SetEmitter(std::make_shared<Emitter>(Color3<float>::fromSrgb(
+          config["shape"][i]["emitter"]["srgb"].as<Vector3f>())));
+    }
     ctx.scene->AddMesh(mesh);
   }
 
@@ -229,12 +245,13 @@ int main(int argc, char** argv) {
   std::shared_ptr<Ajisai::Core::Integrator> integrator =
       std::make_shared<Ajisai::Core::Integrator>();
 
-  std::shared_ptr<Camera> camera = parse(inputFile);
+  // std::shared_ptr<Camera> camera = parse(inputFile);
   std::shared_ptr<Film> film = std::make_shared<Film>(Vector2i{256, 256});
   RenderContext ctx;
   ctx.film = film;
   // ctx.camera = camera;
   ctx.scene = scene;
+  ctx.sampler = std::make_shared<Sampler>();
 
   load_scene_file(ctx, inputFile);
 

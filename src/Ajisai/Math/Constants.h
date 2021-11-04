@@ -20,39 +20,22 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef AJISAI_MATH_VECTOR2_H_
-#define AJISAI_MATH_VECTOR2_H_
-
-#include "Ajisai/Math/Vector.h"
+#ifndef AJISAI_MATH_CONSTANTS_H_
+#define AJISAI_MATH_CONSTANTS_H_
 
 namespace Ajisai::Math {
+template <class>
+struct Constants;
 
-template <class T>
-class Vector2 : public Vector<T, 2> {
- public:
-  constexpr Vector2() noexcept : Vector<T, 2>{} {}
+template <>
+struct Constants<float> {
+  Constants() = delete;
 
-  constexpr explicit Vector2(T value) noexcept : Vector<T, 2>(value) {}
-
-  constexpr Vector2(T x, T y) noexcept : Vector<T, 2>(x, y) {}
-
-  constexpr Vector2(const Vector<T, 2>& other) noexcept : Vector<T, 2>(other) {}
-
-  T& x() { return Vector<T, 2>::_data[0]; }
-  constexpr T x() const { return Vector<T, 2>::_data[0]; }
-  T& y() { return Vector<T, 2>::_data[1]; }
-  constexpr T y() const { return Vector<T, 2>::_data[1]; }
-
-  template <class U = T>
-  typename std::enable_if<std::is_floating_point<U>::value, T>::type
-  aspectRatio() const {
-    return x() / y();
-  }
-
-  VECTOR_SUBCLASS_OPERATOR_IMPL(Vector2, 2)
+  // https://en.wikipedia.org/wiki/Single-precision_floating-point_format
+  static constexpr float pi() { return 3.141592654f; }
+  static constexpr float pi2() { return 1.570796327f; }
+  static constexpr float pi4() { return 0.785398163f; }
 };
-
-VECTOR_FUNCTION_IMPL(Vector2, 2)
 
 }  // namespace Ajisai::Math
 

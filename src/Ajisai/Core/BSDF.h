@@ -20,40 +20,43 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef AJISAI_MATH_VECTOR2_H_
-#define AJISAI_MATH_VECTOR2_H_
+#ifndef AJISAI_CORE_BSDF_H_
+#define AJISAI_CORE_BSDF_H_
 
-#include "Ajisai/Math/Vector.h"
+#include "Ajisai/Core/CoordinateSystem.h"
+#include "Ajisai/Core/Sampler.h"
+#include "Ajisai/Math/Math.h"
+#include "Ajisai/Math/Spectrum.hpp"
 
-namespace Ajisai::Math {
+namespace Ajisai::Core {
 
-template <class T>
-class Vector2 : public Vector<T, 2> {
+// struct BSDFSamplingRecord {
+//   const Math::Vector3f wo;
+//   inline BSDFSamplingRecord(const ScatteringEvent& event, Sampler* sampler);
+// };
+
+struct BSDFSamplingRecord;
+
+class BSDF {
+  Math::Spectrum R;
+  Math::Vector3f Ng;
+  const CoordinateSystem frame;
+
  public:
-  constexpr Vector2() noexcept : Vector<T, 2>{} {}
+  BSDF(const Math::Spectrum& R, const Math::Vector3f& Ng,
+       const Math::Vector3f& Ns)
+      : R(R), Ng(Ng), frame(Ns) {}
 
-  constexpr explicit Vector2(T value) noexcept : Vector<T, 2>(value) {}
+  auto toWorld(const Math::Vector3f& w) const { return frame.toWorld(w); }
+  auto toLocal(const Math::Vector3f& w) const { return frame.toLocal(w); }
 
-  constexpr Vector2(T x, T y) noexcept : Vector<T, 2>(x, y) {}
-
-  constexpr Vector2(const Vector<T, 2>& other) noexcept : Vector<T, 2>(other) {}
-
-  T& x() { return Vector<T, 2>::_data[0]; }
-  constexpr T x() const { return Vector<T, 2>::_data[0]; }
-  T& y() { return Vector<T, 2>::_data[1]; }
-  constexpr T y() const { return Vector<T, 2>::_data[1]; }
-
-  template <class U = T>
-  typename std::enable_if<std::is_floating_point<U>::value, T>::type
-  aspectRatio() const {
-    return x() / y();
-  }
-
-  VECTOR_SUBCLASS_OPERATOR_IMPL(Vector2, 2)
+  void Sample(BSDFSamplingRecord& rec) const;
 };
 
-VECTOR_FUNCTION_IMPL(Vector2, 2)
+// inline BSDFSamplingRecord::BSDFSamplingRecord(const ScatteringEvent& event,
+//                                               Sampler* sampler)
+//     : wo(event.bsdf->toLocal(event.wo)) {}
 
-}  // namespace Ajisai::Math
+}  // namespace Ajisai::Core
 
 #endif

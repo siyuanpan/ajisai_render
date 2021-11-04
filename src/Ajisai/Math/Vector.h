@@ -27,6 +27,8 @@ DEALINGS IN THE SOFTWARE.
 #include <type_traits>
 #include <utility>
 
+#include "Ajisai/Math/BoolVector.h"
+
 namespace Ajisai::Math {
 
 namespace Impl {
@@ -84,6 +86,15 @@ class Vector {
   T& operator[](std::size_t pos) { return _data[pos]; }
   constexpr T operator[](std::size_t pos) const { return _data[pos]; }
 
+  BoolVector<size> operator<(const Vector<T, size>& other) const;
+  BoolVector<size> operator<=(const Vector<T, size>& other) const;
+  BoolVector<size> operator>(const Vector<T, size>& other) const;
+  BoolVector<size> operator>=(const Vector<T, size>& other) const;
+
+  template <class U = T>
+  typename std::enable_if<std::is_signed<U>::value, Vector<T, size>>::type
+  operator-() const;
+
   Vector<T, size>& operator+=(const Vector<T, size>& other) {
     for (std::size_t i = 0; i != size; ++i) {
       _data[i] += other._data[i];
@@ -106,6 +117,18 @@ class Vector {
 
   Vector<T, size> operator-(const Vector<T, size>& other) const {
     return Vector<T, size>(*this) -= other;
+  }
+
+  Vector<T, size> operator*=(const Vector<T, size>& other) {
+    for (std::size_t i = 0; i != size; ++i) {
+      _data[i] *= other._data[i];
+    }
+
+    return *this;
+  }
+
+  Vector<T, size> operator*(const Vector<T, size>& other) const {
+    return Vector<T, size>(*this) *= other;
   }
 
   Vector<T, size>& operator/=(const Vector<T, size>& other) {
@@ -175,36 +198,41 @@ inline Vector<T, size> operator*(typename std::common_type<T>::type scalar,
   return vector * scalar;
 }
 
-#define VECTOR_SUBCLASS_OPERATOR_IMPL(Type, size)                             \
-  static Type<T>& from(T* data) { return *reinterpret_cast<Type<T>*>(data); } \
-  static const Type<T>& from(const T* data) {                                 \
-    return *reinterpret_cast<const Type<T>*>(data);                           \
-  }                                                                           \
-  Type<T>& operator+=(const Vector<T, size>& other) {                         \
-    Vector<T, size>::operator+=(other);                                       \
-    return *this;                                                             \
-  }                                                                           \
-  Type<T> operator+(const Vector<T, size>& other) const {                     \
-    return Vector<T, size>::operator+(other);                                 \
-  }                                                                           \
-  Type<T>& operator-=(const Vector<T, size>& other) {                         \
-    Vector<T, size>::operator-=(other);                                       \
-    return *this;                                                             \
-  }                                                                           \
-  Type<T> operator-(const Vector<T, size>& other) const {                     \
-    return Vector<T, size>::operator-(other);                                 \
-  }                                                                           \
-  Type<T>& operator*=(T scalar) {                                             \
-    Vector<T, size>::operator*=(scalar);                                      \
-    return *this;                                                             \
-  }                                                                           \
-  Type<T> operator*(T scalar) const {                                         \
-    return Vector<T, size>::operator*(scalar);                                \
-  }                                                                           \
-  template <class U = T>                                                      \
-  typename std::enable_if<std::is_floating_point<U>::value, Type<T>>::type    \
-  normalized() const {                                                        \
-    return Vector<T, size>::normalized();                                     \
+#define VECTOR_SUBCLASS_OPERATOR_IMPL(Type, size)                              \
+  static Type<T>& from(T* data) { return *reinterpret_cast<Type<T>*>(data); }  \
+  static const Type<T>& from(const T* data) {                                  \
+    return *reinterpret_cast<const Type<T>*>(data);                            \
+  }                                                                            \
+  template <class U = T>                                                       \
+  typename std::enable_if<std::is_signed<U>::value, Type<T>>::type operator-() \
+      const {                                                                  \
+    return Vector<T, size>::operator-();                                       \
+  }                                                                            \
+  Type<T>& operator+=(const Vector<T, size>& other) {                          \
+    Vector<T, size>::operator+=(other);                                        \
+    return *this;                                                              \
+  }                                                                            \
+  Type<T> operator+(const Vector<T, size>& other) const {                      \
+    return Vector<T, size>::operator+(other);                                  \
+  }                                                                            \
+  Type<T>& operator-=(const Vector<T, size>& other) {                          \
+    Vector<T, size>::operator-=(other);                                        \
+    return *this;                                                              \
+  }                                                                            \
+  Type<T> operator-(const Vector<T, size>& other) const {                      \
+    return Vector<T, size>::operator-(other);                                  \
+  }                                                                            \
+  Type<T>& operator*=(T scalar) {                                              \
+    Vector<T, size>::operator*=(scalar);                                       \
+    return *this;                                                              \
+  }                                                                            \
+  Type<T> operator*(T scalar) const {                                          \
+    return Vector<T, size>::operator*(scalar);                                 \
+  }                                                                            \
+  template <class U = T>                                                       \
+  typename std::enable_if<std::is_floating_point<U>::value, Type<T>>::type     \
+  normalized() const {                                                         \
+    return Vector<T, size>::normalized();                                      \
   }
 
 #define VECTOR_FUNCTION_IMPL(Type, size)                              \
@@ -213,6 +241,65 @@ inline Vector<T, size> operator*(typename std::common_type<T>::type scalar,
                            const Type<T>& vector) {                   \
     return number * static_cast<const Vector<T, size>&>(vector);      \
   }
+
+template <class T, std::size_t size>
+inline BoolVector<size> Vector<T, size>::operator<(
+    const Vector<T, size>& other) const {
+  BoolVector<size> out;
+
+  for (std::size_t i = 0; i != size; ++i) {
+    out.set(i, _data[i] < other._data[i]);
+  }
+
+  return out;
+}
+template <class T, std::size_t size>
+inline BoolVector<size> Vector<T, size>::operator<=(
+    const Vector<T, size>& other) const {
+  BoolVector<size> out;
+
+  for (std::size_t i = 0; i != size; ++i) {
+    out.set(i, _data[i] <= other._data[i]);
+  }
+
+  return out;
+}
+
+template <class T, std::size_t size>
+inline BoolVector<size> Vector<T, size>::operator>=(
+    const Vector<T, size>& other) const {
+  BoolVector<size> out;
+
+  for (std::size_t i = 0; i != size; ++i) {
+    out.set(i, _data[i] >= other._data[i]);
+  }
+
+  return out;
+}
+
+template <class T, std::size_t size>
+inline BoolVector<size> Vector<T, size>::operator>(
+    const Vector<T, size>& other) const {
+  BoolVector<size> out;
+
+  for (std::size_t i = 0; i != size; ++i) {
+    out.set(i, _data[i] > other._data[i]);
+  }
+
+  return out;
+}
+
+template <class T, std::size_t size>
+template <class U>
+inline typename std::enable_if<std::is_signed<U>::value, Vector<T, size>>::type
+Vector<T, size>::operator-() const {
+  Vector<T, size> out;
+  for (std::size_t i = 0; i != size; ++i) {
+    out._data[i] = -_data[i];
+  }
+
+  return out;
+}
 
 }  // namespace Ajisai::Math
 

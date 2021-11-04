@@ -20,40 +20,17 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef AJISAI_MATH_VECTOR2_H_
-#define AJISAI_MATH_VECTOR2_H_
+#ifndef AJISAI_CORE_EMITTER_H_
+#define AJISAI_CORE_EMITTER_H_
 
-#include "Ajisai/Math/Vector.h"
+#include "Ajisai/Math/Color.h"
 
-namespace Ajisai::Math {
-
-template <class T>
-class Vector2 : public Vector<T, 2> {
+namespace Ajisai::Core {
+class Emitter {
  public:
-  constexpr Vector2() noexcept : Vector<T, 2>{} {}
-
-  constexpr explicit Vector2(T value) noexcept : Vector<T, 2>(value) {}
-
-  constexpr Vector2(T x, T y) noexcept : Vector<T, 2>(x, y) {}
-
-  constexpr Vector2(const Vector<T, 2>& other) noexcept : Vector<T, 2>(other) {}
-
-  T& x() { return Vector<T, 2>::_data[0]; }
-  constexpr T x() const { return Vector<T, 2>::_data[0]; }
-  T& y() { return Vector<T, 2>::_data[1]; }
-  constexpr T y() const { return Vector<T, 2>::_data[1]; }
-
-  template <class U = T>
-  typename std::enable_if<std::is_floating_point<U>::value, T>::type
-  aspectRatio() const {
-    return x() / y();
-  }
-
-  VECTOR_SUBCLASS_OPERATOR_IMPL(Vector2, 2)
+  Emitter(const Math::Color3<float> c) : color(c) {}
+  Math::Color3<float> color;
 };
-
-VECTOR_FUNCTION_IMPL(Vector2, 2)
-
-}  // namespace Ajisai::Math
+}  // namespace Ajisai::Core
 
 #endif

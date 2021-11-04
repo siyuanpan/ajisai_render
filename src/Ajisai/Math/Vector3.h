@@ -55,6 +55,13 @@ class Vector3 : public Vector<T, 3> {
   T& z() { return Vector<T, 3>::_data[2]; }
   constexpr T z() const { return Vector<T, 3>::_data[2]; }
 
+  T& r() { return Vector<T, 3>::_data[0]; }
+  constexpr T r() const { return Vector<T, 3>::_data[0]; }
+  T& g() { return Vector<T, 3>::_data[1]; }
+  constexpr T g() const { return Vector<T, 3>::_data[1]; }
+  T& b() { return Vector<T, 3>::_data[2]; }
+  constexpr T b() const { return Vector<T, 3>::_data[2]; }
+
   VECTOR_SUBCLASS_OPERATOR_IMPL(Vector3, 3)
 
  private:

@@ -65,6 +65,17 @@ inline Vector<T, size> clamp(const Vector<T, size>& value,
   return out;
 }
 
+template <class T, std::size_t size>
+inline Vector<T, size> lerp(const Vector<T, size>& a, const Vector<T, size>& b,
+                            const BoolVector<size>& t) {
+  Vector<T, size> out;
+  for (std::size_t i = 0; i != size; ++i) {
+    out[i] = t[i] ? b[i] : a[i];
+  }
+
+  return out;
+}
+
 }  // namespace Ajisai::Math
 
 #endif

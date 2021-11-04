@@ -33,10 +33,17 @@ class Scene {
     meshes.emplace_back(mesh);
   }
 
+  const Mesh& GetMesh(size_t i) const { return *meshes[i]; }
+
   bool Intersect(const Ray& ray, Intersection* intersection) const {
     bool hit = false;
-    for (auto mesh : meshes) {
-      hit |= mesh->Intersect(ray, intersection);
+    for (int i = 0; i < meshes.size(); ++i) {
+      auto& mesh = meshes[i];
+      auto ret = mesh->Intersect(ray, intersection);
+      if (ret) {
+        intersection->meshId = i;
+      }
+      hit |= ret;
     }
 
     return hit;

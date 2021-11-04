@@ -26,6 +26,8 @@ DEALINGS IN THE SOFTWARE.
 #include <cstddef>
 
 #include "Ajisai/Math/Bounds.hpp"
+#include "Ajisai/Math/Color.h"
+#include "Ajisai/Math/Constants.h"
 #include "Ajisai/Math/Functions.h"
 #include "Ajisai/Math/Spectrum.hpp"
 #include "Ajisai/Math/Vector2.h"
@@ -41,6 +43,8 @@ template <class>
 class Vector3;
 template <class>
 class Vector4;
+template <class>
+class Color3;
 template <std::size_t>
 class CoefficientSpectrum;
 

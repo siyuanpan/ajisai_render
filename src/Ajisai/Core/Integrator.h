@@ -30,6 +30,7 @@ DEALINGS IN THE SOFTWARE.
 #include "Ajisai/Core/Film.h"
 #include "Ajisai/Core/Mesh.h"
 #include "Ajisai/Core/Parallel.hpp"
+#include "Ajisai/Core/Sampler.h"
 #include "Ajisai/Core/Scene.h"
 #include "Ajisai/Math/Math.h"
 
@@ -39,7 +40,7 @@ struct RenderContext {
   std::shared_ptr<Film> film;
   std::shared_ptr<Camera> camera;
   std::shared_ptr<Scene> scene;
-  // std::shared_ptr<Mesh> mesh;
+  std::shared_ptr<Sampler> sampler;
 };
 
 class RenderTask {
@@ -53,7 +54,7 @@ class RenderTask {
       auto film = ctx.film;
       auto camera = ctx.camera;
       auto scene = ctx.scene;
-      // auto mesh = ctx.mesh;
+      auto& sampler = ctx.sampler;
       auto nTiles = (film->Dimension() + Math::Vector2i(TileSize - 1)) /
                     Math::Vector2i(TileSize);
       parallel_for_2D(nTiles, [=](Math::Vector2i tilePos, uint32_t tid) {
@@ -66,16 +67,48 @@ class RenderTask {
           for (int x = tile.bounds.min().x(); x < tile.bounds.max().x(); ++x) {
             const float u = (x + 0.5f) / film->Dimension().x();
             const float v = (y + 0.5f) / film->Dimension().y();
-            Intersection intersection;
+            // Intersection intersection;
             auto ray = camera->GenerateRay(u, v);
-            if (scene->Intersect(ray, &intersection)) {
-              tile.AddSample(
-                  Math::Vector2i{x, y},
-                  Math::Spectrum{intersection.Ng[0], intersection.Ng[1],
-                                 intersection.Ng[2]},
-                  1.0f);
-            } else
-              tile.AddSample(Math::Vector2i{x, y}, Math::Spectrum(0), 1.f);
+            Math::Spectrum Li(0), beta(1);
+            // if (scene->Intersect(ray, &intersection)) {
+            //   tile.AddSample(
+            //       Math::Vector2i{x, y},
+            //       Math::Spectrum{intersection.Ng[0], intersection.Ng[1],
+            //                      intersection.Ng[2]},
+            //       1.0f);
+            // } else
+            //   tile.AddSample(Math::Vector2i{x, y}, Math::Spectrum(0), 1.f);
+            for (int depth = 0; depth < 5; ++depth) {
+              Intersection intersection;
+              if (scene->Intersect(ray, &intersection)) {
+                auto& mesh = scene->GetMesh(intersection.meshId);
+                // if (mesh.IsEmitter()) {
+                //   Li +=
+                // }
+                Triangle triangle{};
+                mesh.GetTriangle(intersection.triId, &triangle);
+                auto p = ray.Point(intersection.t);
+                ScatteringEvent event(-ray.d, p, triangle, intersection);
+                mesh.computeScatteringFunctions(&event);
+                BSDFSamplingRecord bRec(event, sampler->Next2D());
+                event.bsdf->Sample(bRec);
+                // std::cout << "pdf: " << bRec.pdf << std::endl;
+
+                // std::cout << "wi: " << bRec.wi[0] << " " << bRec.wi[1] << " "
+                //           << bRec.wi[2] << std::endl;
+                auto wi = event.bsdf->toWorld(bRec.wi);
+                beta *= bRec.f * std::abs(Math::dot(wi, event.Ns)) / bRec.pdf;
+                ray = event.SpawnRay(wi);
+              } else {
+                Li += beta * Math::Spectrum(1);
+                break;
+              }
+
+              // if (depth == 4) {
+              //   Li += beta * Math::Spectrum(1);
+              // }
+            }
+            tile.AddSample(Math::Vector2i{x, y}, Li, 1.0f);
           }
         }
         std::lock_guard<std::mutex> lk(mutex);

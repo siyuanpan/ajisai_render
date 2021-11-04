@@ -1,4 +1,5 @@
 #include <Ajisai/Core/Random.h>
+// #include <Ajisai/Math/Color.h>
 #include <Ajisai/Math/Math.h>
 
 #include <fstream>
@@ -63,4 +64,19 @@ int main(int argc, char** argv) {
   while (count--) {
     std::cout << pcg32.next_double() << std::endl;
   }
+
+  auto boolV = Vector3i(10, 20, 3) < Vector3i(0, 3, 5);
+  std::cout << (lerp(Vector3i(1, 1, 1), Vector3i(2, 2, 2), boolV))[0]
+            << std::endl;
+  std::cout << (lerp(Vector3i(1, 1, 1), Vector3i(2, 2, 2), boolV))[1]
+            << std::endl;
+  std::cout << (lerp(Vector3i(1, 1, 1), Vector3i(2, 2, 2), boolV))[2]
+            << std::endl;
+
+  //   Color3<float> color(Vector3f{0.5, 0.2, 0.3});
+  auto color = Math::Color3<float>::fromSrgb(Vector3f{0.5, 0.1, 0.2});
+  //   // {0.5, 0.2, 0.3};
+  std::cout << color.r() << std::endl;
+  std::cout << color.g() << std::endl;
+  std::cout << color.b() << std::endl;
 }

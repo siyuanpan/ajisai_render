@@ -37,15 +37,32 @@ class CoefficientSpectrum : public Vector<float, size> {
 
   constexpr CoefficientSpectrum(const CoefficientSpectrum<size>& other) noexcept
       : Vector<float, size>(other) {}
-  //   template <class... U, class V = typename std::enable_if<
-  //                             sizeof...(U) + 1 == size, T>::type>
-  //   constexpr CoefficientSpectrum(std::initializer_list<float> value)
-  //   noexcept
-  //       : Vector<float, size>{value} {}
+
+  constexpr CoefficientSpectrum(const Vector<float, size>& other) noexcept
+      : Vector<float, size>(other) {}
+
   template <class... U, class V = typename std::enable_if<
                             sizeof...(U) + 1 == size, float>::type>
   constexpr CoefficientSpectrum(float first, U... next) noexcept
       : Vector<float, size>{first, next...} {}
+
+  CoefficientSpectrum<size>& operator*=(const Vector<float, size>& other) {
+    Vector<float, size>::operator*=(other);
+    return *this;
+  }
+
+  CoefficientSpectrum<size> operator*(const Vector<float, size>& other) const {
+    return Vector<float, size>::operator*(other);
+  }
+
+  CoefficientSpectrum<size>& operator*=(float scalar) {
+    Vector<float, size>::operator*=(scalar);
+    return *this;
+  }
+
+  CoefficientSpectrum<size> operator*(float scalar) const {
+    return Vector<float, size>::operator*(scalar);
+  }
 };
 }  // namespace Ajisai::Math
 
