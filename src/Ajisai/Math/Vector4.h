@@ -50,6 +50,15 @@ class Vector4 : public Vector<T, 4> {
   T& w() { return Vector<T, 4>::_data[3]; }
   constexpr T w() const { return Vector<T, 4>::_data[3]; }
 
+  T& r() { return Vector<T, 4>::_data[0]; }
+  constexpr T r() const { return Vector<T, 4>::_data[0]; }
+  T& g() { return Vector<T, 4>::_data[1]; }
+  constexpr T g() const { return Vector<T, 4>::_data[1]; }
+  T& b() { return Vector<T, 4>::_data[2]; }
+  constexpr T b() const { return Vector<T, 4>::_data[2]; }
+  T& a() { return Vector<T, 4>::_data[3]; }
+  constexpr T a() const { return Vector<T, 4>::_data[3]; }
+
   Vector3<T>& xyz() { return Vector3<T>::from(Vector<T, 4>::data()); }
   constexpr const Vector3<T> xyz() const {
     return {Vector<T, 4>::_data[0], Vector<T, 4>::_data[1],

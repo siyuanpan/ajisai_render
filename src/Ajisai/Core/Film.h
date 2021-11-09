@@ -58,8 +58,8 @@ struct Tile {
   void AddSample(const Math::Vector2i& p, const Math::Spectrum& radiance,
                  float weight) {
     auto& pix = (*this)(p);
-    pix.radiance = radiance;
-    pix.weight = weight;
+    pix.radiance += radiance;
+    pix.weight += weight;
   }
 };
 

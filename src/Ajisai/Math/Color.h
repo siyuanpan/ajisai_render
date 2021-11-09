@@ -24,11 +24,15 @@ DEALINGS IN THE SOFTWARE.
 #define AJISAI_MATH_COLOR_H_
 
 #include "Ajisai/Math/Vector3.h"
+#include "Ajisai/Math/Vector4.h"
 
 namespace Ajisai::Math {
 
 template <class>
 class Color3;
+
+template <class>
+class Color4;
 
 namespace Impl {
 
@@ -41,6 +45,11 @@ Color3<T> fromSrgb(const Vector3<T>& srgb) {
               srgb > Vector3<T>(T(0.04045)));
 }
 
+template <class T>
+Color4<T> fromSrgba(const Vector4<T>& srgba) {
+  return {fromSrgb<T>(srgba.rgb()), srgba.a()};
+}
+
 /* RGB -> sRGB */
 template <class T>
 Vector3<T> toSrgb(const Color3<T>& rgb) {
@@ -49,6 +58,12 @@ Vector3<T> toSrgb(const Color3<T>& rgb) {
               (T(1.0) + a) * pow(rgb, T(1.0) / T(2.4)) - Vector3<T>{a},
               rgb > Vector3<T>(T(0.0031308)));
 }
+
+template <class T>
+Vector4<T> toSrgba(const Color4<T>& rgba) {
+  return {toSrgb<T>(rgba.rgb()), rgba.a()};
+}
+
 }  // namespace Impl
 
 template <class T>
@@ -72,7 +87,36 @@ class Color3 : public Vector3<T> {
   VECTOR_SUBCLASS_OPERATOR_IMPL(Color3, 3)
 };
 
+template <class T>
+class Color4 : public Vector4<T> {
+ public:
+  static Color4<T> fromSrgba(const Vector4<T>& srgba) {
+    return {Impl::fromSrgba<T>(srgba)};
+  }
+  static Color4<T> fromSrgba(const Vector3<T>& srgb, T a) {
+    return {Impl::fromSrgb<T>(srgb), a};
+  }
+
+  constexpr Color4() noexcept : Vector4<T>{} {}
+
+  constexpr explicit Color4(T rgb, T alpha) noexcept
+      : Vector4<T>(rgb, rgb, rgb, alpha) {}
+
+  constexpr Color4(T r, T g, T b, T a) noexcept : Vector4<T>(r, g, b, a) {}
+
+  constexpr Color4(const Vector3<T>& rgb, T a) noexcept
+      : Vector4<T>(rgb[0], rgb[1], rgb[2], a) {}
+
+  constexpr Color4(const Vector<T, 4>& other) noexcept : Vector4<T>(other) {}
+
+  Vector4<T> toSrgba() const { return Impl::toSrgba<T>(*this); }
+
+  VECTOR_SUBCLASS_OPERATOR_IMPL(Color4, 4)
+};
+
 VECTOR_FUNCTION_IMPL(Color3, 3)
+
+VECTOR_FUNCTION_IMPL(Color4, 4)
 
 }  // namespace Ajisai::Math
 

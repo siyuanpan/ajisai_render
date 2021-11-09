@@ -103,6 +103,7 @@ class ParallelPool {
 
   ~ParallelPool() {
     stop = true;
+    workCv.notify_all();
     for (auto& t : threads) {
       t.join();
     }
@@ -131,11 +132,14 @@ class ParallelPool {
 };
 }  // namespace Impl
 
+static std::once_flag flag;
+static std::unique_ptr<Impl::ParallelPool> pool;
+
 inline void parallel_for(uint32_t count,
                          const std::function<void(uint32_t, uint32_t)>& func,
                          uint32_t chunkSize = 1) {
-  static std::once_flag flag;
-  static std::unique_ptr<Impl::ParallelPool> pool;
+  // static std::once_flag flag;
+  // static std::unique_ptr<Impl::ParallelPool> pool;
   std::call_once(flag,
                  [&]() { pool = std::make_unique<Impl::ParallelPool>(); });
   Impl::ParallelContext ctx;
@@ -145,6 +149,8 @@ inline void parallel_for(uint32_t count,
   pool->Enqueue(ctx);
   pool->Wait();
 }
+
+inline void thread_pool_finalize() { pool.reset(nullptr); }
 
 inline void parallel_for_2D(
     const Math::Vector2i& dim,

@@ -45,6 +45,8 @@ template <class>
 class Vector4;
 template <class>
 class Color3;
+template <class>
+class Color4;
 template <std::size_t>
 class CoefficientSpectrum;
 
@@ -58,7 +60,11 @@ typedef Vector2<double> Vector2d;
 typedef Vector3<int> Vector3i;
 typedef Vector3<float> Vector3f;
 
+typedef Color3<float> Color3f;
+
 typedef Vector4<float> Vector4f;
+
+typedef Color4<float> Color4f;
 
 typedef CoefficientSpectrum<3> RGBSpectrum;
 // typedef Vector3<float> RGBSpectrum;

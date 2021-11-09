@@ -30,6 +30,7 @@ DEALINGS IN THE SOFTWARE.
 #include <stb_image_write.h>
 
 #include "Ajisai/Core/Parallel.hpp"
+#include "Ajisai/Math/Color.h"
 #include "Ajisai/Math/Math.h"
 
 namespace Ajisai::Core {
@@ -65,8 +66,10 @@ class Image {
   std::vector<T> texels;
 };
 
-typedef Image<Math::Vector3f> RGBImage;
-typedef Image<Math::Vector4f> RGBAImage;
+typedef Image<Math::Vector3f> SRGBImage;
+typedef Image<Math::Vector4f> SRGBAImage;
+typedef Image<Math::Color3f> RGBImage;
+typedef Image<Math::Color4f> RGBAImage;
 
 class ImageWriter {
  public:
@@ -74,7 +77,7 @@ class ImageWriter {
                     const std::filesystem::path& path) {
     const auto ext = path.extension().string();
     std::cout << ext.c_str() << std::endl;
-    RGBAImage image;
+    SRGBAImage image;
     GammaCorrection(_image, image);
     auto& texels = image.Texels();
     auto dimension = image.Dimension();
@@ -103,15 +106,15 @@ class ImageWriter {
     return false;
   }
 
-  static void GammaCorrection(const RGBAImage& in, RGBAImage& out,
+  static void GammaCorrection(const RGBAImage& in, SRGBAImage& out,
                               float gamma = 1.0 / 2.2f) {
     out.Resize(in.Dimension());
     parallel_for(
         in.Dimension().y(),
         [&](uint32_t y, uint32_t) {
           for (int x = 0; x < in.Dimension().x(); ++x) {
-            out(x, y) =
-                Math::Vector4f(pow(in(x, y).xyz(), gamma), in(x, y).w());
+            out(x, y) = in(x, y).toSrgba();
+            // Math::Vector4f(pow(in(x, y).xyz(), gamma), in(x, y).w());
           }
         },
         1024);

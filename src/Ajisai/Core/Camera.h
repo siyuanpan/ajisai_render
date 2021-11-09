@@ -23,6 +23,8 @@ DEALINGS IN THE SOFTWARE.
 #ifndef AJISAI_CORE_CAMERA_H_
 #define AJISAI_CORE_CAMERA_H_
 
+#include "Ajisai/Core/Random.h"
+#include "Ajisai/Core/Warp.h"
 #include "Ajisai/Math/Math.h"
 
 namespace Ajisai::Core {
@@ -58,8 +60,8 @@ class Camera {
  public:
   explicit Camera(const Math::Vector3f& ori, const Math::Vector3f& tar,
                   float focus_distance, const Math::Vector3f& upDir, float fov,
-                  float aspectRatio)
-      : origin{ori} {
+                  float aspectRatio, float lensRadius = 0.f)
+      : origin{ori}, lensRadius{lensRadius} {
     look = (ori - tar).normalized();
     right = Math::cross(upDir, look).normalized();
     up = Math::cross(look, right).normalized();
@@ -78,7 +80,12 @@ class Camera {
   }
 
   Ray GenerateRay(float s, float t) const {
-    return Ray{origin, lowerLeftCorner + s * horitonal + t * vertical - origin};
+    PCG32 rnd(s * t);
+    auto rd = lensRadius * squareToUniformDiskConcentric(
+                               {rnd.next_float(), rnd.next_float()});
+    auto offset = right * rd.x() + up * rd.y();
+    return Ray{origin + offset, lowerLeftCorner + s * horitonal + t * vertical -
+                                    offset - origin};
   }
 
  private:
@@ -86,6 +93,7 @@ class Camera {
   Math::Vector3f right, up, look;
   Math::Vector3f lowerLeftCorner;
   Math::Vector3f horitonal, vertical;
+  float lensRadius;
 };
 }  // namespace Ajisai::Core
 

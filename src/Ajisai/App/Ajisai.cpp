@@ -411,5 +411,7 @@ int main(int argc, char** argv) {
   std::cout << cross(aa, bb)[0] << " " << cross(aa, bb)[1] << " "
             << cross(aa, bb)[2] << std::endl;
 
+  thread_pool_finalize();
+
   return 0;
 }

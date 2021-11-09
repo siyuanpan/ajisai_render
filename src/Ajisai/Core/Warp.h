@@ -26,7 +26,8 @@ DEALINGS IN THE SOFTWARE.
 #include "Ajisai/Math/Math.h"
 
 namespace Ajisai::Core {
-Math::Vector2f squareToUniformDiskConcentric(const Math::Vector2f& sample) {
+inline Math::Vector2f squareToUniformDiskConcentric(
+    const Math::Vector2f& sample) {
   auto offset = 2.f * sample - Math::Vector2f(1.f);
 
   float r, phi;
@@ -44,7 +45,7 @@ Math::Vector2f squareToUniformDiskConcentric(const Math::Vector2f& sample) {
   return {r * std::cos(phi), r * std::sin(phi)};
 }
 
-Math::Vector3f squareToCosineHemisphere(const Math::Vector2f& sample) {
+inline Math::Vector3f squareToCosineHemisphere(const Math::Vector2f& sample) {
   auto p = squareToUniformDiskConcentric(sample);
   auto r = Math::dot(p, p);
   auto z = std::sqrt(std::max(0.0f, 1 - r));
