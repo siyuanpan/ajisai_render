@@ -26,9 +26,12 @@ target_link_libraries(AjisaiCore PRIVATE cxxopts::cxxopts)
 target_link_libraries(AjisaiCore PRIVATE yaml-cpp)
 target_link_libraries(AjisaiCore PRIVATE tinyobjloader::tinyobjloader)
 
+add_subdirectory(src/Ajisai/PluginManager)
+
 add_executable(test src/Ajisai/App/Test.cpp)
 target_include_directories(test PUBLIC ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
 target_link_libraries(test PRIVATE ryml::ryml)
+target_link_libraries(test PRIVATE Ajisai::PluginManager)
 
 add_executable(Ajisai src/Ajisai/App/Ajisai.cpp)
 target_link_libraries(Ajisai PUBLIC AjisaiCore)

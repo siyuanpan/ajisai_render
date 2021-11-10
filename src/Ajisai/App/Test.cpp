@@ -1,6 +1,7 @@
 #include <Ajisai/Core/Random.h>
 // #include <Ajisai/Math/Color.h>
 #include <Ajisai/Math/Math.h>
+#include <Ajisai/PluginManager/Manager.h>
 
 #include <fstream>
 #include <iostream>
@@ -79,4 +80,6 @@ int main(int argc, char** argv) {
   std::cout << color.r() << std::endl;
   std::cout << color.g() << std::endl;
   std::cout << color.b() << std::endl;
+
+  PluginManager::Manager<int> manager;
 }
