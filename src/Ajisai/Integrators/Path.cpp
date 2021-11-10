@@ -20,36 +20,39 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef AJISAI_CORE_INTEGRATOR_H_
-#define AJISAI_CORE_INTEGRATOR_H_
+#include <Ajisai/Core/Camera.h>
+#include <Ajisai/Core/Film.h>
+#include <Ajisai/Core/Mesh.h>
+#include <Ajisai/Integrators/Integrator.h>
+#include <Ajisai/Math/Math.h>
 
 #include <future>
-#include <mutex>
 
-#include "Ajisai/Core/Camera.h"
-#include "Ajisai/Core/Film.h"
-#include "Ajisai/Core/Mesh.h"
-#include "Ajisai/Core/Parallel.hpp"
-#include "Ajisai/Core/Sampler.h"
-#include "Ajisai/Core/Scene.h"
-#include "Ajisai/Math/Math.h"
+namespace Ajisai::Integrators {
 
-namespace Ajisai::Core {
+using namespace Ajisai::Core;
+using namespace Ajisai::Math;
 
-struct RenderContext {
-  std::shared_ptr<Film> film;
-  std::shared_ptr<Camera> camera;
-  std::shared_ptr<Scene> scene;
-  std::shared_ptr<Sampler> sampler;
-};
+class PTRenderTask : public RenderTask {
+ private:
+  std::future<void> future;
+  RenderContext ctx;
+  std::mutex mutex;
+  int spp;
+  int minDepth;
+  int maxDepth;
 
-class RenderTask {
  public:
-  explicit RenderTask(const RenderContext& ctx, int spp) : ctx(ctx), spp(spp) {}
+  PTRenderTask(const RenderContext& ctx, int spp, int minDepth, int maxDepth)
+      : ctx(ctx), spp(spp), minDepth(minDepth), maxDepth(maxDepth) {}
 
-  void Wait() { future.wait(); }
+  virtual ~PTRenderTask() {}
 
-  auto Li(Ray ray, Sampler* sampler) {
+  virtual std::shared_ptr<const Film> GetFilm() { return ctx.film; }
+
+  virtual void Wait() { future.wait(); }
+
+  virtual Math::Spectrum Li(Ray ray, Sampler* sampler) {
     auto scene = ctx.scene;
     Math::Spectrum Li(0), beta(1);
     for (int depth = 0; depth < 5; ++depth) {
@@ -75,9 +78,10 @@ class RenderTask {
     return Li;
   }
 
-  void Start() {
+  virtual void Start() {
     future = std::async(std::launch::async, [=]() {
       auto beginTime = std::chrono::high_resolution_clock::now();
+
       auto film = ctx.film;
       auto camera = ctx.camera;
       auto scene = ctx.scene;
@@ -101,35 +105,6 @@ class RenderTask {
               auto Li = this->Li(ray, sampler.get());
               tile.AddSample(Math::Vector2i{x, y}, Li, 1.0f);
             }
-            // Math::Spectrum Li(0), beta(1);
-            // for (int depth = 0; depth < 5; ++depth) {
-            //   Intersection intersection;
-            //   if (scene->Intersect(ray, &intersection)) {
-            //     auto& mesh = scene->GetMesh(intersection.meshId);
-            //     // if (mesh.IsEmitter()) {
-            //     //   Li +=
-            //     // }
-            //     Triangle triangle{};
-            //     mesh.GetTriangle(intersection.triId, &triangle);
-            //     auto p = ray.Point(intersection.t);
-            //     ScatteringEvent event(-ray.d, p, triangle, intersection);
-            //     mesh.computeScatteringFunctions(&event);
-            //     BSDFSamplingRecord bRec(event, sampler->Next2D());
-            //     event.bsdf->Sample(bRec);
-            //     // std::cout << "pdf: " << bRec.pdf << std::endl;
-
-            //     // std::cout << "wi: " << bRec.wi[0] << " " << bRec.wi[1] <<
-            //     " "
-            //     //           << bRec.wi[2] << std::endl;
-            //     auto wi = event.bsdf->toWorld(bRec.wi);
-            //     beta *= bRec.f * std::abs(Math::dot(wi, event.Ns)) /
-            //     bRec.pdf; ray = event.SpawnRay(wi);
-            //   } else {
-            //     Li += beta * Math::Spectrum(1);
-            //     break;
-            //   }
-            // }
-            // tile.AddSample(Math::Vector2i{x, y}, Li, 1.0f);
           }
         }
         std::lock_guard<std::mutex> lk(mutex);
@@ -140,21 +115,22 @@ class RenderTask {
       std::cout << "Rendering done in " << elapsed.count() << "  secs\n";
     });
   }
-
-  std::shared_ptr<const Film> GetFilm() { return ctx.film; }
-
-  std::future<void> future;
-  RenderContext ctx;
-  std::mutex mutex;
-  int spp;
 };
 
-class Integrator {
- public:
-  int spp = 16;
-  std::shared_ptr<RenderTask> CreateRenderTask(const RenderContext& ctx) {
-    return std::make_shared<RenderTask>(ctx, spp);
-  }
-};
-}  // namespace Ajisai::Core
-#endif
+std::shared_ptr<RenderTask> PathIntegrator::CreateRenderTask(
+    const RenderContext& ctx) {
+  return std::make_shared<PTRenderTask>(ctx, spp, minDepth, maxDepth);
+}
+
+// class PathIntegrator : public Integrator {
+//  public:
+//   virtual std::shared_ptr<RenderTask> CreateRenderTask(
+//       const RenderContext& ctx) override {
+//     return std::make_shared<PTRenderTask>(ctx, spp);
+//   }
+
+//  private:
+//   int spp = 16;
+//   int minDepth = 5, maxDepth = 16;
+// };
+}  // namespace Ajisai::Integrators

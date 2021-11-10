@@ -24,12 +24,13 @@ DEALINGS IN THE SOFTWARE.
 #define AJISAI_CORE_IMAGE_H_
 
 #include <filesystem>
+#include <iostream>
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image.h>
-#include <stb_image_write.h>
+// #define STB_IMAGE_WRITE_IMPLEMENTATION
+// #include <stb_image.h>
+// #include <stb_image_write.h>
 
-#include "Ajisai/Core/Parallel.hpp"
+#include "Ajisai/Core/Parallel.h"
 #include "Ajisai/Math/Color.h"
 #include "Ajisai/Math/Math.h"
 
@@ -73,38 +74,41 @@ typedef Image<Math::Color4f> RGBAImage;
 
 class ImageWriter {
  public:
-  static bool Write(const RGBAImage& _image,
-                    const std::filesystem::path& path) {
-    const auto ext = path.extension().string();
-    std::cout << ext.c_str() << std::endl;
-    SRGBAImage image;
-    GammaCorrection(_image, image);
-    auto& texels = image.Texels();
-    auto dimension = image.Dimension();
-    std::vector<uint8_t> buffer(texels.size() * 3);
-    parallel_for(
-        texels.size(),
-        [&](uint32_t i, uint32_t) {
-          auto pix = static_cast<uint8_t*>(&buffer[i * 3]);
-          auto rgb = texels[i].rgb();
-          rgb = Math::clamp(rgb, 0.f, 1.f);
-          for (int j = 0; j < 3; ++j) {
-            pix[j] =
-                (uint8_t)std::clamp<int>(std::round(rgb[j] * 255.5), 0, 255);
-            // pix[j] = (uint8_t)std::clamp(255 * rgb[j] + 0.5f, 0.f, 255.f);
-          }
-        },
-        1024);
+  static bool Write(const RGBAImage& _image, const std::filesystem::path& path);
+  // static bool Write(const RGBAImage& _image,
+  //                   const std::filesystem::path& path) {
+  //   const auto ext = path.extension().string();
+  //   std::cout << ext.c_str() << std::endl;
+  //   SRGBAImage image;
+  //   GammaCorrection(_image, image);
+  //   auto& texels = image.Texels();
+  //   auto dimension = image.Dimension();
+  //   std::vector<uint8_t> buffer(texels.size() * 3);
+  //   parallel_for(
+  //       texels.size(),
+  //       [&](uint32_t i, uint32_t) {
+  //         auto pix = static_cast<uint8_t*>(&buffer[i * 3]);
+  //         auto rgb = texels[i].rgb();
+  //         rgb = Math::clamp(rgb, 0.f, 1.f);
+  //         for (int j = 0; j < 3; ++j) {
+  //           pix[j] =
+  //               (uint8_t)std::clamp<int>(std::round(rgb[j] * 255.5), 0, 255);
+  //           // pix[j] = (uint8_t)std::clamp(255 * rgb[j] + 0.5f, 0.f, 255.f);
+  //         }
+  //       },
+  //       1024);
 
-    stbi_flip_vertically_on_write(true);
-    if (ext == ".png")
-      return stbi_write_png(path.string().c_str(), dimension.x(), dimension.y(),
-                            3, buffer.data(), 0);
-    else if (ext == ".jpg")
-      return stbi_write_jpg(path.string().c_str(), dimension.x(), dimension.y(),
-                            3, buffer.data(), 0);
-    return false;
-  }
+  //   stbi_flip_vertically_on_write(true);
+  //   if (ext == ".png")
+  //     return stbi_write_png(path.string().c_str(), dimension.x(),
+  //     dimension.y(),
+  //                           3, buffer.data(), 0);
+  //   else if (ext == ".jpg")
+  //     return stbi_write_jpg(path.string().c_str(), dimension.x(),
+  //     dimension.y(),
+  //                           3, buffer.data(), 0);
+  //   return false;
+  // }
 
   static void GammaCorrection(const RGBAImage& in, SRGBAImage& out,
                               float gamma = 1.0 / 2.2f) {

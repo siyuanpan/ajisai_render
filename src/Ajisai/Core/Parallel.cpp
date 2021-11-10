@@ -19,17 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#ifndef AJISAI_CORE_PARALLEL_H_
-#define AJISAI_CORE_PARALLEL_H_
 
-#include <atomic>
-#include <condition_variable>
-#include <deque>
-#include <functional>
-#include <mutex>
-#include <thread>
-
-#include "Ajisai/Math/Math.h"
+#include <Ajisai/Core/Parallel.h>
 
 namespace Ajisai::Core {
 namespace Impl {
@@ -135,9 +126,9 @@ class ParallelPool {
 static std::once_flag flag;
 static std::unique_ptr<Impl::ParallelPool> pool;
 
-inline void parallel_for(uint32_t count,
-                         const std::function<void(uint32_t, uint32_t)>& func,
-                         uint32_t chunkSize = 1) {
+void parallel_for(uint32_t count,
+                  const std::function<void(uint32_t, uint32_t)>& func,
+                  uint32_t chunkSize) {
   // static std::once_flag flag;
   // static std::unique_ptr<Impl::ParallelPool> pool;
   std::call_once(flag,
@@ -150,21 +141,6 @@ inline void parallel_for(uint32_t count,
   pool->Wait();
 }
 
-inline void thread_pool_finalize() { pool.reset(nullptr); }
+void thread_pool_finalize() { pool.reset(nullptr); }
 
-inline void parallel_for_2D(
-    const Math::Vector2i& dim,
-    const std::function<void(Math::Vector2i, uint32_t)>& func,
-    uint32_t chunkSize = 1) {
-  parallel_for(
-      dim.x() * dim.y(),
-      [&](uint32_t idx, uint32_t tid) {
-        auto x = idx % dim.x();
-        auto y = idx / dim.x();
-        func(Math::Vector2i(x, y), tid);
-      },
-      chunkSize);
 }
-}  // namespace Ajisai::Core
-
-#endif

@@ -25,8 +25,8 @@ DEALINGS IN THE SOFTWARE.
 #include <filesystem>
 #include <vector>
 
-#include "Ajisai/Core/Image.hpp"
-#include "Ajisai/Core/Parallel.hpp"
+#include "Ajisai/Core/Image.h"
+#include "Ajisai/Core/Parallel.h"
 #include "Ajisai/Math/Math.h"
 
 namespace Ajisai::Core {

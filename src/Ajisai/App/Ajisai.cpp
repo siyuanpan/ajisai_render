@@ -25,16 +25,16 @@ DEALINGS IN THE SOFTWARE.
 #include <cxxopts.hpp>
 #include <fstream>
 #include <iostream>
-#include <ryml/ryml.hpp>
+// #include <ryml/ryml.hpp>
 
 #include "Ajisai/Core/Camera.h"
 #include "Ajisai/Core/Emitter.h"
 #include "Ajisai/Core/Film.h"
-#include "Ajisai/Core/Image.hpp"
-#include "Ajisai/Core/Integrator.h"
+#include "Ajisai/Core/Image.h"
 #include "Ajisai/Core/Mesh.h"
-#include "Ajisai/Core/Parallel.hpp"
+#include "Ajisai/Core/Parallel.h"
 #include "Ajisai/Core/Scene.h"
+#include "Ajisai/Integrators/Integrator.h"
 #include "Ajisai/Math/Math.h"
 
 static std::string inputFile;
@@ -123,54 +123,54 @@ void split(const std::string& s, char delim, std::vector<std::string>& elems) {
   }
 }
 
-std::shared_ptr<Ajisai::Core::Camera> parse(std::string& file) {
-  using namespace Ajisai;
+// std::shared_ptr<Ajisai::Core::Camera> parse(std::string& file) {
+//   using namespace Ajisai;
 
-  std::ifstream t(file);
-  std::string contents;
+//   std::ifstream t(file);
+//   std::string contents;
 
-  t.seekg(0, std::ios::end);
-  contents.reserve(t.tellg());
-  t.seekg(0, std::ios::beg);
+//   t.seekg(0, std::ios::end);
+//   contents.reserve(t.tellg());
+//   t.seekg(0, std::ios::beg);
 
-  contents.assign(std::istreambuf_iterator<char>(t),
-                  std::istreambuf_iterator<char>());
+//   contents.assign(std::istreambuf_iterator<char>(t),
+//                   std::istreambuf_iterator<char>());
 
-  ryml::Tree tree = ryml::parse(ryml::to_csubstr(contents.c_str()));
+//   ryml::Tree tree = ryml::parse(ryml::to_csubstr(contents.c_str()));
 
-  auto root = tree.rootref();
-  auto origin = root["camera"]["Perspective"]["transform"]["origin"];
-  auto target = root["camera"]["Perspective"]["transform"]["target"];
-  auto up = root["camera"]["Perspective"]["transform"]["up"];
+//   auto root = tree.rootref();
+//   auto origin = root["camera"]["Perspective"]["transform"]["origin"];
+//   auto target = root["camera"]["Perspective"]["transform"]["target"];
+//   auto up = root["camera"]["Perspective"]["transform"]["up"];
 
-  std::cout << origin[0].val() << std::endl;
-  Math::Vector3f ori{}, tar{}, u{};
-  Math::Vector2f res{};
-  float fov, focus_distance;
+//   std::cout << origin[0].val() << std::endl;
+//   Math::Vector3f ori{}, tar{}, u{};
+//   Math::Vector2f res{};
+//   float fov, focus_distance;
 
-  origin[0] >> ori[0];
-  origin[1] >> ori[1];
-  origin[2] >> ori[2];
+//   origin[0] >> ori[0];
+//   origin[1] >> ori[1];
+//   origin[2] >> ori[2];
 
-  target[0] >> tar[0];
-  target[1] >> tar[1];
-  target[2] >> tar[2];
+//   target[0] >> tar[0];
+//   target[1] >> tar[1];
+//   target[2] >> tar[2];
 
-  up[0] >> u[0];
-  up[1] >> u[1];
-  up[2] >> u[2];
+//   up[0] >> u[0];
+//   up[1] >> u[1];
+//   up[2] >> u[2];
 
-  root["camera"]["Perspective"]["res"][0] >> res[0];
-  root["camera"]["Perspective"]["res"][1] >> res[1];
+//   root["camera"]["Perspective"]["res"][0] >> res[0];
+//   root["camera"]["Perspective"]["res"][1] >> res[1];
 
-  root["camera"]["Perspective"]["focus_istance"] >> focus_distance;
-  root["camera"]["Perspective"]["fov"] >> fov;
+//   root["camera"]["Perspective"]["focus_istance"] >> focus_distance;
+//   root["camera"]["Perspective"]["fov"] >> fov;
 
-  return std::make_shared<Ajisai::Core::Camera>(ori, tar, focus_distance, u,
-                                                fov, res.aspectRatio());
-}
+//   return std::make_shared<Ajisai::Core::Camera>(ori, tar, focus_distance, u,
+//                                                 fov, res.aspectRatio());
+// }
 
-void load_scene_file(Ajisai::Core::RenderContext& ctx,
+void load_scene_file(Ajisai::Integrators::RenderContext& ctx,
                      const std::filesystem::path& path) {
   // YAML::Node node;        // starts out as null
   // node["key"] = "value";  // it now is a map node
@@ -238,12 +238,13 @@ void load_scene_file(Ajisai::Core::RenderContext& ctx,
 int main(int argc, char** argv) {
   using namespace Ajisai::Core;
   using namespace Ajisai::Math;
+  using namespace Ajisai::Integrators;
   parse(argc, argv);
 
   std::shared_ptr<Ajisai::Core::Scene> scene =
       std::make_shared<Ajisai::Core::Scene>();
-  std::shared_ptr<Ajisai::Core::Integrator> integrator =
-      std::make_shared<Ajisai::Core::Integrator>();
+  std::shared_ptr<Ajisai::Integrators::Integrator> integrator =
+      std::make_shared<Ajisai::Integrators::PathIntegrator>();
 
   // std::shared_ptr<Camera> camera = parse(inputFile);
   std::shared_ptr<Film> film = std::make_shared<Film>(Vector2i{256, 256});
