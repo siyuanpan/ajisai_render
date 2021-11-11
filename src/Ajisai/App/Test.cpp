@@ -18,6 +18,32 @@ void split(const std::string& s, char delim, std::vector<std::string>& elems) {
   }
 }
 
+class A {
+ public:
+  A() {}
+
+ private:
+  int* t1;
+  int* t2;
+};
+
+class B : public A {
+ public:
+  B() {}
+  // virtual std::string name() = 0;
+  int spp = 16;
+};
+
+class C : public B {
+ public:
+  C() {}
+  // virtual std::string name() override { return "C"; }
+
+ private:
+  int spp = 16;
+  int minDepth = 5, maxDepth = 16;
+};
+
 int main(int argc, char** argv) {
   using namespace Ajisai;
   using namespace Ajisai::Core;
@@ -81,5 +107,20 @@ int main(int argc, char** argv) {
   std::cout << color.g() << std::endl;
   std::cout << color.b() << std::endl;
 
-  PluginManager::Manager<int> manager;
+  C* c = new C();
+  B* b = static_cast<B*>(c);
+  A* a = static_cast<A*>(c);
+  void* vc = c;
+  B* vb = static_cast<B*>(vc);
+  A* va = static_cast<A*>(vc);
+  std::cout << c << std::endl;
+  std::cout << b << std::endl;
+  // std::cout << a << std::endl;
+  // std::cout << static_cast<B*>(a) << std::endl;
+  std::cout << vc << std::endl;
+  std::cout << vb << std::endl;
+  // std::cout << va << std::endl;
+  // std::cout << static_cast<B*>(va) << std::endl;
+
+  // PluginManager::Manager<int> manager;
 }

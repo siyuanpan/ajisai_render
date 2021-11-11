@@ -23,9 +23,15 @@ DEALINGS IN THE SOFTWARE.
 #ifndef AJISAI_PLUGINMANAGER_ABSTRACTMANAGER_H_
 #define AJISAI_PLUGINMANAGER_ABSTRACTMANAGER_H_
 
+// #include <Ajisai/PluginManager/Common.h>
+// #include <Ajisai/PluginManager/AbstractPlugin.h>
 #include <Ajisai/Util/Macros.h>
 
+#include <filesystem>
+#include <map>
+#include <memory>
 #include <string>
+#include <vector>
 
 namespace Ajisai::PluginManager {
 
@@ -39,8 +45,13 @@ class AbstractManager {
   AbstractManager& operator=(AbstractManager&&) = delete;
 
  protected:
-  explicit AbstractManager();
+  explicit AbstractManager(const std::vector<std::filesystem::path>&);
   ~AbstractManager();
+
+  void* loadImpl(const std::string& plugin);
+
+  std::vector<std::filesystem::path> searchPath;
+  std::map<std::string, Constructor> plugins;
 };
 
 #define AJISAI_PLUGIN_REGISTER(name, className, interface)     \

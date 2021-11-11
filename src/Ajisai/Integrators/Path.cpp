@@ -25,6 +25,7 @@ DEALINGS IN THE SOFTWARE.
 #include <Ajisai/Core/Mesh.h>
 #include <Ajisai/Integrators/Integrator.h>
 #include <Ajisai/Math/Math.h>
+#include <Ajisai/PluginManager/AbstractManager.h>
 
 #include <future>
 
@@ -117,20 +118,31 @@ class PTRenderTask : public RenderTask {
   }
 };
 
-std::shared_ptr<RenderTask> PathIntegrator::CreateRenderTask(
-    const RenderContext& ctx) {
-  return std::make_shared<PTRenderTask>(ctx, spp, minDepth, maxDepth);
-}
+// std::shared_ptr<RenderTask> PathIntegrator::CreateRenderTask(
+//     const RenderContext& ctx) {
+//   return std::make_shared<PTRenderTask>(ctx, spp, minDepth, maxDepth);
+// }
 
-// class PathIntegrator : public Integrator {
-//  public:
-//   virtual std::shared_ptr<RenderTask> CreateRenderTask(
-//       const RenderContext& ctx) override {
-//     return std::make_shared<PTRenderTask>(ctx, spp);
-//   }
+class PathIntegrator : public Integrator {
+ public:
+  //   explicit PathIntegrator() {}
+  explicit PathIntegrator(PluginManager::AbstractManager& manager,
+                          const std::string plugin)
+      : Integrator{manager, plugin} {}
 
-//  private:
-//   int spp = 16;
-//   int minDepth = 5, maxDepth = 16;
-// };
+  virtual std::shared_ptr<RenderTask> CreateRenderTask(
+      const RenderContext& ctx) override {
+    std::cout << "cp1\n";
+    return std::make_shared<PTRenderTask>(ctx, spp, minDepth, maxDepth);
+    std::cout << "cp5\n";
+  }
+
+ private:
+  int spp = 16;
+  int minDepth = 5, maxDepth = 16;
+};
+
 }  // namespace Ajisai::Integrators
+
+AJISAI_PLUGIN_REGISTER(PathIntegrator, Ajisai::Integrators::PathIntegrator,
+                       "ajisai.integrators.Integrator/0.0.1")

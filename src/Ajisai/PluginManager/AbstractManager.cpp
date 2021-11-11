@@ -21,10 +21,87 @@ DEALINGS IN THE SOFTWARE.
 */
 
 #include <Ajisai/PluginManager/AbstractManager.h>
+#include <Ajisai/PluginManager/configure.h>
+#include <dlfcn.h>
+
+#include <filesystem>
+#include <iostream>
 
 namespace Ajisai::PluginManager {
-AbstractManager::AbstractManager() {}
+AbstractManager::AbstractManager(
+    const std::vector<std::filesystem::path>& searchPath)
+    : searchPath(searchPath) {}
 
 AbstractManager::~AbstractManager() {}
+
+void* AbstractManager::loadImpl(const std::string& plugin) {
+  auto find = plugins.find(plugin);
+  if (find != plugins.end()) {
+    return find->second(*this, plugin);
+  }
+  for (auto& prefix : searchPath) {
+    auto path = prefix / plugin;
+    path = path.concat(PLUGIN_FILENAME_SUFFIX);
+    std::cout << "Loading " << path.string() << std::endl;
+    void* lib = dlopen(path.string().data(), RTLD_NOW | RTLD_GLOBAL);
+    if (!lib) {
+      //   std::cerr << "PluginManager::Manager::load(): cannot load plugin "
+      //             << plugin << std::endl;
+      continue;
+    } else {
+      auto constructor =
+          reinterpret_cast<Constructor>(dlsym(lib, "pluginConstructor"));
+      if (constructor == nullptr) {
+        std::cerr
+            << "PluginManager::Manager::load(): cannot get constructor of "
+               "plugin\n";
+        dlclose(lib);
+        return nullptr;
+      }
+
+      plugins.insert({plugin, constructor});
+
+      //   void* t = constructor(*this, plugin);
+      //   auto tmp = static_cast<AbstractPlugin*>(t);
+      //   auto tmp1 = reinterpret_cast<AbstractPlugin*>(t);
+      //   std::cout << t << std::endl;
+      //   std::cout << tmp << std::endl;
+      //   std::cout << tmp1 << std::endl;
+      //   AbstractPlugin* tmp =
+      //       static_cast<AbstractPlugin*>(constructor(*this, plugin));
+      //   tmp->getManager();
+      //   std::cout << "cp3\n";
+      //   std::cout << "cp4\n";
+      //   return tmp;
+      return constructor(*this, plugin);
+      //   return static_cast<AbstractPlugin*>(constructor(*this, plugin));
+    }
+  }
+
+  std::cerr << "PluginManager::Manager::load(): cannot load plugin " << plugin
+            << std::endl;
+  return nullptr;
+
+  //   std::filesystem::path prefix = "./";
+  //   auto path = prefix / std::filesystem::path(plugin);
+  //   path = path.concat(PLUGIN_FILENAME_SUFFIX);
+  //   std::cout << "Loading " << path.string() << std::endl;
+  //   void* lib = dlopen(path.string().data(), RTLD_NOW | RTLD_GLOBAL);
+  //   if (!lib) {
+  //     std::cerr << "PluginManager::Manager::load(): cannot load plugin " <<
+  //     plugin
+  //               << std::endl;
+  //   }
+  //   auto constructor =
+  //       reinterpret_cast<Constructor>(dlsym(lib, "pluginConstructor"));
+  //   if (constructor == nullptr) {
+  //     std::cerr << "PluginManager::Manager::load(): cannot get constructor of
+  //     "
+  //                  "plugin\n";
+  //     dlclose(lib);
+  //   }
+
+  //   return static_cast<AbstractPlugin*>(constructor(*this, plugin));
+}
 
 }  // namespace Ajisai::PluginManager

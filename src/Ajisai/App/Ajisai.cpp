@@ -36,6 +36,7 @@ DEALINGS IN THE SOFTWARE.
 #include "Ajisai/Core/Scene.h"
 #include "Ajisai/Integrators/Integrator.h"
 #include "Ajisai/Math/Math.h"
+#include "Ajisai/PluginManager/Manager.h"
 
 static std::string inputFile;
 static std::string outputFile;
@@ -236,6 +237,7 @@ void load_scene_file(Ajisai::Integrators::RenderContext& ctx,
 }
 
 int main(int argc, char** argv) {
+  using namespace Ajisai;
   using namespace Ajisai::Core;
   using namespace Ajisai::Math;
   using namespace Ajisai::Integrators;
@@ -243,8 +245,11 @@ int main(int argc, char** argv) {
 
   std::shared_ptr<Ajisai::Core::Scene> scene =
       std::make_shared<Ajisai::Core::Scene>();
-  std::shared_ptr<Ajisai::Integrators::Integrator> integrator =
-      std::make_shared<Ajisai::Integrators::PathIntegrator>();
+  // std::shared_ptr<Ajisai::Integrators::Integrator> integrator =
+  //     std::make_shared<Ajisai::Integrators::PathIntegrator>();
+  PluginManager::Manager<Integrator> manager;
+  // std::shared_ptr<Integrator>
+  auto integrator = manager.load("PathIntegrator");
 
   // std::shared_ptr<Camera> camera = parse(inputFile);
   std::shared_ptr<Film> film = std::make_shared<Film>(Vector2i{256, 256});
@@ -263,9 +268,13 @@ int main(int argc, char** argv) {
   // pix.radiance[0] = 10;
   std::cout << "radiance : " << tt(Vector2i{1, 1}).radiance[0] << std::endl;
 
+  std::cout << "cp0\n";
   auto task = integrator->CreateRenderTask(ctx);
+  std::cout << "cp2\n";
   task->Start();
+  std::cout << "cp3\n";
   task->Wait();
+  std::cout << "cp4\n";
 
   auto filmUpdate = task->GetFilm();
 

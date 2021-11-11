@@ -33,6 +33,8 @@ DEALINGS IN THE SOFTWARE.
 // #include "Ajisai/Core/Sampler.h"
 #include <Ajisai/Core/Scene.h>
 #include <Ajisai/Math/Math.h>
+#include <Ajisai/PluginManager/AbstractPlugin.h>
+#include <Ajisai/Util/Directory.h>
 
 namespace Ajisai::Integrators {
 
@@ -130,24 +132,35 @@ class RenderTask {
   // int spp;
 };
 
-class Integrator {
+class Integrator : public PluginManager::AbstractPlugin {
  public:
   // int spp = 16;
+  // explicit Integrator() {}
+  explicit Integrator(PluginManager::AbstractManager& manager,
+                      const std::string& plugin)
+      : PluginManager::AbstractPlugin{manager, plugin} {}
   virtual std::shared_ptr<RenderTask> CreateRenderTask(
       const RenderContext& ctx) = 0;
-  // {
-  //   return std::make_shared<RenderTask>(ctx, spp);
+
+  // static std::string Integrator::pluginInterface() {
+  //   return "ajisai.integrators.Integrator/0.0.1";
+  // }
+  static std::string pluginInterface();
+  static std::vector<std::filesystem::path> pluginSearchPaths();
+  // static std::vector<std::string> Integrator::pluginSearchPaths() {
+  //   std::cout << Util::libraryLocation(&pluginInterface) << std::endl;
+  //   return {{}};
   // }
 };
 
-class PathIntegrator : public Integrator {
- public:
-  virtual std::shared_ptr<RenderTask> CreateRenderTask(
-      const RenderContext& ctx) override;
+// class PathIntegrator : public Integrator {
+//  public:
+//   virtual std::shared_ptr<RenderTask> CreateRenderTask(
+//       const RenderContext& ctx) override;
 
- private:
-  int spp = 16;
-  int minDepth = 5, maxDepth = 16;
-};
+//  private:
+//   int spp = 16;
+//   int minDepth = 5, maxDepth = 16;
+// };
 }  // namespace Ajisai::Integrators
 #endif

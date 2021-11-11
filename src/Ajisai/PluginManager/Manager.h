@@ -24,8 +24,8 @@ DEALINGS IN THE SOFTWARE.
 #define AJISAI_PLUGINMANAGER_MANAGER_H_
 
 #include <Ajisai/PluginManager/AbstractManager.h>
-#include <dlfcn.h>
 
+#include <iostream>
 #include <memory>
 
 namespace Ajisai::PluginManager {
@@ -34,20 +34,27 @@ class Manager : public AbstractManager {
  public:
   //   static const int Version;
 
-  explicit Manager() {}
+  explicit Manager() : AbstractManager{T::pluginSearchPaths()} {}
 
   //   Manager(const Manager<T>&) = delete;
   //   Manager(Manager<T>&&) = delete;
   //   Manager<T>& operator=(const Manager<T>&) = delete;
   //   Manager<T>& operator=(Manager<T>&&) = delete;
 
-  //   std::unique_ptr<T> load(const std::string& plugin) {
-  //     void* lib = dlopen(plugin.data(), RTLD_NOW | RTLD_GLOBAL);
-  //     if (!lib) {
-  //       std::cerr << "PluginManager::Manager::load(): cannot load plugin "
-  //                 << plugin << std::endl;
-  //     }
-  //   }
+  T* load(const std::string& plugin) {
+    // auto tmp = loadImpl(plugin);
+    // std::cout << tmp << std::endl;
+    // std::cout << reinterpret_cast<T*>(tmp) << std::endl;
+    // std::cout << static_cast<T*>(tmp) << std::endl;
+    // return static_cast<T*>(tmp);
+    return static_cast<T*>(loadImpl(plugin));
+    // return reinterpret_cast<T*>(loadImpl(plugin));
+    //     void* lib = dlopen(plugin.data(), RTLD_NOW | RTLD_GLOBAL);
+    //     if (!lib) {
+    //       std::cerr << "PluginManager::Manager::load(): cannot load plugin "
+    //                 << plugin << std::endl;
+    //     }
+  }
 };
 
 // #define AJISAI_PLUGIN_REGISTER(name, className, interface)                  \

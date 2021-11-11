@@ -1,3 +1,4 @@
+
 #
 # Copyright 2021 Siyuan Pan <pansiyuan.cs@gmail.com>
 #
@@ -20,18 +21,18 @@
 # DEALINGS IN THE SOFTWARE.
 #
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/configure.h.cmake
-                ${CMAKE_CURRENT_BINARY_DIR}/configure.h)       
+set(INTEGRATORS_SRCS Integrator.cpp)
 
-set(PLUGINMANAGER_SRCS AbstractManager.cpp AbstractPlugin.cpp)
+set(INTEGRATORS_HEADERS Integrator.h)
 
-set(PLUGINMANAGER_HEADERS Manager.h AbstractManager.h AbstractPlugin.h)
+add_library(AjisaiIntegrators SHARED ${INTEGRATORS_SRCS} ${INTEGRATORS_HEADERS})
 
-add_library(AjisaiPluginManager SHARED ${PLUGINMANAGER_SRCS} ${PLUGINMANAGER_HEADERS})
+target_include_directories(AjisaiIntegrators PUBLIC ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
+target_link_libraries(AjisaiIntegrators PRIVATE Ajisai::Util)
+# target_link_libraries(AjisaiIntegrators PRIVATE dl)
 
-target_include_directories(AjisaiPluginManager PUBLIC ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
-#target_link_libraries(AjisaiPluginManager AjisaiCore)
-target_link_libraries(AjisaiPluginManager PRIVATE dl)
+add_library(Ajisai::Integrators ALIAS AjisaiIntegrators)
 
-add_library(Ajisai::PluginManager ALIAS AjisaiPluginManager)
+add_plugin(PathIntegrator Path.cpp)
 
+target_link_libraries(PathIntegrator PRIVATE Ajisai::PluginManager)
