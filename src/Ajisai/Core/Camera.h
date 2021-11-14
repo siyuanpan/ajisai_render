@@ -23,24 +23,27 @@ DEALINGS IN THE SOFTWARE.
 #ifndef AJISAI_CORE_CAMERA_H_
 #define AJISAI_CORE_CAMERA_H_
 
+#include <Ajisai/Core/Film.h>
+#include <Ajisai/Core/Geometry.h>
+#include <Ajisai/Math/Math.h>
+
 #include "Ajisai/Core/Random.h"
 #include "Ajisai/Core/Warp.h"
-#include "Ajisai/Math/Math.h"
 
 namespace Ajisai::Core {
 
-struct Ray {
-  Math::Vector3f o, d;
-  float t_min, t_max;
+// struct Ray {
+//   Math::Vector3f o, d;
+//   float t_min, t_max;
 
-  Ray() = default;
-  Ray(const Math::Vector3f& o, const Math::Vector3f& d,
-      float t_min = 0.001 /*ray bias*/,
-      float t_max = std::numeric_limits<float>::infinity())
-      : o(o), d(d.normalized()), t_min(t_min), t_max(t_max) {}
+//   Ray() = default;
+//   Ray(const Math::Vector3f& o, const Math::Vector3f& d,
+//       float t_min = 0.001 /*ray bias*/,
+//       float t_max = std::numeric_limits<float>::infinity())
+//       : o(o), d(d.normalized()), t_min(t_min), t_max(t_max) {}
 
-  auto Point(float t) const { return o + t * d; }
-};
+//   auto Point(float t) const { return o + t * d; }
+// };
 
 struct Intersection {
   float t = std::numeric_limits<float>::infinity();
@@ -48,6 +51,7 @@ struct Intersection {
   int triId = -1;
   Math::Vector3f Ng;
   Math::Vector2f uv;
+  Math::Vector3f p;
 
   //   void computeScatteringFunctions(const Math::Vector3f& wo, const
   //   Math::Vector3f& p, const Triangle& triangle, const Intersection&
@@ -60,19 +64,17 @@ class Camera {
  public:
   explicit Camera(const Math::Vector3f& ori, const Math::Vector3f& tar,
                   float focus_distance, const Math::Vector3f& upDir, float fov,
-                  float aspectRatio, float lensRadius = 0.f)
-      : origin{ori}, lensRadius{lensRadius} {
+                  /*float aspectRatio*/ const Math::Vector2f& res,
+                  float lensRadius = 0.f)
+      : origin{ori}, resolution(res), lensRadius{lensRadius} {
+    film = std::make_shared<Film>(Math::Vector2i{int(res.x()), int(res.y())});
+
     look = (ori - tar).normalized();
     right = Math::cross(upDir, look).normalized();
     up = Math::cross(look, right).normalized();
 
-    // const float focusDis = (eye - view).length();
-    // std::cout << "dis " << focus_distance << std::endl;
-    // std::cout << "std::tan(fov * 0.5f) " << std::tan(fov * 0.5f) <<
-    // std::endl; std::cout << "aspectRatio : " << aspectRatio << std::endl;
-
     const float halfH = std::tan(fov * 0.5f) * focus_distance;
-    const float halfW = aspectRatio * halfH;
+    const float halfW = res.aspectRatio() * halfH;
     lowerLeftCorner =
         origin - halfW * right - halfH * up - focus_distance * look;
     horitonal = 2.f * halfW * right;
@@ -88,12 +90,17 @@ class Camera {
                                     offset - origin};
   }
 
+  std::shared_ptr<Film> GetFilm() const { return film; }
+
  private:
   Math::Vector3f origin;
   Math::Vector3f right, up, look;
   Math::Vector3f lowerLeftCorner;
   Math::Vector3f horitonal, vertical;
+  Math::Vector2f resolution;
   float lensRadius;
+
+  std::shared_ptr<Film> film;
 };
 }  // namespace Ajisai::Core
 

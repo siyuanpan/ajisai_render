@@ -49,22 +49,59 @@ class PTRenderTask : public RenderTask {
 
   virtual ~PTRenderTask() {}
 
-  virtual std::shared_ptr<const Film> GetFilm() { return ctx.film; }
+  virtual std::shared_ptr<const Film> GetFilm() {
+    return ctx.camera->GetFilm();
+  }
 
   virtual void Wait() { future.wait(); }
 
   virtual Math::Spectrum Li(Ray ray, Sampler* sampler) {
     auto scene = ctx.scene;
     Math::Spectrum Li(0), beta(1);
-    for (int depth = 0; depth < 5; ++depth) {
+    // bool first = true;
+    for (int depth = 0; depth < maxDepth; ++depth) {
       Intersection intersection;
       if (scene->Intersect(ray, &intersection)) {
         auto& mesh = scene->GetMesh(intersection.meshId);
+        if (mesh.IsEmitter() && depth == 0) {
+          Li += beta * mesh.Le(-ray.d);
+        }
         Triangle triangle{};
         mesh.GetTriangle(intersection.triId, &triangle);
         auto p = ray.Point(intersection.t);
         ScatteringEvent event(-ray.d, p, triangle, intersection);
         mesh.computeScatteringFunctions(&event);
+
+        // light sample
+        float lightPdf = 0.f;
+        auto sampleLight = scene->SampleOneLight(sampler->Next1D(), &lightPdf);
+        if (sampleLight && lightPdf > 0) {
+          LightSamplingRecord lRec;
+          sampleLight->SampleLi(sampler->Next2D(), p, lRec);
+          lightPdf *= lRec.pdf;
+          auto wi = event.bsdf->toLocal(lRec.wi);
+          auto wo = event.bsdf->toLocal(event.wo);
+          auto f = event.bsdf->Evaluate(wo, wi) *
+                   std::abs(Math::dot(lRec.wi, event.Ns));
+          Intersection shadowIntersection;
+          if (lightPdf > 0 &&
+              scene->Intersect(lRec.shadowRay, &shadowIntersection) &&
+              shadowIntersection.meshId == intersection.meshId) {
+            // if (first) {
+            //   std::cout << "beta: " << beta[0] << " " << beta[1] << " "
+            //             << beta[2] << std::endl;
+            //   std::cout << "f: " << f[0] << " " << f[1] << " " << f[2]
+            //             << std::endl;
+            //   std::cout << "lRec.Li: " << lRec.Li[0] << " " << lRec.Li[1] <<
+            //   " "
+            //             << lRec.Li[2] << std::endl;
+            //   std::cout << "lightPdf: " << lightPdf << std::endl;
+            //   first = false;
+            // }
+            Li += beta * f * lRec.Li / lightPdf;
+          }
+        }
+
         BSDFSamplingRecord bRec(event, sampler->Next2D());
         event.bsdf->Sample(bRec);
 
@@ -72,7 +109,7 @@ class PTRenderTask : public RenderTask {
         beta *= bRec.f * std::abs(Math::dot(wi, event.Ns)) / bRec.pdf;
         ray = event.SpawnRay(wi);
       } else {
-        Li += beta * Math::Spectrum(1);
+        Li += beta * Math::Spectrum(0);
         break;
       }
     }
@@ -83,8 +120,9 @@ class PTRenderTask : public RenderTask {
     future = std::async(std::launch::async, [=]() {
       auto beginTime = std::chrono::high_resolution_clock::now();
 
-      auto film = ctx.film;
-      auto camera = ctx.camera;
+      // auto film = ctx.film;
+      auto& camera = ctx.camera;
+      auto film = camera->GetFilm();
       auto scene = ctx.scene;
       auto& _sampler = ctx.sampler;
       auto nTiles = (film->Dimension() + Math::Vector2i(TileSize - 1)) /
@@ -118,11 +156,6 @@ class PTRenderTask : public RenderTask {
   }
 };
 
-// std::shared_ptr<RenderTask> PathIntegrator::CreateRenderTask(
-//     const RenderContext& ctx) {
-//   return std::make_shared<PTRenderTask>(ctx, spp, minDepth, maxDepth);
-// }
-
 class PathIntegrator : public Integrator {
  public:
   //   explicit PathIntegrator() {}
@@ -132,9 +165,7 @@ class PathIntegrator : public Integrator {
 
   virtual std::shared_ptr<RenderTask> CreateRenderTask(
       const RenderContext& ctx) override {
-    std::cout << "cp1\n";
     return std::make_shared<PTRenderTask>(ctx, spp, minDepth, maxDepth);
-    std::cout << "cp5\n";
   }
 
  private:

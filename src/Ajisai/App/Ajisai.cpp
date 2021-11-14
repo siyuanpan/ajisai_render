@@ -25,7 +25,6 @@ DEALINGS IN THE SOFTWARE.
 #include <cxxopts.hpp>
 #include <fstream>
 #include <iostream>
-// #include <ryml/ryml.hpp>
 
 #include "Ajisai/Core/Camera.h"
 #include "Ajisai/Core/Emitter.h"
@@ -124,53 +123,6 @@ void split(const std::string& s, char delim, std::vector<std::string>& elems) {
   }
 }
 
-// std::shared_ptr<Ajisai::Core::Camera> parse(std::string& file) {
-//   using namespace Ajisai;
-
-//   std::ifstream t(file);
-//   std::string contents;
-
-//   t.seekg(0, std::ios::end);
-//   contents.reserve(t.tellg());
-//   t.seekg(0, std::ios::beg);
-
-//   contents.assign(std::istreambuf_iterator<char>(t),
-//                   std::istreambuf_iterator<char>());
-
-//   ryml::Tree tree = ryml::parse(ryml::to_csubstr(contents.c_str()));
-
-//   auto root = tree.rootref();
-//   auto origin = root["camera"]["Perspective"]["transform"]["origin"];
-//   auto target = root["camera"]["Perspective"]["transform"]["target"];
-//   auto up = root["camera"]["Perspective"]["transform"]["up"];
-
-//   std::cout << origin[0].val() << std::endl;
-//   Math::Vector3f ori{}, tar{}, u{};
-//   Math::Vector2f res{};
-//   float fov, focus_distance;
-
-//   origin[0] >> ori[0];
-//   origin[1] >> ori[1];
-//   origin[2] >> ori[2];
-
-//   target[0] >> tar[0];
-//   target[1] >> tar[1];
-//   target[2] >> tar[2];
-
-//   up[0] >> u[0];
-//   up[1] >> u[1];
-//   up[2] >> u[2];
-
-//   root["camera"]["Perspective"]["res"][0] >> res[0];
-//   root["camera"]["Perspective"]["res"][1] >> res[1];
-
-//   root["camera"]["Perspective"]["focus_istance"] >> focus_distance;
-//   root["camera"]["Perspective"]["fov"] >> fov;
-
-//   return std::make_shared<Ajisai::Core::Camera>(ori, tar, focus_distance, u,
-//                                                 fov, res.aspectRatio());
-// }
-
 void load_scene_file(Ajisai::Integrators::RenderContext& ctx,
                      const std::filesystem::path& path) {
   // YAML::Node node;        // starts out as null
@@ -206,8 +158,7 @@ void load_scene_file(Ajisai::Integrators::RenderContext& ctx,
   Vector2f res = config["camera"]["Perspective"]["res"].as<Vector2f>();
 
   ctx.camera = std::make_shared<Ajisai::Core::Camera>(
-      origin, target, focus_distance, up, fov * 3.14159265359f / 180.f,
-      res.aspectRatio());
+      origin, target, focus_distance, up, fov * 3.14159265359f / 180.f, res);
 
   for (int i = 0; i < config["shape"].size(); ++i) {
     std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>();
@@ -252,29 +203,25 @@ int main(int argc, char** argv) {
   auto integrator = manager.load("PathIntegrator");
 
   // std::shared_ptr<Camera> camera = parse(inputFile);
-  std::shared_ptr<Film> film = std::make_shared<Film>(Vector2i{256, 256});
+  // std::shared_ptr<Film> film = std::make_shared<Film>(Vector2i{256, 256});
   RenderContext ctx;
-  ctx.film = film;
+  // ctx.film = film;
   // ctx.camera = camera;
   ctx.scene = scene;
   ctx.sampler = std::make_shared<Sampler>();
 
   load_scene_file(ctx, inputFile);
 
-  auto tt = film->GetTile(Bounds2i{Vector2i{1, 1}, Vector2i{2, 2}});
-  std::cout << "radiance : " << tt(Vector2i{1, 1}).radiance[0] << std::endl;
-  // tt(Vector2i{0, 0}).radiance[0] = 10;
-  tt.AddSample(Vector2i{1, 1}, Spectrum(1), 1);
-  // pix.radiance[0] = 10;
-  std::cout << "radiance : " << tt(Vector2i{1, 1}).radiance[0] << std::endl;
+  // auto tt = film->GetTile(Bounds2i{Vector2i{1, 1}, Vector2i{2, 2}});
+  // std::cout << "radiance : " << tt(Vector2i{1, 1}).radiance[0] << std::endl;
+  // // tt(Vector2i{0, 0}).radiance[0] = 10;
+  // tt.AddSample(Vector2i{1, 1}, Spectrum(1), 1);
+  // // pix.radiance[0] = 10;
+  // std::cout << "radiance : " << tt(Vector2i{1, 1}).radiance[0] << std::endl;
 
-  std::cout << "cp0\n";
   auto task = integrator->CreateRenderTask(ctx);
-  std::cout << "cp2\n";
   task->Start();
-  std::cout << "cp3\n";
   task->Wait();
-  std::cout << "cp4\n";
 
   auto filmUpdate = task->GetFilm();
 
@@ -354,16 +301,17 @@ int main(int argc, char** argv) {
   // std::cout << b.min().x() << " " << b.min().y() << std::endl;
   // std::cout << b.max().x() << " " << b.max().y() << std::endl;
 
-  Vector2i i{1, 2};
-  Bounds2i b{i * (int)TileSize, (i + Vector2i(1)) * (int)TileSize};
-  // i *= 2;
-  // std::cout << i.x() << " " << i.y() << std::endl;
-  // std::cout << (i * 4).x() << " " << (i * 4).y() << std::endl;
-  std::cout << b.min().x() << " " << b.min().y() << std::endl;
-  std::cout << b.max().x() << " " << b.max().y() << std::endl;
-  std::cout << "b.size = " << b.Size().x() << " " << b.Size().y() << std::endl;
+  // Vector2i i{1, 2};
+  // Bounds2i b{i * (int)TileSize, (i + Vector2i(1)) * (int)TileSize};
+  // // i *= 2;
+  // // std::cout << i.x() << " " << i.y() << std::endl;
+  // // std::cout << (i * 4).x() << " " << (i * 4).y() << std::endl;
+  // std::cout << b.min().x() << " " << b.min().y() << std::endl;
+  // std::cout << b.max().x() << " " << b.max().y() << std::endl;
+  // std::cout << "b.size = " << b.Size().x() << " " << b.Size().y() <<
+  // std::endl;
 
-  std::cout << film->GetTile(b).bounds.min().x() << std::endl;
+  // std::cout << film->GetTile(b).bounds.min().x() << std::endl;
 
   Spectrum radiance = Spectrum(10);
   auto rr = radiance / 2.f;
@@ -402,24 +350,25 @@ int main(int argc, char** argv) {
   std::cout << c2[0] << " " << c2[1] << " " << c2[2] << " " << c2[3]
             << std::endl;
 
-  Vector<float, 2> vf2{3.f, 4.f};
-  std::cout << vf2.normalized()[0] << " " << vf2.normalized()[1] << std::endl;
-  std::cout << vf2.normalized().length() << " " << vf2.normalized().dot()
-            << std::endl;
+  // Vector<float, 2> vf2{3.f, 4.f};
+  // std::cout << vf2.normalized()[0] << " " << vf2.normalized()[1] <<
+  // std::endl; std::cout << vf2.normalized().length() << " " <<
+  // vf2.normalized().dot()
+  //           << std::endl;
 
-  Vector3f v3f = Vector3f{2.f, 1.f, 4.f}, v3f2 = Vector3f{-5.f, 3.f, 6.f};
-  std::cout << v3f[0] << " " << v3f[1] << " " << v3f[2] << std::endl;
-  std::cout << v3f2[0] << " " << v3f2[1] << " " << v3f2[2] << std::endl;
-  Vector3f v3f3 = cross(v3f, v3f2);
-  std::cout << v3f3[0] << " " << v3f3[1] << " " << v3f3[2] << std::endl;
-  std::cout << cross(v3f3, v3f)[0] << " " << cross(v3f3, v3f)[1] << " "
-            << cross(v3f3, v3f)[2] << std::endl;
+  // Vector3f v3f = Vector3f{2.f, 1.f, 4.f}, v3f2 = Vector3f{-5.f, 3.f, 6.f};
+  // std::cout << v3f[0] << " " << v3f[1] << " " << v3f[2] << std::endl;
+  // std::cout << v3f2[0] << " " << v3f2[1] << " " << v3f2[2] << std::endl;
+  // Vector3f v3f3 = cross(v3f, v3f2);
+  // std::cout << v3f3[0] << " " << v3f3[1] << " " << v3f3[2] << std::endl;
+  // std::cout << cross(v3f3, v3f)[0] << " " << cross(v3f3, v3f)[1] << " "
+  //           << cross(v3f3, v3f)[2] << std::endl;
 
-  Vector3i aa{1, -1, 1}, bb{4, 3, 7};
-  std::cout << aa[0] << " " << aa[1] << " " << aa[2] << std::endl;
-  std::cout << bb[0] << " " << bb[1] << " " << bb[2] << std::endl;
-  std::cout << cross(aa, bb)[0] << " " << cross(aa, bb)[1] << " "
-            << cross(aa, bb)[2] << std::endl;
+  // Vector3i aa{1, -1, 1}, bb{4, 3, 7};
+  // std::cout << aa[0] << " " << aa[1] << " " << aa[2] << std::endl;
+  // std::cout << bb[0] << " " << bb[1] << " " << bb[2] << std::endl;
+  // std::cout << cross(aa, bb)[0] << " " << cross(aa, bb)[1] << " "
+  //           << cross(aa, bb)[2] << std::endl;
 
   thread_pool_finalize();
 

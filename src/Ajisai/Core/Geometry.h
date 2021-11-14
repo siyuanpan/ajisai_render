@@ -20,17 +20,32 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef AJISAI_CORE_EMITTER_H_
-#define AJISAI_CORE_EMITTER_H_
+#ifndef AJISAI_CORE_GEOMETRY_H_
+#define AJISAI_CORE_GEOMETRY_H_
 
-#include "Ajisai/Math/Color.h"
+#include <Ajisai/Math/Math.h>
 
 namespace Ajisai::Core {
-class Emitter {
- public:
-  Emitter(const Math::Color3<float> c) : color(c) {}
 
-  Math::Color3<float> color;
+struct Ray {
+  Math::Vector3f o, d;
+  float t_min, t_max;
+
+  Ray() = default;
+  Ray(const Math::Vector3f& o, const Math::Vector3f& d,
+      float t_min = 0.001 /*ray bias*/,
+      float t_max = std::numeric_limits<float>::infinity())
+      : o(o), d(d.normalized()), t_min(t_min), t_max(t_max) {}
+
+  auto Point(float t) const { return o + t * d; }
+};
+
+struct LightSamplingRecord {
+  Math::Spectrum Li;
+  Math::Vector3f wi;
+  float pdf;
+  Math::Vector3f normal;
+  Ray shadowRay;
 };
 }  // namespace Ajisai::Core
 

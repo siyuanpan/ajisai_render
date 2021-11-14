@@ -22,15 +22,24 @@ DEALINGS IN THE SOFTWARE.
 #ifndef AJISAI_CORE_SCENE_H_
 #define AJISAI_CORE_SCENE_H_
 
-#include "Ajisai/Core/Camera.h"
-#include "Ajisai/Core/Mesh.h"
+#include <Ajisai/Core/Camera.h>
+#include <Ajisai/Core/Light.h>
+#include <Ajisai/Core/Mesh.h>
+
+// #include <cmath>
 
 namespace Ajisai::Core {
 
 class Scene {
  public:
-  void AddMesh(const std::shared_ptr<const Mesh>& mesh) {
+  void AddMesh(const std::shared_ptr<Mesh>& mesh) {
     meshes.emplace_back(mesh);
+    if (mesh->IsEmitter()) {
+      auto meshLights = mesh->GetLights();
+      for (auto light : meshLights) {
+        lights.emplace_back(light);
+      }
+    }
   }
 
   const Mesh& GetMesh(size_t i) const { return *meshes[i]; }
@@ -49,8 +58,24 @@ class Scene {
     return hit;
   }
 
+  const AreaLight* SampleOneLight(/*Math::Vector2f& sample*/ float u,
+                                  float* pdf) const {
+    if (lights.empty()) return nullptr;
+
+    float light_pdf = 1.f / lights.size();
+
+    size_t index =
+        std::min(size_t(u * (float)lights.size()), (size_t)lights.size() - 1);
+
+    // sample.x() = (sample.x() - index * light_pdf) * lights.size();
+    auto light = lights[index].get();
+    *pdf = light_pdf;
+    return light;
+  }
+
  protected:
   std::vector<std::shared_ptr<const Mesh>> meshes;
+  std::vector<std::shared_ptr<AreaLight>> lights;
 
  private:
 };

@@ -92,7 +92,7 @@ class Film {
           for (int x = 0; x < radiance.Dimension().x(); ++x) {
             if (weight(x, y) != 0) {
               auto tmp = radiance(x, y) / weight(x, y);
-              image(x, y) = Math::Vector4f{tmp[0], tmp[1], tmp[2], 1.f};
+              image(x, y) = Math::Color4f{tmp[0], tmp[1], tmp[2], 1.f};
             }
           }
         },

@@ -23,6 +23,9 @@ DEALINGS IN THE SOFTWARE.
 #ifndef AJISAI_CORE_MESH_H_
 #define AJISAI_CORE_MESH_H_
 
+// #include <Ajisai/Core/Light.h>
+#include <Ajisai/Math/Math.h>
+
 #include <array>
 #include <filesystem>
 #include <iostream>
@@ -32,7 +35,6 @@ DEALINGS IN THE SOFTWARE.
 #include "Ajisai/Core/Camera.h"
 #include "Ajisai/Core/Emitter.h"
 #include "Ajisai/Core/Material.h"
-#include "Ajisai/Math/Math.h"
 
 namespace Ajisai::Core {
 
@@ -45,6 +47,8 @@ void split(const std::string& s, char delim, std::vector<std::string>& elems) {
   }
 }
 }  // namespace
+
+class AreaLight;
 
 struct Vertex {
   Math::Vector3f pos, Ns;
@@ -63,6 +67,14 @@ struct Triangle {
   Math::Vector2f lerpTexCoord(const Math::Vector2f& uv) const {
     return (1 - uv.x() - uv.y()) * texCoords[0] + uv.x() * texCoords[1] +
            uv.y() * texCoords[2];
+  }
+  Math::Vector3f lerpVert(const Math::Vector2f& uv) const {
+    return (1 - uv.x() - uv.y()) * v[0] + uv.x() * v[1] + uv.y() * v[2];
+  }
+  float area() const {
+    auto e1 = v[1] - v[0];
+    auto e2 = v[2] - v[0];
+    return Math::cross(e1, e2).length() * 0.5f;
   }
 };
 
@@ -237,44 +249,6 @@ class Mesh {
   //     // contents.assign(std::istreambuf_iterator<char>(t),
   //     //                 std::istreambuf_iterator<char>());
 
-  //     // std::stringstream ss(contents);
-  //     // std::string item;
-  //     // while (std::getline(ss, item, '\n')) {
-  //     //   if (item.empty() || item[0] == '#') continue;
-  //     //   if (item[0] == 'v' && item[1] == ' ') {
-  //     //     std::vector<std::string> tmp;
-  //     //     split(item.substr(2), ' ', tmp);
-  //     //     vertices.emplace_back(std::stof(tmp[0]), std::stof(tmp[1]),
-  //     //                           std::stof(tmp[2]));
-  //     //   } else if (item[0] == 'v' && item[1] == 'n') {
-  //     //     std::vector<std::string> tmp;
-  //     //     split(item.substr(3), ' ', tmp);
-  //     //     normals.emplace_back(std::stof(tmp[0]), std::stof(tmp[1]),
-  //     //                          std::stof(tmp[2]));
-  //     //   } else if (item[0] == 'f' && item[1] == ' ') {
-  //     //     std::vector<std::string> tmp;
-  //     //     split(item.substr(2), ' ', tmp);
-  //     //     if (tmp[0].find('/') == tmp[0].npos) {
-  //     //       indices.emplace_back(std::stoul(tmp[0]) - 1);
-  //     //       indices.emplace_back(std::stoul(tmp[1]) - 1);
-  //     //       indices.emplace_back(std::stoul(tmp[2]) - 1);
-  //     //     } else {
-  //     //       indices.emplace_back(
-  //     //           std::stoul(tmp[0].substr(0, tmp[0].find_first_of('/'))) -
-  //     1);
-  //     //       indices.emplace_back(
-  //     //           std::stoul(tmp[1].substr(0, tmp[1].find_first_of('/'))) -
-  //     1);
-  //     //       indices.emplace_back(
-  //     //           std::stoul(tmp[2].substr(0, tmp[2].find_first_of('/'))) -
-  //     1);
-  //     //     }
-  //     //   }
-  //     // }
-
-  //     return true;
-  //   }
-
   void Translate(const Math::Vector3f& t) {
     for (auto& v : vertices) {
       v.pos += t;
@@ -287,6 +261,18 @@ class Mesh {
 
   bool IsEmitter() const { return emitter.get() != nullptr; }
 
+  Math::Spectrum Le(const Math::Vector3f& wo) const { return emitter->color; }
+
+  std::vector<std::shared_ptr<AreaLight>> GetLights();
+  // {
+  //   if (!lights.empty()) return lights;
+  //   for (int i = 0; i < indices.size() / 3; ++i) {
+  //     lights.emplace_back(std::make_shared<AreaLight>(this, i));
+  //     // lights.emplace_back(this, i);
+  //   }
+  //   return lights;
+  // }
+
  protected:
   // std::vector<Math::Vector3f> vertices;
   // std::vector<Math::Vector3f> normals;
@@ -294,6 +280,7 @@ class Mesh {
   std::vector<std::size_t> indices;
   std::shared_ptr<Material> material;
   std::shared_ptr<Emitter> emitter;
+  std::vector<std::shared_ptr<AreaLight>> lights;
 };
 
 }  // namespace Ajisai::Core

@@ -40,4 +40,13 @@ void BSDF::Sample(BSDFSamplingRecord& rec) const {
   rec.pdf = absCosTheta(rec.wi) / Math::Constants<float>::pi();
   rec.f = R / Math::Constants<float>::pi();
 }
+
+Math::Spectrum BSDF::Evaluate(const Math::Vector3f& wo,
+                              const Math::Vector3f& wi) const {
+  if (wo.z() * wo.z() >= 0) {
+    auto f = R / Math::Constants<float>::pi();
+    return f;
+  }
+  return Math::Spectrum(0);
+}
 }  // namespace Ajisai::Core

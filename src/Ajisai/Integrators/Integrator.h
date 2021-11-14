@@ -39,7 +39,7 @@ DEALINGS IN THE SOFTWARE.
 namespace Ajisai::Integrators {
 
 struct RenderContext {
-  std::shared_ptr<Ajisai::Core::Film> film;
+  // std::shared_ptr<Ajisai::Core::Film> film;
   std::shared_ptr<Ajisai::Core::Camera> camera;
   std::shared_ptr<Ajisai::Core::Scene> scene;
   std::shared_ptr<Ajisai::Core::Sampler> sampler;

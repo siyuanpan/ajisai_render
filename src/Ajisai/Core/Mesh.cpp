@@ -20,6 +20,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
+#include <Ajisai/Core/Light.h>
 #include <Ajisai/Core/Mesh.h>
 
 #define TINYOBJLOADER_IMPLEMENTATION
@@ -91,4 +92,14 @@ bool Mesh::Load(const std::filesystem::path& path) {
 
   return true;
 }
+
+std::vector<std::shared_ptr<AreaLight>> Mesh::GetLights() {
+  if (!lights.empty()) return lights;
+  for (int i = 0; i < indices.size() / 3; ++i) {
+    lights.emplace_back(std::make_shared<AreaLight>(this, i, material->color));
+    // lights.emplace_back(this, i);
+  }
+  return lights;
+}
+
 }  // namespace Ajisai::Core

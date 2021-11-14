@@ -51,6 +51,7 @@ class BSDF {
   auto toLocal(const Math::Vector3f& w) const { return frame.toLocal(w); }
 
   void Sample(BSDFSamplingRecord& rec) const;
+  Math::Spectrum Evaluate(const Math::Vector3f&, const Math::Vector3f&) const;
 };
 
 // inline BSDFSamplingRecord::BSDFSamplingRecord(const ScatteringEvent& event,
