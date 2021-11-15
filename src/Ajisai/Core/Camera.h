@@ -52,12 +52,6 @@ struct Intersection {
   Math::Vector3f Ng;
   Math::Vector2f uv;
   Math::Vector3f p;
-
-  //   void computeScatteringFunctions(const Math::Vector3f& wo, const
-  //   Math::Vector3f& p, const Triangle& triangle, const Intersection&
-  //   intersection) {
-
-  //   }
 };
 
 class Camera {

@@ -96,7 +96,8 @@ bool Mesh::Load(const std::filesystem::path& path) {
 std::vector<std::shared_ptr<AreaLight>> Mesh::GetLights() {
   if (!lights.empty()) return lights;
   for (int i = 0; i < indices.size() / 3; ++i) {
-    lights.emplace_back(std::make_shared<AreaLight>(this, i, material->color));
+    lights.emplace_back(
+        std::make_shared<AreaLight>(this, i, emitter->radiance));
     // lights.emplace_back(this, i);
   }
   return lights;

@@ -49,4 +49,10 @@ Math::Spectrum BSDF::Evaluate(const Math::Vector3f& wo,
   }
   return Math::Spectrum(0);
 }
+
+float BSDF::EvaluatePdf(const Math::Vector3f& wo,
+                        const Math::Vector3f& wi) const {
+  return absCosTheta(wi) / Math::Constants<float>::pi();
+}
+
 }  // namespace Ajisai::Core

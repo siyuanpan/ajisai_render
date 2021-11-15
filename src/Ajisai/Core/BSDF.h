@@ -52,6 +52,7 @@ class BSDF {
 
   void Sample(BSDFSamplingRecord& rec) const;
   Math::Spectrum Evaluate(const Math::Vector3f&, const Math::Vector3f&) const;
+  float EvaluatePdf(const Math::Vector3f&, const Math::Vector3f&) const;
 };
 
 // inline BSDFSamplingRecord::BSDFSamplingRecord(const ScatteringEvent& event,

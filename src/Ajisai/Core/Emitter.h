@@ -23,14 +23,16 @@ DEALINGS IN THE SOFTWARE.
 #ifndef AJISAI_CORE_EMITTER_H_
 #define AJISAI_CORE_EMITTER_H_
 
-#include "Ajisai/Math/Color.h"
+// #include "Ajisai/Math/Color.h"
+#include <Ajisai/Math/Math.h>
 
 namespace Ajisai::Core {
 class Emitter {
  public:
-  Emitter(const Math::Color3<float> c) : color(c) {}
+  Emitter(const Math::Vector3f& c) : radiance(c) {}
 
-  Math::Color3<float> color;
+  // Math::Color3<float> color;
+  Math::Vector3f radiance;
 };
 }  // namespace Ajisai::Core
 

@@ -30,8 +30,10 @@ DEALINGS IN THE SOFTWARE.
 namespace Ajisai::Core {
 class AreaLight {
  public:
-  AreaLight(Mesh* mesh, int triId, const Math::Spectrum& color)
-      : mesh(mesh), triId(triId), color(color) {}
+  AreaLight(Mesh* mesh, int triId, const Math::Spectrum& radiance)
+      : mesh(mesh), triId(triId), radiance(radiance) {
+    mesh->GetTriangle(triId, &triangle);
+  }
 
   void SampleLi(Math::Vector2f sample, const Math::Vector3f& p,
                 LightSamplingRecord& lRec) const {
@@ -54,13 +56,9 @@ class AreaLight {
     auto dist = wi.length();
     // wi /= dist;
     wi = wi.normalized();
-    // std::cout << "x : " << x[0] << " " << x[1] << " " << x[2] << std::endl;
-    // std::cout << "p : " << p[0] << " " << p[1] << " " << p[2] << std::endl;
-    // std::cout << "wi : " << wi[0] << " " << wi[1] << " " << wi[2] <<
-    // std::endl;
-    // std::cout << "dist2 : " << dist2 << std::endl;
 
-    lRec.Li = {8.5f, 6.f, 2.f};  // Math::Spectrum(17.f, 12.f, 4.f);  // color;
+    lRec.Li = radiance;  //{8.5f, 6.f, 2.f};  //
+                         // Math::Spectrum(17.f, 12.f, 4.f);  // color;
     lRec.wi = wi;
     lRec.pdf = dist2 / (-Math::dot(lRec.wi, normal)) * pdf;
     lRec.normal = normal;
@@ -70,9 +68,25 @@ class AreaLight {
         dist * 0.99);
   }
 
+  float pdfLi(Intersection its, const Math::Vector3f& wi) const {
+    Intersection _its;
+    Ray ray(its.p, wi);
+    if (!triangle.Intersect(ray, &_its)) {
+      return 0.f;
+    }
+    // std::cout << "this\n";
+    // auto tmp =
+    //     _its.t * _its.t / (-Math::dot(wi, _its.Ng)) * (1.f /
+    //     triangle.area());
+    // std::cout << "pdf : " << tmp << std::endl;
+    return _its.t * _its.t / (-Math::dot(wi, _its.Ng)) *
+           (1.f / triangle.area());
+  }
+
   Mesh* mesh;
   int triId;
-  Math::Spectrum color;
+  Math::Spectrum radiance;
+  Triangle triangle;
 };
 }  // namespace Ajisai::Core
 

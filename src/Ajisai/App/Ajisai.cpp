@@ -174,8 +174,8 @@ void load_scene_file(Ajisai::Integrators::RenderContext& ctx,
           Material::Type::Diffuse));
     }
     if (config["shape"][i]["emitter"].IsDefined()) {
-      mesh->SetEmitter(std::make_shared<Emitter>(Color3<float>::fromSrgb(
-          config["shape"][i]["emitter"]["srgb"].as<Vector3f>())));
+      mesh->SetEmitter(std::make_shared<Emitter>(
+          config["shape"][i]["emitter"]["radiance"].as<Vector3f>()));
     }
     ctx.scene->AddMesh(mesh);
   }
@@ -313,42 +313,42 @@ int main(int argc, char** argv) {
 
   // std::cout << film->GetTile(b).bounds.min().x() << std::endl;
 
-  Spectrum radiance = Spectrum(10);
-  auto rr = radiance / 2.f;
+  // Spectrum radiance = Spectrum(10);
+  // auto rr = radiance / 2.f;
 
-  std::cout << "radiance / 2.f " << rr[0] << " " << rr[1] << " " << rr[2]
-            << std::endl;
+  // std::cout << "radiance / 2.f " << rr[0] << " " << rr[1] << " " << rr[2]
+  //           << std::endl;
 
-  Vector<float, 2> vv1{1.f, 3.f}, vv2{2.f, 2.f};
-  std::cout << (vv1 - vv2)[0] << " " << (vv1 - vv2)[1] << std::endl;
+  // Vector<float, 2> vv1{1.f, 3.f}, vv2{2.f, 2.f};
+  // std::cout << (vv1 - vv2)[0] << " " << (vv1 - vv2)[1] << std::endl;
 
-  Image<int> image;
-  std::cout << image(0, 0) << std::endl;
-  image(0, 0) = 4;
-  std::cout << image(0, 0) << std::endl;
+  // Image<int> image;
+  // std::cout << image(0, 0) << std::endl;
+  // image(0, 0) = 4;
+  // std::cout << image(0, 0) << std::endl;
 
-  Vector4<int> vv4{1, 4, 2, 10};
-  std::cout << vv4.xyz().x() << " " << vv4.xyz().y() << " " << vv4.xyz().z()
-            << std::endl;
-  vv4.xyz().x() = 1;
-  vv4.xyz().y() = 2;
-  vv4.xyz().z() = 3;
-  std::cout << vv4.xyz().x() << " " << vv4.xyz().y() << " " << vv4.xyz().z()
-            << std::endl;
+  // Vector4<int> vv4{1, 4, 2, 10};
+  // std::cout << vv4.xyz().x() << " " << vv4.xyz().y() << " " << vv4.xyz().z()
+  //           << std::endl;
+  // vv4.xyz().x() = 1;
+  // vv4.xyz().y() = 2;
+  // vv4.xyz().z() = 3;
+  // std::cout << vv4.xyz().x() << " " << vv4.xyz().y() << " " << vv4.xyz().z()
+  //           << std::endl;
 
-  auto tmpow = pow(vv4, 2);
-  for (int i = 0; i < 4; ++i) std::cout << "pow : " << tmpow[i] << std::endl;
+  // auto tmpow = pow(vv4, 2);
+  // for (int i = 0; i < 4; ++i) std::cout << "pow : " << tmpow[i] << std::endl;
 
-  Vector4<int> vv3(vv4.xyz(), 12);
-  std::cout << vv3.x() << " " << vv3.y() << " " << vv3.z() << " " << vv3.w()
-            << std::endl;
+  // Vector4<int> vv3(vv4.xyz(), 12);
+  // std::cout << vv3.x() << " " << vv3.y() << " " << vv3.z() << " " << vv3.w()
+  //           << std::endl;
 
-  auto c1 = clamp(vv4, 2, 3);
-  auto c2 = clamp(vv4, Vector4<int>(0, 2, 4, 1), Vector4<int>(2, 4, 5, 1));
-  std::cout << c1[0] << " " << c1[1] << " " << c1[2] << " " << c1[3]
-            << std::endl;
-  std::cout << c2[0] << " " << c2[1] << " " << c2[2] << " " << c2[3]
-            << std::endl;
+  // auto c1 = clamp(vv4, 2, 3);
+  // auto c2 = clamp(vv4, Vector4<int>(0, 2, 4, 1), Vector4<int>(2, 4, 5, 1));
+  // std::cout << c1[0] << " " << c1[1] << " " << c1[2] << " " << c1[3]
+  //           << std::endl;
+  // std::cout << c2[0] << " " << c2[1] << " " << c2[2] << " " << c2[3]
+  //           << std::endl;
 
   // Vector<float, 2> vf2{3.f, 4.f};
   // std::cout << vf2.normalized()[0] << " " << vf2.normalized()[1] <<

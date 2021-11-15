@@ -34,6 +34,13 @@ namespace Ajisai::Integrators {
 using namespace Ajisai::Core;
 using namespace Ajisai::Math;
 
+// Multiple Importance Sampling
+static float MisWeight(float pdfA, float pdfB, float beta = 2.0f) {
+  pdfA = std::pow(pdfA, beta);
+  pdfB = std::pow(pdfB, beta);
+  return pdfA / (pdfA + pdfB);
+}
+
 class PTRenderTask : public RenderTask {
  private:
   std::future<void> future;
@@ -59,12 +66,23 @@ class PTRenderTask : public RenderTask {
     auto scene = ctx.scene;
     Math::Spectrum Li(0), beta(1);
     // bool first = true;
+    Intersection prevIts;
+    float prevPdf;
     for (int depth = 0; depth < maxDepth; ++depth) {
       Intersection intersection;
       if (scene->Intersect(ray, &intersection)) {
         auto& mesh = scene->GetMesh(intersection.meshId);
-        if (mesh.IsEmitter() && depth == 0) {
-          Li += beta * mesh.Le(-ray.d);
+        if (mesh.IsEmitter()) {
+          if (depth == 0)
+            Li += beta * mesh.Le(-ray.d);
+          else {
+            auto light = mesh.GetLight(intersection.triId);
+            auto lightPdf = light->pdfLi(prevIts, ray.d);
+            // std::cout << "prevPdf : " << prevPdf << std::endl;
+            if (lightPdf != 0)
+              // std::cout << "lightPdf : " << lightPdf << std::endl;
+              Li += beta * mesh.Le(-ray.d) * MisWeight(prevPdf, lightPdf);
+          }
         }
         Triangle triangle{};
         mesh.GetTriangle(intersection.triId, &triangle);
@@ -86,18 +104,9 @@ class PTRenderTask : public RenderTask {
           Intersection shadowIntersection;
           if (lightPdf > 0 &&
               !scene->Intersect(lRec.shadowRay, &shadowIntersection)) {
-            // if (first) {
-            //   std::cout << "beta: " << beta[0] << " " << beta[1] << " "
-            //             << beta[2] << std::endl;
-            //   std::cout << "f: " << f[0] << " " << f[1] << " " << f[2]
-            //             << std::endl;
-            //   std::cout << "lRec.Li: " << lRec.Li[0] << " " << lRec.Li[1] <<
-            //   " "
-            //             << lRec.Li[2] << std::endl;
-            //   std::cout << "lightPdf: " << lightPdf << std::endl;
-            //   first = false;
-            // }
-            Li += beta * f * lRec.Li / lightPdf;
+            auto scatteringPdf = event.bsdf->EvaluatePdf(wo, wi);
+            Li += beta * f * lRec.Li / lightPdf *
+                  MisWeight(lightPdf, scatteringPdf);
           }
         }
 
@@ -107,6 +116,8 @@ class PTRenderTask : public RenderTask {
         auto wi = event.bsdf->toWorld(bRec.wi);
         beta *= bRec.f * std::abs(Math::dot(wi, event.Ns)) / bRec.pdf;
         ray = event.SpawnRay(wi);
+        prevIts = intersection;
+        prevPdf = bRec.pdf;
       } else {
         Li += beta * Math::Spectrum(0);
         break;

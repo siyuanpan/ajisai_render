@@ -76,6 +76,37 @@ struct Triangle {
     auto e2 = v[2] - v[0];
     return Math::cross(e1, e2).length() * 0.5f;
   }
+
+  bool Intersect(const Ray& ray, Intersection* intersection) const {
+    bool hit = false;
+    auto v1 = v[0];
+    auto v2 = v[1];
+    auto v3 = v[2];
+    auto e1 = v2 - v1;
+    auto e2 = v3 - v1;
+    auto Ng = Math::cross(e1, e2).normalized();
+    float a, f, u, v;
+    auto h = Math::cross(ray.d.normalized(), e2);
+    a = Math::dot(e1, h);
+    if (a > -1e-6f && a < 1e-6f) return false;
+    f = 1.0f / a;
+    auto s = ray.o - v1;
+    u = f * Math::dot(s, h);
+    if (u < 0.0 || u > 1.0) return false;
+    auto q = Math::cross(s, e1);
+    v = f * Math::dot(ray.d.normalized(), q);
+    if (v < 0.0 || u + v > 1.0) return false;
+    float t = f * Math::dot(e2, q);
+    if (t > ray.t_min && t < ray.t_max) {
+      if (t < intersection->t) {
+        intersection->Ng = Ng;
+        intersection->t = t;
+        intersection->uv = Math::Vector2f{u, v};
+        hit = true;
+      }
+    }
+    return hit;
+  }
 };
 
 struct ScatteringEvent {
@@ -264,18 +295,12 @@ class Mesh {
   Math::Spectrum Le(const Math::Vector3f& wo) const {
     // return emitter->color;
     // return {17.f, 12.f, 4.f};
-    return {8.5f, 6.f, 2.f};
+    return emitter->radiance;  //{8.5f, 6.f, 2.f};
   }
 
   std::vector<std::shared_ptr<AreaLight>> GetLights();
-  // {
-  //   if (!lights.empty()) return lights;
-  //   for (int i = 0; i < indices.size() / 3; ++i) {
-  //     lights.emplace_back(std::make_shared<AreaLight>(this, i));
-  //     // lights.emplace_back(this, i);
-  //   }
-  //   return lights;
-  // }
+
+  std::shared_ptr<AreaLight> GetLight(int triId) const { return lights[triId]; }
 
  protected:
   // std::vector<Math::Vector3f> vertices;
