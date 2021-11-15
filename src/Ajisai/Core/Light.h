@@ -60,7 +60,7 @@ class AreaLight {
     // std::endl;
     // std::cout << "dist2 : " << dist2 << std::endl;
 
-    lRec.Li = color;
+    lRec.Li = {8.5f, 6.f, 2.f};  // Math::Spectrum(17.f, 12.f, 4.f);  // color;
     lRec.wi = wi;
     lRec.pdf = dist2 / (-Math::dot(lRec.wi, normal)) * pdf;
     lRec.normal = normal;

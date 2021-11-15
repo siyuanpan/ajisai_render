@@ -85,8 +85,7 @@ class PTRenderTask : public RenderTask {
                    std::abs(Math::dot(lRec.wi, event.Ns));
           Intersection shadowIntersection;
           if (lightPdf > 0 &&
-              scene->Intersect(lRec.shadowRay, &shadowIntersection) &&
-              shadowIntersection.meshId == intersection.meshId) {
+              !scene->Intersect(lRec.shadowRay, &shadowIntersection)) {
             // if (first) {
             //   std::cout << "beta: " << beta[0] << " " << beta[1] << " "
             //             << beta[2] << std::endl;

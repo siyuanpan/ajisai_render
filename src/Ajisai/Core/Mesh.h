@@ -261,7 +261,11 @@ class Mesh {
 
   bool IsEmitter() const { return emitter.get() != nullptr; }
 
-  Math::Spectrum Le(const Math::Vector3f& wo) const { return emitter->color; }
+  Math::Spectrum Le(const Math::Vector3f& wo) const {
+    // return emitter->color;
+    // return {17.f, 12.f, 4.f};
+    return {8.5f, 6.f, 2.f};
+  }
 
   std::vector<std::shared_ptr<AreaLight>> GetLights();
   // {
