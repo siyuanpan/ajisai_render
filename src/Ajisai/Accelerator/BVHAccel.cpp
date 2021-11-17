@@ -20,33 +20,17 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef AJISAI_PLUGINMANAGER_ABSTRACTPLUGIN_H_
-#define AJISAI_PLUGINMANAGER_ABSTRACTPLUGIN_H_
+#include <Ajisai/Accelerator/Accelerator.h>
 
-// #include <Ajisai/PluginManager/Common.h>
-#include <Ajisai/PluginManager/AbstractManager.h>
+namespace Ajisai::Accelerator {
 
-#include <string>
-
-#define AJISAI_PLUGIN_STATIC_FUNC()     \
-  static std::string pluginInterface(); \
-  static std::vector<std::filesystem::path> pluginSearchPaths();
-
-namespace Ajisai::PluginManager {
-
-class AbstractPlugin {
+class BVHAccel final : public Accel {
  public:
-  //   AbstractPlugin() {}
-  AbstractPlugin(AbstractManager& manager, const std::string& plugin);
-  // : manager(&manager), plugin(plugin) {}
-
-  //   AbstractManager* getManager() { return manager; }
-
- private:
-  AbstractManager* manager;
-  //   std::string plugin;
+  BVHAccel(PluginManager::AbstractManager& manager, const std::string& plugin)
+      : Accel{manager, plugin} {}
 };
 
-}  // namespace Ajisai::PluginManager
+}  // namespace Ajisai::Accelerator
 
-#endif
+AJISAI_PLUGIN_REGISTER(BVHAccel, Ajisai::Accelerator::BVHAccel,
+                       "ajisai.accelerator.Accelerator/0.0.1")

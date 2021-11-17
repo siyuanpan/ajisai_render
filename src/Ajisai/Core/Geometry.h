@@ -27,6 +27,8 @@ DEALINGS IN THE SOFTWARE.
 
 namespace Ajisai::Core {
 
+class Mesh;
+
 struct Ray {
   Math::Vector3f o, d;
   float t_min, t_max;
@@ -38,6 +40,16 @@ struct Ray {
       : o(o), d(d.normalized()), t_min(t_min), t_max(t_max) {}
 
   auto Point(float t) const { return o + t * d; }
+};
+
+struct Intersection {
+  float t = std::numeric_limits<float>::infinity();
+  // int meshId = -1;
+  int triId = -1;
+  Math::Vector3f Ng;
+  Math::Vector2f uv;
+  Math::Vector3f p;
+  const Mesh* mesh;
 };
 
 struct LightSamplingRecord {

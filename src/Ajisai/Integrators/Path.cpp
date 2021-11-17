@@ -71,24 +71,25 @@ class PTRenderTask : public RenderTask {
     for (int depth = 0; depth < maxDepth; ++depth) {
       Intersection intersection;
       if (scene->Intersect(ray, &intersection)) {
-        auto& mesh = scene->GetMesh(intersection.meshId);
-        if (mesh.IsEmitter()) {
+        // auto& mesh = scene->GetMesh(intersection.meshId);
+        auto mesh = intersection.mesh;
+        if (mesh->IsEmitter()) {
           if (depth == 0)
-            Li += beta * mesh.Le(-ray.d);
+            Li += beta * mesh->Le(-ray.d);
           else {
-            auto light = mesh.GetLight(intersection.triId);
+            auto light = mesh->GetLight(intersection.triId);
             auto lightPdf = light->pdfLi(prevIts, ray.d);
             // std::cout << "prevPdf : " << prevPdf << std::endl;
             if (lightPdf != 0)
               // std::cout << "lightPdf : " << lightPdf << std::endl;
-              Li += beta * mesh.Le(-ray.d) * MisWeight(prevPdf, lightPdf);
+              Li += beta * mesh->Le(-ray.d) * MisWeight(prevPdf, lightPdf);
           }
         }
         Triangle triangle{};
-        mesh.GetTriangle(intersection.triId, &triangle);
+        mesh->GetTriangle(intersection.triId, &triangle);
         auto p = ray.Point(intersection.t);
         ScatteringEvent event(-ray.d, p, triangle, intersection);
-        mesh.computeScatteringFunctions(&event);
+        mesh->computeScatteringFunctions(&event);
 
         // light sample
         float lightPdf = 0.f;

@@ -192,6 +192,7 @@ class Mesh {
           intersection->t = t;
           intersection->triId = i;
           intersection->uv = Math::Vector2f{u, v};
+          intersection->mesh = this;
           hit = true;
         }
       }

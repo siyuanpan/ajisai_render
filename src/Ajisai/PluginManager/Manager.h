@@ -24,6 +24,7 @@ DEALINGS IN THE SOFTWARE.
 #define AJISAI_PLUGINMANAGER_MANAGER_H_
 
 #include <Ajisai/PluginManager/AbstractManager.h>
+#include <Ajisai/Util/Ptr.h>
 
 #include <iostream>
 #include <memory>
@@ -41,13 +42,13 @@ class Manager : public AbstractManager {
   //   Manager<T>& operator=(const Manager<T>&) = delete;
   //   Manager<T>& operator=(Manager<T>&&) = delete;
 
-  T* load(const std::string& plugin) {
+  Util::Ptr<T> load(const std::string& plugin) {
     // auto tmp = loadImpl(plugin);
     // std::cout << tmp << std::endl;
     // std::cout << reinterpret_cast<T*>(tmp) << std::endl;
     // std::cout << static_cast<T*>(tmp) << std::endl;
     // return static_cast<T*>(tmp);
-    return static_cast<T*>(loadImpl(plugin));
+    return Util::Ptr<T>(static_cast<T*>(loadImpl(plugin)));
     // return reinterpret_cast<T*>(loadImpl(plugin));
     //     void* lib = dlopen(plugin.data(), RTLD_NOW | RTLD_GLOBAL);
     //     if (!lib) {

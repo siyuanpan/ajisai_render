@@ -20,33 +20,18 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef AJISAI_PLUGINMANAGER_ABSTRACTPLUGIN_H_
-#define AJISAI_PLUGINMANAGER_ABSTRACTPLUGIN_H_
+#include <Ajisai/Accelerator/Accelerator.h>
+#include <Ajisai/Util/Directory.h>
 
-// #include <Ajisai/PluginManager/Common.h>
-#include <Ajisai/PluginManager/AbstractManager.h>
+namespace Ajisai::Accelerator {
 
-#include <string>
+std::string Accel::pluginInterface() {
+  return "ajisai.accelerator.Accelerator/0.0.1";
+}
 
-#define AJISAI_PLUGIN_STATIC_FUNC()     \
-  static std::string pluginInterface(); \
-  static std::vector<std::filesystem::path> pluginSearchPaths();
+std::vector<std::filesystem::path> Accel::pluginSearchPaths() {
+  std::filesystem::path path = Util::libraryLocation(&pluginInterface);
+  return {path.parent_path()};
+}
 
-namespace Ajisai::PluginManager {
-
-class AbstractPlugin {
- public:
-  //   AbstractPlugin() {}
-  AbstractPlugin(AbstractManager& manager, const std::string& plugin);
-  // : manager(&manager), plugin(plugin) {}
-
-  //   AbstractManager* getManager() { return manager; }
-
- private:
-  AbstractManager* manager;
-  //   std::string plugin;
-};
-
-}  // namespace Ajisai::PluginManager
-
-#endif
+}  // namespace Ajisai::Accelerator

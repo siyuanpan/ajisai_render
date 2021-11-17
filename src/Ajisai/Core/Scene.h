@@ -49,9 +49,9 @@ class Scene {
     for (int i = 0; i < meshes.size(); ++i) {
       auto& mesh = meshes[i];
       auto ret = mesh->Intersect(ray, intersection);
-      if (ret) {
-        intersection->meshId = i;
-      }
+      // if (ret) {
+      //   intersection->meshId = i;
+      // }
       hit |= ret;
     }
 

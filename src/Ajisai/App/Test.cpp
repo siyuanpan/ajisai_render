@@ -2,6 +2,7 @@
 // #include <Ajisai/Math/Color.h>
 #include <Ajisai/Math/Math.h>
 #include <Ajisai/PluginManager/Manager.h>
+#include <Ajisai/Util/Ptr.h>
 
 #include <fstream>
 #include <iostream>
@@ -22,6 +23,10 @@ class A {
  public:
   A() {}
 
+  A(int i, int j) {}
+
+  virtual ~A() { std::cout << "~A call\n"; }
+
  private:
   int* t1;
   int* t2;
@@ -30,6 +35,8 @@ class A {
 class B : public A {
  public:
   B() {}
+
+  virtual ~B() { std::cout << "~B call\n"; }
   // virtual std::string name() = 0;
   int spp = 16;
 };
@@ -38,6 +45,7 @@ class C : public B {
  public:
   C() {}
   // virtual std::string name() override { return "C"; }
+  virtual ~C() { std::cout << "~C call\n"; }
 
  private:
   int spp = 16;
@@ -121,6 +129,13 @@ int main(int argc, char** argv) {
   std::cout << vb << std::endl;
   // std::cout << va << std::endl;
   // std::cout << static_cast<B*>(va) << std::endl;
+
+  using Ajisai::Util::Ptr;
+
+  Ptr<A> pa(new A());
+  Ptr<B> pb(new B());
+  pa = std::move(pb);
+  // auto pa = Ptr<A>(1, 2);
 
   // PluginManager::Manager<int> manager;
 }

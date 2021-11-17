@@ -32,27 +32,14 @@ DEALINGS IN THE SOFTWARE.
 
 namespace Ajisai::Core {
 
-// struct Ray {
-//   Math::Vector3f o, d;
-//   float t_min, t_max;
-
-//   Ray() = default;
-//   Ray(const Math::Vector3f& o, const Math::Vector3f& d,
-//       float t_min = 0.001 /*ray bias*/,
-//       float t_max = std::numeric_limits<float>::infinity())
-//       : o(o), d(d.normalized()), t_min(t_min), t_max(t_max) {}
-
-//   auto Point(float t) const { return o + t * d; }
+// struct Intersection {
+//   float t = std::numeric_limits<float>::infinity();
+//   int meshId = -1;
+//   int triId = -1;
+//   Math::Vector3f Ng;
+//   Math::Vector2f uv;
+//   Math::Vector3f p;
 // };
-
-struct Intersection {
-  float t = std::numeric_limits<float>::infinity();
-  int meshId = -1;
-  int triId = -1;
-  Math::Vector3f Ng;
-  Math::Vector2f uv;
-  Math::Vector3f p;
-};
 
 class Camera {
  public:
