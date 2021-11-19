@@ -22,9 +22,11 @@ DEALINGS IN THE SOFTWARE.
 #ifndef AJISAI_CORE_SCENE_H_
 #define AJISAI_CORE_SCENE_H_
 
+#include <Ajisai/Accelerator/Accelerator.h>
 #include <Ajisai/Core/Camera.h>
 #include <Ajisai/Core/Light.h>
 #include <Ajisai/Core/Mesh.h>
+#include <Ajisai/Util/Ptr.h>
 
 // #include <cmath>
 
@@ -73,9 +75,15 @@ class Scene {
     return light;
   }
 
+  void SetAccel(Util::Ptr<Accelerator::Accel>& accel) {
+    this->accel = std::move(accel);
+    this->accel->Build(this);
+  }
+
  protected:
   std::vector<std::shared_ptr<const Mesh>> meshes;
   std::vector<std::shared_ptr<AreaLight>> lights;
+  Util::Ptr<Accelerator::Accel> accel;
 
  private:
 };

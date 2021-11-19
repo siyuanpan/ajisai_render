@@ -192,6 +192,8 @@ int main(int argc, char** argv) {
 
   load_scene_file(ctx, inputFile);
 
+  ctx.scene->SetAccel(accel);
+
   auto task = integrator->CreateRenderTask(ctx);
   task->Start();
   task->Wait();

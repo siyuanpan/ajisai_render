@@ -24,7 +24,8 @@ DEALINGS IN THE SOFTWARE.
 
 #include <type_traits>
 
-#include "Ajisai/Math/Vector2.h"
+#include <Ajisai/Math/Functions.h>
+#include "Ajisai/Math/Vector3.h"
 
 namespace Ajisai::Math {
 
@@ -43,12 +44,19 @@ struct BoundsTraits<T, 2> {
   typedef Vector2<T> Type;
   constexpr static Type from(const Vector<T, 2>& value) { return value; }
 };
+
+template <class T>
+struct BoundsTraits<T, 3> {
+  typedef Vector3<T> Type;
+  constexpr static Type from(const Vector<T, 3>& value) { return value; }
+};
+
 }  // namespace
 
-template <class T, std::size_t size>
+template <class T, std::size_t dimensions>
 class Bounds {
  public:
-  typedef typename BoundsTraits<T, size>::Type VectorType;
+  typedef typename BoundsTraits<T, dimensions>::Type VectorType;
   // constexpr Bounds() noexcept: Bounds<T, size>{typename std::conditional<size
   // == 1, >::type{}} {}
   constexpr Bounds() noexcept {}
@@ -56,7 +64,15 @@ class Bounds {
   constexpr Bounds(const VectorType& min, const VectorType& max) noexcept
       : _min{min}, _max{max} {}
 
-  constexpr Bounds(const Bounds<T, size>&) noexcept = default;
+  // constexpr Bounds(const Vector<T, dimensions>& min,
+  //                  const Vector<T, dimensions>& max) noexcept
+  //     : _min{min}, _max{max} {}
+
+  Bounds(const std::pair<Vector<T, dimensions>, Vector<T, dimensions>>&
+             minmax) noexcept
+      : _min{minmax.first}, _max{minmax.second} {}
+
+  constexpr Bounds(const Bounds<T, dimensions>&) noexcept = default;
 
   VectorType& min() { return _min; }
   constexpr const VectorType min() const { return _min; }
@@ -64,12 +80,33 @@ class Bounds {
   VectorType& max() { return _max; }
   constexpr const VectorType max() const { return _max; }
 
-  constexpr const VectorType Size() const { return _max - _min; }
+  VectorType size() const { return _max - _min; }
+
+  VectorType center() const { return (_max + _min) / T(2); }
 
  private:
   //   constexpr explicit Bounds()
   VectorType _min, _max;
 };
+
+template <class T, std::size_t dim>
+inline Bounds<T, dim> join(const Bounds<T, dim>& a, const Bounds<T, dim>& b) {
+  if (a.min() == a.max()) return b;
+  if (b.min() == b.max()) return a;
+  return {Math::min(a.min(), b.min()), Math::max(a.max(), b.max())};
+}
+
+template <class T, std::size_t dim>
+inline bool intersects(const Bounds<T, dim>& a, const Bounds<T, dim>& b) {
+  return (a.max() > b.min()).all() && (a.min() < b.max()).all();
+}
+
+template <class T, std::size_t dim>
+inline Bounds<T, dim> intersect(const Bounds<T, dim>& a,
+                                const Bounds<T, dim>& b) {
+  if (!intersects(a, b)) return {};
+  return {Math::max(a.min(), b.min()), Math::min(a.max(), b.max())};
+}
 
 }  // namespace Ajisai::Math
 

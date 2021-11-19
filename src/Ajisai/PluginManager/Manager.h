@@ -58,18 +58,6 @@ class Manager : public AbstractManager {
   }
 };
 
-// #define AJISAI_PLUGIN_REGISTER(name, className, interface)                  \
-//   extern "C" AJISAI_API_EXPORT void* pluginCreate(                          \
-//       Ajisai::PluginManager::Manager& manager, const std::string& plugin);  \
-//   extern "C" AJISAI_API_EXPORT void* pluginCreate(                          \
-//       Ajisai::PluginManager::Manager& manager, const std::string& plugin) { \
-//     return new className{manager, plugin};                                  \
-//   }                                                                         \
-//   extern "C" AJISAI_API_EXPORT const char* pluginInterface();               \
-//   extern "C" AJISAI_API_EXPORT const char* pluginInterface() {              \
-//     return interface;                                                       \
-//   }
-
 }  // namespace Ajisai::PluginManager
 
 #endif

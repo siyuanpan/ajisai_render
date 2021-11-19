@@ -138,4 +138,29 @@ int main(int argc, char** argv) {
   // auto pa = Ptr<A>(1, 2);
 
   // PluginManager::Manager<int> manager;
+
+  Bounds2i ba{{3, 2}, {5, 4}}, bb{{2, 2}, {3, 3}};
+
+  auto bc = join(ba, bb);
+  std::cout << "c.min.x " << bc.min().x() << "\n"
+            << "c.min.y " << bc.min().y() << "\n"
+            << "c.max.x " << bc.max().x() << "\n"
+            << "c.max.y " << bc.max().y() << "\n";
+
+  BoolVector<19> bvec(0xff, 0xff, 0x04);
+  std::cout << "all : " << bvec.all() << std::endl;
+
+  {
+    Bounds2i a({34, 23}, {47, 30});
+    Bounds2i b{{30, 25}, {35, 105}};
+    // Bounds2i c{{34, 25}, {35, 30}};
+    Bounds2i d{{130, -15}, {130, -15}};
+    std::cout << "intersects : " << intersects(a, b) << std::endl;
+    std::cout << "intersects : " << intersects(b, a) << std::endl;
+    auto c = intersect(b, a);
+    std::cout << "c.min.x " << c.min().x() << "\n"
+              << "c.min.y " << c.min().y() << "\n"
+              << "c.max.x " << c.max().x() << "\n"
+              << "c.max.y " << c.max().y() << "\n";
+  }
 }

@@ -24,10 +24,14 @@ DEALINGS IN THE SOFTWARE.
 
 namespace Ajisai::Accelerator {
 
+enum class SplitMethod { SAH, HLBVH, Middle, EqualCounts };
+
 class BVHAccel final : public Accel {
  public:
   BVHAccel(PluginManager::AbstractManager& manager, const std::string& plugin)
       : Accel{manager, plugin} {}
+
+  virtual void Build(const Core::Scene* scene) override {}
 };
 
 }  // namespace Ajisai::Accelerator

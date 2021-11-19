@@ -31,6 +31,18 @@ DEALINGS IN THE SOFTWARE.
 
 namespace Ajisai::Math {
 
+template <class T>
+constexpr typename std::enable_if<std::is_scalar<T>::value, T>::type min(T a,
+                                                                         T b) {
+  return b < a ? b : a;
+}
+
+template <class T>
+constexpr typename std::enable_if<std::is_scalar<T>::value, T>::type max(T a,
+                                                                         T b) {
+  return a < b ? b : a;
+}
+
 namespace Impl {
 template <class T>
 constexpr T repeat(T value, std::size_t) {
@@ -85,6 +97,17 @@ class Vector {
 
   T& operator[](std::size_t pos) { return _data[pos]; }
   constexpr T operator[](std::size_t pos) const { return _data[pos]; }
+
+  bool operator==(const Vector<T, size>& other) const {
+    for (std::size_t i = 0; i != size; ++i)
+      if (_data[i] != other._data[i]) return false;
+
+    return true;
+  }
+
+  bool operator!=(const Vector<T, size>& other) const {
+    return !operator==(other);
+  }
 
   BoolVector<size> operator<(const Vector<T, size>& other) const;
   BoolVector<size> operator<=(const Vector<T, size>& other) const;

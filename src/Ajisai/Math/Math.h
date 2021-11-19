@@ -25,6 +25,7 @@ DEALINGS IN THE SOFTWARE.
 
 #include <cstddef>
 
+#include "Ajisai/Math/BoolVector.h"
 #include "Ajisai/Math/Bounds.hpp"
 #include "Ajisai/Math/Color.h"
 #include "Ajisai/Math/Constants.h"

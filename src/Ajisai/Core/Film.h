@@ -43,7 +43,7 @@ struct Tile {
   Math::Vector2i size;
   std::vector<Pixel> pixels;
   explicit Tile(const Math::Bounds2i& bounds)
-      : bounds{bounds}, size(bounds.Size()), pixels(size.x() * size.y()) {}
+      : bounds{bounds}, size(bounds.size()), pixels(size.x() * size.y()) {}
 
   auto& operator()(const Math::Vector2i& p) {
     auto q = p - bounds.min();

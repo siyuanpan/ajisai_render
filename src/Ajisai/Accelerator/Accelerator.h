@@ -25,12 +25,18 @@ DEALINGS IN THE SOFTWARE.
 
 #include <Ajisai/PluginManager/AbstractPlugin.h>
 
+namespace Ajisai::Core {
+class Scene;
+}
+
 namespace Ajisai::Accelerator {
 
 class Accel : public PluginManager::AbstractPlugin {
  public:
   Accel(PluginManager::AbstractManager& manager, const std::string& plugin)
       : PluginManager::AbstractPlugin{manager, plugin} {}
+
+  virtual void Build(const Core::Scene* scene) = 0;
 
   AJISAI_PLUGIN_STATIC_FUNC()
 };

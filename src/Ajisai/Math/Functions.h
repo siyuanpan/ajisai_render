@@ -76,6 +76,32 @@ inline Vector<T, size> lerp(const Vector<T, size>& a, const Vector<T, size>& b,
   return out;
 }
 
+template <class T>
+constexpr typename std::enable_if<std::is_scalar<T>::value, T>::type min(T a,
+                                                                         T b);
+
+template <class T, std::size_t size>
+inline Vector<T, size> min(const Vector<T, size>& a, const Vector<T, size>& b) {
+  Vector<T, size> out;
+  for (std::size_t i = 0; i != size; ++i) {
+    out[i] = Math::min(a[i], b[i]);
+  }
+  return out;
+}
+
+template <class T>
+constexpr typename std::enable_if<std::is_scalar<T>::value, T>::type max(T a,
+                                                                         T b);
+
+template <class T, std::size_t size>
+inline Vector<T, size> max(const Vector<T, size>& a, const Vector<T, size>& b) {
+  Vector<T, size> out;
+  for (std::size_t i = 0; i != size; ++i) {
+    out[i] = Math::max(a[i], b[i]);
+  }
+  return out;
+}
+
 }  // namespace Ajisai::Math
 
 #endif

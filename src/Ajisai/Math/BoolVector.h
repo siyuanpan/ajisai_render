@@ -23,6 +23,7 @@ DEALINGS IN THE SOFTWARE.
 */
 
 #include <cstdint>
+#include <type_traits>
 
 namespace Ajisai::Math {
 
@@ -54,9 +55,23 @@ class BoolVector {
     return *this;
   }
 
+  bool all() const;
+
  private:
+  enum : std::uint8_t { FullMask = 0xFF, LastMask = (1 << size % 8) - 1 };
+
   std::uint8_t _data[(size - 1) / 8 + 1];
 };
+
+template <std::size_t size>
+inline bool BoolVector<size>::all() const {
+  for (std::size_t i = 0; i != (size) / 8; ++i)
+    if (_data[i] != FullMask) return false;
+
+  if (size % 8 && (_data[DataSize - 1] & LastMask) != LastMask) return false;
+
+  return true;
+}
 
 }  // namespace Ajisai::Math
 

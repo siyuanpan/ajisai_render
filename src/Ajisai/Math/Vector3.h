@@ -23,7 +23,7 @@ DEALINGS IN THE SOFTWARE.
 #ifndef AJISAI_MATH_VECTOR3_H_
 #define AJISAI_MATH_VECTOR3_H_
 
-#include "Ajisai/Math/Vector.h"
+#include "Ajisai/Math/Vector2.h"
 
 namespace Ajisai::Math {
 
