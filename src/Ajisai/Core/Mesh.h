@@ -77,6 +77,19 @@ struct Triangle {
     return Math::cross(e1, e2).length() * 0.5f;
   }
 
+  Math::Bounds3f Bounds() const {
+    Math::Bounds3f bounds(Math::Vector3f{std::numeric_limits<float>::max()},
+                          Math::Vector3f{std::numeric_limits<float>::lowest()});
+    for (std::size_t i = 0; i != 3; ++i) {
+      bounds.min() = Math::min(bounds.min(), v[i]);
+      bounds.max() = Math::max(bounds.max(), v[i]);
+    }
+
+    return bounds;
+  }
+
+  auto Centroid() -> Math::Vector3f const { return Bounds().center(); }
+
   bool Intersect(const Ray& ray, Intersection* intersection) const {
     bool hit = false;
     auto v1 = v[0];
@@ -142,6 +155,8 @@ struct BSDFSamplingRecord {
 
 class Mesh {
  public:
+  std::size_t GetTriSize() const { return indices.size() / 3; }
+
   void GetTriangle(uint32_t triId, Triangle* triangle) const {
     auto v0 = vertices[indices[triId * 3 + 0]].pos;
     auto v1 = vertices[indices[triId * 3 + 1]].pos;
@@ -208,78 +223,6 @@ class Mesh {
   }
 
   bool Load(const std::filesystem::path& path);
-  //   bool Load(const std::filesystem::path& path) {
-  //     tinyobj::ObjReaderConfig reader_config;
-  //     reader_config.mtl_search_path = "./";
-
-  //     tinyobj::ObjReader reader;
-
-  //     if (!reader.ParseFromFile(path.string(), reader_config)) {
-  //       if (!reader.Error().empty()) {
-  //         std::cerr << "TinyObjReader: " << reader.Error();
-  //       }
-  //       std::exit(1);
-  //     }
-
-  //     if (!reader.Warning().empty()) {
-  //       std::cout << "TinyObjReader: " << reader.Warning();
-  //     }
-
-  //     auto& attrib = reader.GetAttrib();
-  //     auto& shapes = reader.GetShapes();
-  //     auto& materials = reader.GetMaterials();
-
-  //     for (size_t s = 0; s < shapes.size(); ++s) {
-  //       size_t index_offset = 0;
-  //       for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); ++f)
-  //       {
-  //         size_t fv = size_t(shapes[s].mesh.num_face_vertices[f]);
-
-  //         Vertex vertex[3];
-  //         for (size_t v = 0; v < fv; ++v) {
-  //           tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
-  //           indices.push_back(indices.size());
-  //           for (int i = 0; i < 3; ++i) {
-  //             vertex[v].pos[i] = attrib.vertices[3 * idx.vertex_index + i];
-  //           }
-  //         }
-  //         auto Ng = Math::cross(vertex[1].pos - vertex[0].pos,
-  //                               vertex[2].pos - vertex[0].pos)
-  //                       .normalized();
-  //         for (size_t v = 0; v < fv; ++v) {
-  //           tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
-  //           if (idx.normal_index >= 0) {
-  //             for (int i = 0; i < 3; ++i) {
-  //               vertex[v].Ns[i] = attrib.normals[3 * idx.normal_index + i];
-  //             }
-  //           } else {
-  //             vertex[v].Ns = Ng;
-  //           }
-  //           if (idx.texcoord_index >= 0) {
-  //             for (int i = 0; i < 2; ++i) {
-  //               vertex[v].texCoord[i] =
-  //                   attrib.texcoords[2 * idx.texcoord_index + i];
-  //             }
-  //           } else {
-  //             vertex[v].texCoord = Math::Vector2f(v > 0 ? 1 : 0, v & 0);
-  //           }
-  //         }
-  //         index_offset += fv;
-  //         for (auto& i : vertex) {
-  //           vertices.emplace_back(i);
-  //         }
-  //       }
-  //     }
-
-  //     // std::ifstream t(path.string());
-  //     // std::string contents;
-
-  //     // t.seekg(0, std::ios::end);
-  //     // contents.reserve(t.tellg());
-  //     // t.seekg(0, std::ios::beg);
-
-  //     // contents.assign(std::istreambuf_iterator<char>(t),
-  //     //                 std::istreambuf_iterator<char>());
 
   void Translate(const Math::Vector3f& t) {
     for (auto& v : vertices) {

@@ -57,6 +57,10 @@ class BoolVector {
 
   bool all() const;
 
+  BoolVector<size> operator~() const;
+
+  BoolVector<size> operator!() const { return operator~(); }
+
  private:
   enum : std::uint8_t { FullMask = 0xFF, LastMask = (1 << size % 8) - 1 };
 
@@ -71,6 +75,15 @@ inline bool BoolVector<size>::all() const {
   if (size % 8 && (_data[DataSize - 1] & LastMask) != LastMask) return false;
 
   return true;
+}
+
+template <std::size_t size>
+inline BoolVector<size> BoolVector<size>::operator~() const {
+  BoolVector<size> out;
+
+  for (std::size_t i = 0; i != DataSize; ++i) out._data[i] = ~_data[i];
+
+  return out;
 }
 
 }  // namespace Ajisai::Math

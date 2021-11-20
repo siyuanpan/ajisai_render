@@ -22,6 +22,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
+#include <ostream>
 #include <type_traits>
 
 #include <Ajisai/Math/Functions.h>
@@ -64,6 +65,8 @@ class Bounds {
   constexpr Bounds(const VectorType& min, const VectorType& max) noexcept
       : _min{min}, _max{max} {}
 
+  constexpr Bounds(const VectorType& min) noexcept : Bounds{min, min} {}
+
   // constexpr Bounds(const Vector<T, dimensions>& min,
   //                  const Vector<T, dimensions>& max) noexcept
   //     : _min{min}, _max{max} {}
@@ -83,6 +86,13 @@ class Bounds {
   VectorType size() const { return _max - _min; }
 
   VectorType center() const { return (_max + _min) / T(2); }
+
+  template <std::size_t dim = dimensions,
+            class = typename std::enable_if<dim == 3>::type>
+  T area() const {
+    auto d = size();
+    return T(2) * (d.x() * d.y() + d.x() * d.z() + d.y() * d.z());
+  }
 
  private:
   //   constexpr explicit Bounds()
@@ -109,5 +119,11 @@ inline Bounds<T, dim> intersect(const Bounds<T, dim>& a,
 }
 
 }  // namespace Ajisai::Math
+
+template <class T, std::size_t dim>
+std::ostream& operator<<(std::ostream& ostream,
+                         const Ajisai::Math::Bounds<T, dim>& value) {
+  return ostream << "Bounds(" << value.min() << "," << value.max() << ")";
+}
 
 #endif

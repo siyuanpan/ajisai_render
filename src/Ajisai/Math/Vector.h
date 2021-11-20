@@ -24,6 +24,7 @@ DEALINGS IN THE SOFTWARE.
 #define AJISAI_MATH_VECTOR_H_
 
 #include <cmath>
+#include <iostream>
 #include <type_traits>
 #include <utility>
 
@@ -203,6 +204,12 @@ class Vector {
     return (*this) * invLength();
   }
 
+  T min() const;
+
+  T max() const;
+
+  std::pair<T, T> minmax() const;
+
  protected:
   T _data[size];
 
@@ -219,6 +226,18 @@ template <class T, std::size_t size>
 inline Vector<T, size> operator*(typename std::common_type<T>::type scalar,
                                  const Vector<T, size>& vector) {
   return vector * scalar;
+}
+
+template <class T, std::size_t size>
+inline Vector<T, size> operator/(typename std::common_type<T>::type scalar,
+                                 const Vector<T, size>& vector) {
+  Vector<T, size> out;
+
+  for (std::size_t i = 0; i != size; ++i) {
+    out[i] = scalar / vector[i];
+  }
+
+  return out;
 }
 
 #define VECTOR_SUBCLASS_OPERATOR_IMPL(Type, size)                              \
@@ -258,11 +277,16 @@ inline Vector<T, size> operator*(typename std::common_type<T>::type scalar,
     return Vector<T, size>::normalized();                                      \
   }
 
-#define VECTOR_FUNCTION_IMPL(Type, size)                              \
-  template <class T>                                                  \
-  inline Type<T> operator*(typename std::common_type<T>::type number, \
-                           const Type<T>& vector) {                   \
-    return number * static_cast<const Vector<T, size>&>(vector);      \
+#define VECTOR_FUNCTION_IMPL(Type, size)                               \
+  template <class T>                                                   \
+  inline Type<T> operator*(typename std::common_type<T>::type number,  \
+                           const Type<T>& vector) {                    \
+    return number * static_cast<const Vector<T, size>&>(vector);       \
+  }                                                                    \
+  template <class T>                                                   \
+  inline Type<T> operator/(typename std::common_type<T>::type number,  \
+                           const Type<T>& vector) {                    \
+    return number / static_cast<const Math::Vector<T, size>&>(vector); \
   }
 
 template <class T, std::size_t size>
@@ -324,6 +348,39 @@ Vector<T, size>::operator-() const {
   return out;
 }
 
+template <class T, std::size_t size>
+inline T Vector<T, size>::min() const {
+  T out(_data[0]);
+
+  for (std::size_t i = 1; i != size; ++i) {
+    out = Math::min(out, _data[i]);
+  }
+
+  return out;
+}
+
+template <class T, std::size_t size>
+inline T Vector<T, size>::max() const {
+  T out(_data[0]);
+
+  for (std::size_t i = 1; i != size; ++i) {
+    out = Math::max(out, _data[i]);
+  }
+
+  return out;
+}
+
 }  // namespace Ajisai::Math
+
+template <class T, std::size_t size>
+std::ostream& operator<<(std::ostream& ostream,
+                         const Ajisai::Math::Vector<T, size>& value) {
+  ostream << "Vector(";
+  for (std::size_t i = 0; i != size; ++i) {
+    if (i != 0) ostream << ",";
+    ostream << value[i];
+  }
+  return ostream << ")";
+}
 
 #endif

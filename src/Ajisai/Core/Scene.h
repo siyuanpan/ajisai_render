@@ -46,15 +46,25 @@ class Scene {
 
   const Mesh& GetMesh(size_t i) const { return *meshes[i]; }
 
+  const std::vector<std::shared_ptr<const Mesh>>& GetMeshes() const {
+    return meshes;
+  }
+
   bool Intersect(const Ray& ray, Intersection* intersection) const {
+    // bool hit1 = false;
+    // if (accel) {
+    //   hit1 = accel->Intersect(ray, intersection);
+    // }
+
     bool hit = false;
-    for (int i = 0; i < meshes.size(); ++i) {
-      auto& mesh = meshes[i];
-      auto ret = mesh->Intersect(ray, intersection);
-      // if (ret) {
-      //   intersection->meshId = i;
-      // }
-      hit |= ret;
+    if (accel) {
+      hit = accel->Intersect(ray, intersection);
+    } else {
+      for (int i = 0; i < meshes.size(); ++i) {
+        auto& mesh = meshes[i];
+        auto ret = mesh->Intersect(ray, intersection);
+        hit |= ret;
+      }
     }
 
     return hit;

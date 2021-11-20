@@ -23,6 +23,7 @@ DEALINGS IN THE SOFTWARE.
 #ifndef AJISAI_ACCELERATOR_H_
 #define AJISAI_ACCELERATOR_H_
 
+#include <Ajisai/Core/Geometry.h>
 #include <Ajisai/PluginManager/AbstractPlugin.h>
 
 namespace Ajisai::Core {
@@ -37,6 +38,9 @@ class Accel : public PluginManager::AbstractPlugin {
       : PluginManager::AbstractPlugin{manager, plugin} {}
 
   virtual void Build(const Core::Scene* scene) = 0;
+
+  virtual bool Intersect(const Core::Ray& ray,
+                         Core::Intersection* intersection) const = 0;
 
   AJISAI_PLUGIN_STATIC_FUNC()
 };
