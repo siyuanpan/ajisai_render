@@ -36,6 +36,7 @@ struct Primitive {
   Math::Bounds3f bounds;
   Math::Vector3f centroid;
   int triId;
+  int meshId;
 };
 
 struct BVHNode {
@@ -63,7 +64,10 @@ class BVHAccel final : public Accel {
   BVHAccel(PluginManager::AbstractManager& manager, const std::string& plugin)
       : Accel{manager, plugin} {}
 
+  virtual ~BVHAccel() {}
+
   virtual void Build(const Core::Scene* scene) override {
+    int cnt = 0;
     for (auto& mesh : scene->GetMeshes()) {
       for (std::size_t i = 0; i != mesh->GetTriSize(); ++i) {
         Core::Triangle triangle;
@@ -75,9 +79,11 @@ class BVHAccel final : public Accel {
         primitive.centroid = triangle.Centroid();
         primitive.triangle = std::move(triangle);
         primitive.triId = i;
+        primitive.meshId = cnt;
 
         primitives.emplace_back(primitive);
       }
+      cnt++;
     }
 
     recursiveBuild(0, primitives.size(), 0);
@@ -104,6 +110,7 @@ class BVHAccel final : public Accel {
               hit = true;
               intersection->mesh = primitives[node.first + i].mesh;
               intersection->triId = primitives[node.first + i].triId;
+              intersection->meshId = primitives[node.first + i].meshId;
               // std::cout << "hit\n";
             }
           }

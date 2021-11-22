@@ -246,6 +246,10 @@ class Mesh {
 
   std::shared_ptr<AreaLight> GetLight(int triId) const { return lights[triId]; }
 
+  const Vertex* GetVertexBuffer() const { return vertices.data(); }
+
+  const std::size_t* GetIndexBuffer() const { return indices.data(); }
+
  protected:
   // std::vector<Math::Vector3f> vertices;
   // std::vector<Math::Vector3f> normals;

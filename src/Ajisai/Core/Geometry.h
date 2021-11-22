@@ -44,7 +44,7 @@ struct Ray {
 
 struct Intersection {
   float t = std::numeric_limits<float>::infinity();
-  // int meshId = -1;
+  int meshId = -1;
   int triId = -1;
   Math::Vector3f Ng;
   Math::Vector2f uv;

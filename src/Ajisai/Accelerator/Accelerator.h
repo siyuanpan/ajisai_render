@@ -37,6 +37,8 @@ class Accel : public PluginManager::AbstractPlugin {
   Accel(PluginManager::AbstractManager& manager, const std::string& plugin)
       : PluginManager::AbstractPlugin{manager, plugin} {}
 
+  virtual ~Accel() {}
+
   virtual void Build(const Core::Scene* scene) = 0;
 
   virtual bool Intersect(const Core::Ray& ray,

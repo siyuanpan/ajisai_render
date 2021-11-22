@@ -184,7 +184,11 @@ int main(int argc, char** argv) {
 
   PluginManager::Manager<Accel> accel_manager;
 
+#if 0
   auto accel = accel_manager.load("BVHAccel");
+#else
+  auto accel = accel_manager.load("EmbreeAccel");
+#endif
 
   RenderContext ctx;
   ctx.scene = scene;

@@ -35,3 +35,9 @@ add_library(Ajisai::Accelerator ALIAS AjisaiAccelerator)
 add_plugin(BVHAccel BVHAccel.cpp)
 
 target_link_libraries(BVHAccel PRIVATE Ajisai::PluginManager)
+
+
+add_plugin(EmbreeAccel EmbreeAccel.cpp)
+find_package(TBB CONFIG REQUIRED)
+find_package(embree 3 CONFIG REQUIRED)
+target_link_libraries(EmbreeAccel PRIVATE TBB::tbb embree)
