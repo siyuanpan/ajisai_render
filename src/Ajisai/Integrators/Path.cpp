@@ -74,9 +74,9 @@ class PTRenderTask : public RenderTask {
         auto& mesh = scene->GetMesh(intersection.meshId);
         // auto mesh = intersection.mesh;
         if (mesh.IsEmitter()) {
-          if (depth == 0)
+          if (depth == 0) {
             Li += beta * mesh.Le(-ray.d);
-          else {
+          } else {
             auto light = mesh.GetLight(intersection.triId);
             auto lightPdf = light->pdfLi(prevIts, ray.d);
             // std::cout << "prevPdf : " << prevPdf << std::endl;

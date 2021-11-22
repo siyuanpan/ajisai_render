@@ -184,10 +184,10 @@ int main(int argc, char** argv) {
 
   PluginManager::Manager<Accel> accel_manager;
 
-#if 0
-  auto accel = accel_manager.load("BVHAccel");
-#else
+#if AJISAI_USE_EMBREE
   auto accel = accel_manager.load("EmbreeAccel");
+#else
+  auto accel = accel_manager.load("BVHAccel");
 #endif
 
   RenderContext ctx;

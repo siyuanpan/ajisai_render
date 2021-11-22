@@ -20,6 +20,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 #
+# option(AJISAI_USE_EMBREE "Use Embree as ray intersection backend" ON)
 
 set(ACCELERATOR_SRCS Accelerator.cpp)
 
@@ -36,8 +37,9 @@ add_plugin(BVHAccel BVHAccel.cpp)
 
 target_link_libraries(BVHAccel PRIVATE Ajisai::PluginManager)
 
-
-add_plugin(EmbreeAccel EmbreeAccel.cpp)
-find_package(TBB CONFIG REQUIRED)
-find_package(embree 3 CONFIG REQUIRED)
-target_link_libraries(EmbreeAccel PRIVATE TBB::tbb embree)
+if(AJISAI_USE_EMBREE)
+    add_plugin(EmbreeAccel EmbreeAccel.cpp)
+    find_package(TBB CONFIG REQUIRED)
+    find_package(embree 3 CONFIG REQUIRED)
+    target_link_libraries(EmbreeAccel PRIVATE TBB::tbb embree)
+endif()

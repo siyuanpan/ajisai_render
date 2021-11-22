@@ -248,13 +248,13 @@ class Mesh {
 
   const Vertex* GetVertexBuffer() const { return vertices.data(); }
 
-  const std::size_t* GetIndexBuffer() const { return indices.data(); }
+  const uint32_t* GetIndexBuffer() const { return indices.data(); }
 
  protected:
   // std::vector<Math::Vector3f> vertices;
   // std::vector<Math::Vector3f> normals;
   std::vector<Vertex> vertices;
-  std::vector<std::size_t> indices;
+  std::vector<uint32_t> indices;
   std::shared_ptr<Material> material;
   std::shared_ptr<Emitter> emitter;
   std::vector<std::shared_ptr<AreaLight>> lights;

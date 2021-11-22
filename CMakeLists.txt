@@ -33,6 +33,9 @@ target_link_libraries(AjisaiCore PRIVATE yaml-cpp)
 target_link_libraries(AjisaiCore PRIVATE tinyobjloader::tinyobjloader)
 
 # add_subdirectory(src/Ajisai/PluginManager)
+
+option(AJISAI_USE_EMBREE "Use Embree as ray intersection backend" ON)
+
 add_subdirectory(src)
 
 add_executable(test src/Ajisai/App/Test.cpp)
@@ -47,6 +50,9 @@ target_link_libraries(Ajisai PRIVATE yaml-cpp)
 target_link_libraries(Ajisai PRIVATE Ajisai::Util)
 target_link_libraries(Ajisai PRIVATE Ajisai::Integrators)
 target_link_libraries(Ajisai PRIVATE Ajisai::Accelerator)
+if(AJISAI_USE_EMBREE)
+    target_compile_definitions(Ajisai PRIVATE "AJISAI_USE_EMBREE")
+endif()
 
 # function(add_plugin plugin_name)
 #     add_library(${plugin_name} MODULE ${ARGN})

@@ -55,7 +55,10 @@ class EmbreeAccel final : public Accel {
                                  sizeof(Core::Vertex), mesh->GetTriSize() * 3);
       rtcSetSharedGeometryBuffer(rtcGeo, RTC_BUFFER_TYPE_INDEX, 0,
                                  RTC_FORMAT_UINT3, mesh->GetIndexBuffer(), 0,
-                                 3 * sizeof(std::size_t), mesh->GetTriSize());
+                                 3 * sizeof(uint32_t), mesh->GetTriSize());
+      sizeof(std::size_t);
+      sizeof(unsigned int);
+      sizeof(uint64_t);
       rtcCommitGeometry(rtcGeo);
       rtcAttachGeometry(rtcScene, rtcGeo);
       rtcReleaseGeometry(rtcGeo);
@@ -88,6 +91,8 @@ class EmbreeAccel final : public Accel {
     if (rayhit.hit.geomID == RTC_INVALID_GEOMETRY_ID ||
         rayhit.hit.primID == RTC_INVALID_GEOMETRY_ID)
       return false;
+
+    // if (rayhit.hit.geomID == 7) std::cout << rayhit.hit.geomID << std::endl;
 
     intersection->triId = rayhit.hit.primID;
     intersection->meshId = rayhit.hit.geomID;
