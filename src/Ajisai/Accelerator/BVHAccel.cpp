@@ -124,6 +124,39 @@ class BVHAccel final : public Accel {
     return hit;
   }
 
+  virtual bool Occlude(const Core::Ray& ray) const {
+    Core::Intersection intersection;
+    auto invDir = 1.f / ray.d;
+    auto dirIsNeg = invDir < Math::Vector3f(0);
+    int sp = 0;
+    const int maxDepth = 64;
+    int stack[maxDepth];
+    stack[sp++] = 0;
+
+    while (true) {
+      const auto& node = nodes[stack[--sp]];
+
+      if (IntersectP(node.bounds, ray, invDir, dirIsNeg)) {
+        if (node.count > 0) {
+          for (std::size_t i = 0; i != node.count; ++i) {
+            if (primitives[node.first + i].triangle.Intersect(ray,
+                                                              &intersection)) {
+              return true;
+            }
+          }
+
+        } else {
+          stack[sp++] = node.left;
+          stack[sp++] = node.right;
+        }
+      }
+
+      if (sp == 0) break;
+    }
+
+    return false;
+  }
+
   int recursiveBuild(std::size_t start, std::size_t end, std::size_t depth) {
     using Math::Bounds3f;
     using Math::Vector3f;

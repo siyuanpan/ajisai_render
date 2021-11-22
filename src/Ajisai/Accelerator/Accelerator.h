@@ -42,6 +42,8 @@ class Accel : public PluginManager::AbstractPlugin {
   virtual bool Intersect(const Core::Ray& ray,
                          Core::Intersection* intersection) const = 0;
 
+  virtual bool Occlude(const Core::Ray& ray) const = 0;
+
   AJISAI_PLUGIN_STATIC_FUNC()
 };
 
