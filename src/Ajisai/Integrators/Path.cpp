@@ -47,12 +47,12 @@ class PTRenderTask : public RenderTask {
   RenderContext ctx;
   std::mutex mutex;
   int spp;
-  int minDepth;
+  int rrDepth;
   int maxDepth;
 
  public:
-  PTRenderTask(const RenderContext& ctx, int spp, int minDepth, int maxDepth)
-      : ctx(ctx), spp(spp), minDepth(minDepth), maxDepth(maxDepth) {}
+  PTRenderTask(const RenderContext& ctx, int spp, int rrDepth, int maxDepth)
+      : ctx(ctx), spp(spp), rrDepth(rrDepth), maxDepth(maxDepth) {}
 
   virtual ~PTRenderTask() {}
 
@@ -78,7 +78,8 @@ class PTRenderTask : public RenderTask {
             Li += beta * mesh.Le(-ray.d);
           } else {
             auto light = mesh.GetLight(intersection.triId);
-            auto lightPdf = light->pdfLi(prevIts, ray.d);
+            auto lightPdf =
+                light->pdfLi(prevIts, ray.d) * scene->PdfLight(light.get());
             // std::cout << "prevPdf : " << prevPdf << std::endl;
             if (lightPdf != 0)
               // std::cout << "lightPdf : " << lightPdf << std::endl;
@@ -116,6 +117,11 @@ class PTRenderTask : public RenderTask {
 
         auto wi = event.bsdf->toWorld(bRec.wi);
         beta *= bRec.f * std::abs(Math::dot(wi, event.Ns)) / bRec.pdf;
+        if (depth >= rrDepth) {
+          float q = std::min(0.95f, beta.max());
+          if (sampler->Next1D() >= q) break;
+          beta /= q;
+        }
         ray = event.SpawnRay(wi);
         prevIts = intersection;
         prevPdf = bRec.pdf;
@@ -176,12 +182,12 @@ class PathIntegrator : public Integrator {
 
   virtual std::shared_ptr<RenderTask> CreateRenderTask(
       const RenderContext& ctx) override {
-    return std::make_shared<PTRenderTask>(ctx, spp, minDepth, maxDepth);
+    return std::make_shared<PTRenderTask>(ctx, spp, rrDepth, maxDepth);
   }
 
  private:
   int spp = 16;
-  int minDepth = 5, maxDepth = 16;
+  int rrDepth = 5, maxDepth = 16;
 };
 
 }  // namespace Ajisai::Integrators

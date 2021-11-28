@@ -71,6 +71,8 @@ class Scene {
     return hit;
   }
 
+  float PdfLight(AreaLight* light) const { return 1.f / lights.size(); }
+
   const AreaLight* SampleOneLight(/*Math::Vector2f& sample*/ float u,
                                   float* pdf) const {
     if (lights.empty()) return nullptr;
