@@ -33,6 +33,7 @@ DEALINGS IN THE SOFTWARE.
 #include "Ajisai/Core/Image.h"
 #include "Ajisai/Core/Mesh.h"
 #include "Ajisai/Core/Parallel.h"
+#include "Ajisai/Core/RenderJob.h"
 #include "Ajisai/Core/Scene.h"
 #include "Ajisai/Integrators/Integrator.h"
 #include "Ajisai/Math/Math.h"
@@ -124,8 +125,8 @@ void split(const std::string& s, char delim, std::vector<std::string>& elems) {
   }
 }
 
-void load_scene_file(Ajisai::Integrators::RenderContext& ctx,
-                     const std::filesystem::path& path) {
+void load_scene_file(  // Ajisai::Integrators::RenderContext& ctx,
+    Ajisai::Core::RenderJob& job, const std::filesystem::path& path) {
   using namespace Ajisai::Core;
   using namespace Ajisai::Math;
 
@@ -143,7 +144,7 @@ void load_scene_file(Ajisai::Integrators::RenderContext& ctx,
   float fov = config["camera"]["Perspective"]["fov"].as<float>();
   Vector2f res = config["camera"]["Perspective"]["res"].as<Vector2f>();
 
-  ctx.camera = std::make_shared<Ajisai::Core::Camera>(
+  job.ctx.camera = std::make_shared<Ajisai::Core::Camera>(
       origin, target, focus_distance, up, fov * 3.14159265359f / 180.f, res);
 
   for (int i = 0; i < config["shape"].size(); ++i) {
@@ -163,7 +164,7 @@ void load_scene_file(Ajisai::Integrators::RenderContext& ctx,
       mesh->SetEmitter(std::make_shared<Emitter>(
           config["shape"][i]["emitter"]["radiance"].as<Vector3f>()));
     }
-    ctx.scene->AddMesh(mesh);
+    job.ctx.scene->AddMesh(mesh);
   }
 }
 
@@ -190,27 +191,32 @@ int main(int argc, char** argv) {
   auto accel = accel_manager.load("BVHAccel");
 #endif
 
-  RenderContext ctx;
-  ctx.scene = scene;
-  ctx.sampler = std::make_shared<Sampler>();
+  // RenderContext ctx;
+  // ctx.scene = scene;
+  // ctx.sampler = std::make_shared<Sampler>();
 
-  load_scene_file(ctx, inputFile);
+  // load_scene_file(ctx, inputFile);
 
-  ctx.scene->SetAccel(accel);
+  // ctx.scene->SetAccel(accel);
 
-  auto task = integrator->CreateRenderTask(ctx);
-  task->Start();
-  task->Wait();
+  RenderJob job;
+  job.ctx.scene = scene;
+  job.ctx.sampler = std::make_shared<Sampler>();
+  job.ctx.integrator = std::move(integrator);
+  job.spp = 16;
 
-  auto filmUpdate = task->GetFilm();
+  load_scene_file(job, inputFile);
+
+  job.ctx.scene->SetAccel(accel);
+
+  job.Run();
+  job.Join();
+  auto filmUpdate = job.ctx.camera->GetFilm();
 
   std::cout << "outfile : " << outputFile << std::endl;
   filmUpdate->WriteImage(outputFile);
 
   thread_pool_finalize();
-
-  // delete integrator;
-  // delete accel;
 
   return 0;
 }

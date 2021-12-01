@@ -38,99 +38,26 @@ DEALINGS IN THE SOFTWARE.
 
 namespace Ajisai::Integrators {
 
-struct RenderContext {
-  // std::shared_ptr<Ajisai::Core::Film> film;
-  std::shared_ptr<Ajisai::Core::Camera> camera;
-  std::shared_ptr<Ajisai::Core::Scene> scene;
-  std::shared_ptr<Ajisai::Core::Sampler> sampler;
-};
+// struct RenderContext {
+//   std::shared_ptr<Ajisai::Core::Camera> camera;
+//   std::shared_ptr<Ajisai::Core::Scene> scene;
+//   std::shared_ptr<Ajisai::Core::Sampler> sampler;
+// };
 
-class RenderTask {
- public:
-  // explicit RenderTask(const RenderContext& ctx, int spp) : ctx(ctx), spp(spp)
-  // {}
+// class RenderTask {
+//  public:
 
-  virtual ~RenderTask() {}
+//   virtual ~RenderTask() {}
 
-  // void Wait() { future.wait(); }
-  virtual void Wait() = 0;
+//   virtual void Wait() = 0;
 
-  virtual Math::Spectrum Li(Core::Ray ray, Core::Sampler* sampler) = 0;
+//   virtual Math::Spectrum Li(Core::Ray ray, Core::Sampler* sampler) = 0;
 
-  // auto Li(Ray ray, Sampler* sampler) {
-  //   auto scene = ctx.scene;
-  //   Math::Spectrum Li(0), beta(1);
-  //   for (int depth = 0; depth < 5; ++depth) {
-  //     Intersection intersection;
-  //     if (scene->Intersect(ray, &intersection)) {
-  //       auto& mesh = scene->GetMesh(intersection.meshId);
-  //       Triangle triangle{};
-  //       mesh.GetTriangle(intersection.triId, &triangle);
-  //       auto p = ray.Point(intersection.t);
-  //       ScatteringEvent event(-ray.d, p, triangle, intersection);
-  //       mesh.computeScatteringFunctions(&event);
-  //       BSDFSamplingRecord bRec(event, sampler->Next2D());
-  //       event.bsdf->Sample(bRec);
+//   virtual void Start() = 0;
 
-  //       auto wi = event.bsdf->toWorld(bRec.wi);
-  //       beta *= bRec.f * std::abs(Math::dot(wi, event.Ns)) / bRec.pdf;
-  //       ray = event.SpawnRay(wi);
-  //     } else {
-  //       Li += beta * Math::Spectrum(1);
-  //       break;
-  //     }
-  //   }
-  //   return Li;
-  // }
+//   virtual std::shared_ptr<const Core::Film> GetFilm() = 0;
 
-  virtual void Start() = 0;
-
-  // void Start() {
-  //   future = std::async(std::launch::async, [=]() {
-  //     auto beginTime = std::chrono::high_resolution_clock::now();
-  //     auto film = ctx.film;
-  //     auto camera = ctx.camera;
-  //     auto scene = ctx.scene;
-  //     auto& _sampler = ctx.sampler;
-  //     auto nTiles = (film->Dimension() + Math::Vector2i(TileSize - 1)) /
-  //                   Math::Vector2i(TileSize);
-  //     parallel_for_2D(nTiles, [=](Math::Vector2i tilePos, uint32_t tid) {
-  //       (void)tid;
-  //       Math::Bounds2i tileBounds =
-  //           Math::Bounds2i{tilePos * (int)TileSize,
-  //                          (tilePos + Math::Vector2i(1)) * (int)TileSize};
-  //       auto tile = film->GetTile(tileBounds);
-  //       auto sampler = _sampler->Copy();
-  //       for (int y = tile.bounds.min().y(); y < tile.bounds.max().y(); ++y) {
-  //         for (int x = tile.bounds.min().x(); x < tile.bounds.max().x(); ++x)
-  //         {
-  //           sampler->SetSeed(x + y * film->Dimension().x());
-  //           for (int s = 0; s < spp; ++s) {
-  //             const float u = (x + sampler->Next1D()) /
-  //             film->Dimension().x(); const float v = (y + sampler->Next1D())
-  //             / film->Dimension().y(); auto ray = camera->GenerateRay(u, v);
-  //             auto Li = this->Li(ray, sampler.get());
-  //             tile.AddSample(Math::Vector2i{x, y}, Li, 1.0f);
-  //           }
-  //         }
-  //       }
-  //       std::lock_guard<std::mutex> lk(mutex);
-  //       film->MergeTile(tile);
-  //     });
-  //     auto endTime = std::chrono::high_resolution_clock::now();
-  //     std::chrono::duration<double> elapsed = (endTime - beginTime);
-  //     std::cout << "Rendering done in " << elapsed.count() << "  secs\n";
-  //   });
-  // }
-
-  // std::shared_ptr<const Film> GetFilm() { return ctx.film; }
-  virtual std::shared_ptr<const Core::Film> GetFilm() = 0;
-
-  // std::future<void> future;
-  // RenderContext ctx;
-  // std::mutex mutex;
-  // int spp;
-};
+// };
 
 class Integrator : public PluginManager::AbstractPlugin {
  public:
@@ -139,8 +66,11 @@ class Integrator : public PluginManager::AbstractPlugin {
   explicit Integrator(PluginManager::AbstractManager& manager,
                       const std::string& plugin)
       : PluginManager::AbstractPlugin{manager, plugin} {}
-  virtual std::shared_ptr<RenderTask> CreateRenderTask(
-      const RenderContext& ctx) = 0;
+  // virtual std::shared_ptr<RenderTask> CreateRenderTask(
+  //     const RenderContext& ctx) = 0;
+
+  virtual Math::Spectrum Li(Core::Ray ray, Core::Scene* scene,
+                            Core::Sampler* sampler) const = 0;
 
   // static std::string Integrator::pluginInterface() {
   //   return "ajisai.integrators.Integrator/0.0.1";
