@@ -20,19 +20,24 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef AJISAI_CORE_MATERIAL_H_
-#define AJISAI_CORE_MATERIAL_H_
+#ifndef AJISAI_MATERIALS_MIRROR_H_
+#define AJISAI_MATERIALS_MIRROR_H_
 
-#include "Ajisai/Math/Math.h"
+#include <Ajisai/Core/Mesh.h>
+#include <Ajisai/Materials/Material.h>
+#include <Ajisai/Math/Math.h>
 
-namespace Ajisai::Core {
-class Material {
+namespace Ajisai::Materials {
+class MirrorMaterial : public Material {
  public:
-  enum Type { Diffuse };
-  Material(const Math::Color3<float> c, Type t = Diffuse) : color(c), type(t) {}
+  MirrorMaterial(const Math::Color3<float> c);
+
+  virtual void ComputeScatteringFunction(
+      Core::SurfaceInteraction* si) const override;
+
+ private:
   Math::Color3<float> color;
-  Type type;
 };
-}  // namespace Ajisai::Core
+}  // namespace Ajisai::Materials
 
 #endif

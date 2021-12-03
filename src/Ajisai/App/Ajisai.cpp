@@ -36,6 +36,8 @@ DEALINGS IN THE SOFTWARE.
 #include "Ajisai/Core/RenderJob.h"
 #include "Ajisai/Core/Scene.h"
 #include "Ajisai/Integrators/Integrator.h"
+#include "Ajisai/Materials/Matte.h"
+#include "Ajisai/Materials/Mirror.h"
 #include "Ajisai/Math/Math.h"
 #include "Ajisai/PluginManager/Manager.h"
 
@@ -129,6 +131,7 @@ void load_scene_file(  // Ajisai::Integrators::RenderContext& ctx,
     Ajisai::Core::RenderJob& job, const std::filesystem::path& path) {
   using namespace Ajisai::Core;
   using namespace Ajisai::Math;
+  using namespace Ajisai::Materials;
 
   YAML::Node config = YAML::LoadFile(path.string());
 
@@ -155,10 +158,12 @@ void load_scene_file(  // Ajisai::Integrators::RenderContext& ctx,
           config["shape"][i]["transform"]["translate"].as<Vector3f>());
     }
     if (config["shape"][i]["bsdf"]["type"].as<std::string>() == "diffuse") {
-      mesh->SetMaterial(std::make_shared<Material>(
-          Color3<float>::fromSrgb(
-              config["shape"][i]["bsdf"]["srgb"].as<Vector3f>()),
-          Material::Type::Diffuse));
+      mesh->SetMaterial(std::make_shared<MatteMaterial>(Color3<float>::fromSrgb(
+          config["shape"][i]["bsdf"]["srgb"].as<Vector3f>())));
+    } else if (config["shape"][i]["bsdf"]["type"].as<std::string>() ==
+               "mirror") {
+      mesh->SetMaterial(std::make_shared<MirrorMaterial>(
+          Color3<float>(config["shape"][i]["bsdf"]["rgb"].as<Vector3f>())));
     }
     if (config["shape"][i]["emitter"].IsDefined()) {
       mesh->SetEmitter(std::make_shared<Emitter>(

@@ -23,7 +23,10 @@ DEALINGS IN THE SOFTWARE.
 #ifndef AJISAI_CORE_GEOMETRY_H_
 #define AJISAI_CORE_GEOMETRY_H_
 
+// #include <Ajisai/Core/BSDF.h>
+// #include <Ajisai/Core/Mesh.h>
 #include <Ajisai/Math/Math.h>
+// #include <memory>
 
 namespace Ajisai::Core {
 
@@ -51,6 +54,27 @@ struct Intersection {
   Math::Vector3f p;
   const Mesh* mesh;
 };
+
+// struct SurfaceInteraction {
+//   Math::Vector3f wo;
+//   Math::Vector3f p;
+//   Math::Vector2f texCoord;
+//   Math::Vector3f Ng;
+//   Math::Vector3f Ns;
+//   std::shared_ptr<BSDF> bsdf;
+//   float rayBias = 1e-5f;
+//   SurfaceInteraction(const Math::Vector3f& wo, const Math::Vector3f& p,
+//                      const Triangle& triangle, const Intersection&
+//                      intersection)
+//       : wo(wo), p(p) {
+//     texCoord = triangle.lerpTexCoord(intersection.uv);
+//     Ns = triangle.lerpNormal(intersection.uv);
+//     Ng = triangle.Ng;
+//   }
+//   Ray SpawnRay(const Math::Vector3f& w) const {
+//     return Ray{p, w, rayBias / std::abs(Math::dot(w, Ng))};
+//   }
+// };
 
 struct LightSamplingRecord {
   Math::Spectrum Li;

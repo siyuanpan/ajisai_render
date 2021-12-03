@@ -31,8 +31,39 @@ inline float cosTheta(const Math::Vector3f& w) { return w.z(); }
 inline float absCosTheta(const Math::Vector3f& w) {
   return std::abs(cosTheta(w));
 }
+inline Math::Vector3f reflect(const Math::Vector3f& w,
+                              const Math::Vector3f& n) {
+  return -1.0f * w + 2.0f * Math::dot(w, n) * n;
+}
 
 void BSDF::Sample(BSDFSamplingRecord& rec) const {
+  bxdfs[0]->Sample(rec);
+  rec.type = bxdfs[0]->GetType();
+  // rec.wi = squareToCosineHemisphere(rec.u);
+  // if (rec.wo.z() * rec.wi.z() < 0) {
+  //   rec.wi.z() *= -1;
+  // }
+  // rec.pdf = absCosTheta(rec.wi) / Math::Constants<float>::pi();
+  // rec.f = R / Math::Constants<float>::pi();
+}
+
+Math::Spectrum BSDF::Evaluate(const Math::Vector3f& wo,
+                              const Math::Vector3f& wi) const {
+  // if (wo.z() * wo.z() >= 0) {
+  //   auto f = R / Math::Constants<float>::pi();
+  //   return f;
+  // }
+  // return Math::Spectrum(0);
+  return bxdfs[0]->Evaluate(wo, wi);
+}
+
+float BSDF::EvaluatePdf(const Math::Vector3f& wo,
+                        const Math::Vector3f& wi) const {
+  // return absCosTheta(wi) / Math::Constants<float>::pi();
+  return bxdfs[0]->EvaluatePdf(wo, wi);
+}
+
+void LambertianReflection::Sample(BSDFSamplingRecord& rec) const {
   rec.wi = squareToCosineHemisphere(rec.u);
   if (rec.wo.z() * rec.wi.z() < 0) {
     rec.wi.z() *= -1;
@@ -41,8 +72,8 @@ void BSDF::Sample(BSDFSamplingRecord& rec) const {
   rec.f = R / Math::Constants<float>::pi();
 }
 
-Math::Spectrum BSDF::Evaluate(const Math::Vector3f& wo,
-                              const Math::Vector3f& wi) const {
+Math::Spectrum LambertianReflection::Evaluate(const Math::Vector3f& wo,
+                                              const Math::Vector3f& wi) const {
   if (wo.z() * wo.z() >= 0) {
     auto f = R / Math::Constants<float>::pi();
     return f;
@@ -50,9 +81,29 @@ Math::Spectrum BSDF::Evaluate(const Math::Vector3f& wo,
   return Math::Spectrum(0);
 }
 
-float BSDF::EvaluatePdf(const Math::Vector3f& wo,
-                        const Math::Vector3f& wi) const {
+float LambertianReflection::EvaluatePdf(const Math::Vector3f& wo,
+                                        const Math::Vector3f& wi) const {
   return absCosTheta(wi) / Math::Constants<float>::pi();
+}
+
+void SpecularReflection::Sample(BSDFSamplingRecord& rec) const {
+  rec.wi = reflect(
+      rec.wo,
+      Math::Vector3f{
+          0.f, 0.f,
+          1.f});  // Math::Vector3f{-rec.wo.x(), -rec.wo.y(), rec.wo.z()};
+  rec.pdf = 1;
+  rec.f = R / absCosTheta(rec.wi);
+}
+
+Math::Spectrum SpecularReflection::Evaluate(const Math::Vector3f& wo,
+                                            const Math::Vector3f& wi) const {
+  return Math::Spectrum(0);
+}
+
+float SpecularReflection::EvaluatePdf(const Math::Vector3f& wo,
+                                      const Math::Vector3f& wi) const {
+  return 0.f;
 }
 
 }  // namespace Ajisai::Core

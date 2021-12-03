@@ -19,8 +19,13 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-add_subdirectory(Util)
-add_subdirectory(PluginManager)
-add_subdirectory(Integrators)
-add_subdirectory(Accelerator)
-add_subdirectory(Materials)
+set(MATERIAL_SRCS Matte.cpp Mirror.cpp)
+
+set(MATERIAL_HEADERS Material.h Matte.h Mirror.h)
+
+add_library(AjisaiMaterials SHARED ${MATERIAL_SRCS} ${MATERIAL_HEADERS})
+
+target_include_directories(AjisaiMaterials PUBLIC ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
+# target_link_libraries(AjisaiMaterials PRIVATE dl)
+
+add_library(Ajisai::Materials ALIAS AjisaiMaterials)

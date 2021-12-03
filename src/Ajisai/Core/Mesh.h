@@ -34,7 +34,7 @@ DEALINGS IN THE SOFTWARE.
 #include "Ajisai/Core/BSDF.h"
 #include "Ajisai/Core/Camera.h"
 #include "Ajisai/Core/Emitter.h"
-#include "Ajisai/Core/Material.h"
+#include "Ajisai/Materials/Material.h"
 
 namespace Ajisai::Core {
 
@@ -122,7 +122,8 @@ struct Triangle {
   }
 };
 
-struct ScatteringEvent {
+// struct ScatteringEvent {
+struct SurfaceInteraction {
   Math::Vector3f wo;
   Math::Vector3f p;
   Math::Vector2f texCoord;
@@ -130,8 +131,8 @@ struct ScatteringEvent {
   Math::Vector3f Ns;
   std::shared_ptr<BSDF> bsdf;
   float rayBias = 1e-5f;
-  ScatteringEvent(const Math::Vector3f& wo, const Math::Vector3f& p,
-                  const Triangle& triangle, const Intersection& intersection)
+  SurfaceInteraction(const Math::Vector3f& wo, const Math::Vector3f& p,
+                     const Triangle& triangle, const Intersection& intersection)
       : wo(wo), p(p) {
     texCoord = triangle.lerpTexCoord(intersection.uv);
     Ns = triangle.lerpNormal(intersection.uv);
@@ -148,7 +149,8 @@ struct BSDFSamplingRecord {
   Math::Vector3f wi;
   float pdf = -1;
   Math::Spectrum f;
-  inline BSDFSamplingRecord(const ScatteringEvent& event,
+  BSDFType type;
+  inline BSDFSamplingRecord(const SurfaceInteraction& event,
                             const Math::Vector2f& u)
       : wo(event.bsdf->toLocal(event.wo)), u(u) {}
 };
@@ -176,9 +178,10 @@ class Mesh {
     triangle->Ng = Ng;
   }
 
-  void computeScatteringFunctions(ScatteringEvent* event) const {
-    event->bsdf = std::make_shared<BSDF>(material->color, event->Ng, event->Ns);
-  }
+  // void computeScatteringFunctions(SurfaceInteraction* event) const {
+  //   event->bsdf = std::make_shared<BSDF>(material->color, event->Ng,
+  //   event->Ns);
+  // }
 
   bool Intersect(const Ray& ray, Intersection* intersection) const {
     bool hit = false;
@@ -230,7 +233,11 @@ class Mesh {
     }
   }
 
-  void SetMaterial(const std::shared_ptr<Material>& m) { material = m; }
+  void SetMaterial(const std::shared_ptr<Materials::Material>& m) {
+    material = m;
+  }
+
+  std::shared_ptr<Materials::Material> GetMaterial() const { return material; }
 
   void SetEmitter(const std::shared_ptr<Emitter>& e) { emitter = e; }
 
@@ -255,7 +262,7 @@ class Mesh {
   // std::vector<Math::Vector3f> normals;
   std::vector<Vertex> vertices;
   std::vector<uint32_t> indices;
-  std::shared_ptr<Material> material;
+  std::shared_ptr<Materials::Material> material;
   std::shared_ptr<Emitter> emitter;
   std::vector<std::shared_ptr<AreaLight>> lights;
 };
