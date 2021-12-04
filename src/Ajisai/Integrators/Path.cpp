@@ -70,7 +70,7 @@ class PathIntegrator : public Integrator {
           auto lightPdf =
               light->pdfLi(prevIts, ray.d) * scene->PdfLight(light.get());
           if (lightPdf != 0)
-            L += pathThroughput * intersection.Le(-ray.d) / prevPdf *
+            L += pathThroughput * intersection.Le(-ray.d) *
                  MisWeight(prevPdf, lightPdf);
         }
       }
