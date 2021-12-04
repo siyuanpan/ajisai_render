@@ -63,6 +63,8 @@ class CoefficientSpectrum : public Vector<float, size> {
   CoefficientSpectrum<size> operator*(float scalar) const {
     return Vector<float, size>::operator*(scalar);
   }
+
+  bool isBlack() const { return this->max() <= 0; }
 };
 }  // namespace Ajisai::Math
 

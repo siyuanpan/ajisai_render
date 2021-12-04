@@ -43,6 +43,7 @@ target_include_directories(test PUBLIC ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINAR
 target_link_libraries(test PRIVATE ryml::ryml)
 target_link_libraries(test PRIVATE Ajisai::PluginManager)
 
+
 add_executable(Ajisai src/Ajisai/App/Ajisai.cpp)
 target_link_libraries(Ajisai PUBLIC AjisaiCore Ajisai::PluginManager)
 #target_include_directories(Ajisai PUBLIC ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)

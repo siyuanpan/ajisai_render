@@ -87,11 +87,12 @@ float LambertianReflection::EvaluatePdf(const Math::Vector3f& wo,
 }
 
 void SpecularReflection::Sample(BSDFSamplingRecord& rec) const {
-  rec.wi = reflect(
-      rec.wo,
-      Math::Vector3f{
-          0.f, 0.f,
-          1.f});  // Math::Vector3f{-rec.wo.x(), -rec.wo.y(), rec.wo.z()};
+  rec.wi = Math::Vector3f{-rec.wo.x(), -rec.wo.y(), rec.wo.z()};
+  // reflect(
+  //     rec.wo,
+  //     Math::Vector3f{
+  //         0.f, 0.f,
+  //         1.f});  // Math::Vector3f{-rec.wo.x(), -rec.wo.y(), rec.wo.z()};
   rec.pdf = 1;
   rec.f = R / absCosTheta(rec.wi);
 }

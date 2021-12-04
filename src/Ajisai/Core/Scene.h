@@ -51,11 +51,6 @@ class Scene {
   }
 
   bool Intersect(const Ray& ray, Intersection* intersection) const {
-    // bool hit1 = false;
-    // if (accel) {
-    //   hit1 = accel->Intersect(ray, intersection);
-    // }
-
     bool hit = false;
     if (accel) {
       hit = accel->Intersect(ray, intersection);
@@ -67,9 +62,14 @@ class Scene {
         hit |= ret;
       }
     }
+    intersection->mesh = &this->GetMesh(intersection->meshId);
 
     return hit;
   }
+
+  // void PostIntersect(const Ray& ray, Intersection* intersection) const {
+
+  // }
 
   float PdfLight(AreaLight* light) const { return 1.f / lights.size(); }
 

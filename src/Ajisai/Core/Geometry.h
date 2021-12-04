@@ -53,6 +53,8 @@ struct Intersection {
   Math::Vector2f uv;
   Math::Vector3f p;
   const Mesh* mesh;
+
+  Math::Spectrum Le(const Math::Vector3f& wo) const;
 };
 
 // struct SurfaceInteraction {

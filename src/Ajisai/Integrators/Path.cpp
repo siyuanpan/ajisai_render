@@ -43,95 +43,160 @@ static float MisWeight(float pdfA, float pdfB, float beta = 2.0f) {
 
 class PathIntegrator : public Integrator {
  public:
-  //   explicit PathIntegrator() {}
   explicit PathIntegrator(PluginManager::AbstractManager& manager,
                           const std::string plugin)
       : Integrator{manager, plugin} {}
 
-  // virtual std::shared_ptr<RenderTask> CreateRenderTask(
-  //     const RenderContext& ctx) override {
-  //   return std::make_shared<PTRenderTask>(ctx, spp, rrDepth, maxDepth);
-  // }
-
   virtual Math::Spectrum Li(Core::Ray ray, Core::Scene* scene,
                             Core::Sampler* sampler) const override {
-    Math::Spectrum Li(0), beta(1);
-    bool specular = false;
+    Math::Spectrum L(0), pathThroughput(1);
+    bool specularBounce = true;
     Intersection prevIts;
     float prevPdf;
-    for (int depth = 0; depth < maxDepth; ++depth) {
+    // auto pathRay = ray;
+    for (auto bounce = 0;; bounce++) {
       Intersection intersection;
-      if (scene->Intersect(ray, &intersection)) {
-        auto& mesh = scene->GetMesh(intersection.meshId);
-        auto material = mesh.GetMaterial();
-        // auto mesh = intersection.mesh;
-        if (mesh.IsEmitter()) {
-          if (depth == 0) {
-            Li += beta * mesh.Le(-ray.d);
-          } else {
-            auto light = mesh.GetLight(intersection.triId);
-            auto lightPdf =
-                light->pdfLi(prevIts, ray.d) * scene->PdfLight(light.get());
-            // std::cout << "prevPdf : " << prevPdf << std::endl;
-            if (lightPdf != 0)
-              // std::cout << "lightPdf : " << lightPdf << std::endl;
-              Li += beta * mesh.Le(-ray.d) * MisWeight(prevPdf, lightPdf);
-          }
+      auto intersected = scene->Intersect(ray, &intersection);
+
+      if (pathThroughput.isBlack()) break;
+
+      if (specularBounce) {
+        if (intersected) {
+          L += pathThroughput * intersection.Le(-ray.d);
         }
-        Triangle triangle{};
-        mesh.GetTriangle(intersection.triId, &triangle);
-        auto p = ray.Point(intersection.t);
-        SurfaceInteraction event(-ray.d, p, triangle, intersection);
-        material->ComputeScatteringFunction(&event);
+      } else {
+        if (intersected && intersection.mesh->IsEmitter()) {
+          auto light = intersection.mesh->GetLight(intersection.triId);
+          auto lightPdf =
+              light->pdfLi(prevIts, ray.d) * scene->PdfLight(light.get());
+          if (lightPdf != 0)
+            L += pathThroughput * intersection.Le(-ray.d) / prevPdf *
+                 MisWeight(prevPdf, lightPdf);
+        }
+      }
 
-        BSDFSamplingRecord bRec(event, sampler->Next2D());
-        event.bsdf->Sample(bRec);
-        if (bRec.pdf <= 0) break;
+      if (!intersected || bounce >= maxDepth) break;
 
-        // light sample
-        specular = bRec.type & BSDFType::BSDF_SPECULAR;
+      Triangle triangle{};
+      intersection.mesh->GetTriangle(intersection.triId, &triangle);
+      auto p = ray.Point(intersection.t);
+      SurfaceInteraction si(-ray.d, p, triangle, intersection);
+      intersection.mesh->GetMaterial()->ComputeScatteringFunction(&si);
+
+      BSDFSamplingRecord bRec(si, sampler->Next2D());
+      si.bsdf->Sample(bRec);
+      if (bRec.pdf <= 0.f) break;
+
+      specularBounce = bRec.type & BSDFType::BSDF_SPECULAR;
+      if (!specularBounce) {
         float lightPdf = 0.f;
         auto sampleLight = scene->SampleOneLight(sampler->Next1D(), &lightPdf);
         if (sampleLight && lightPdf > 0) {
           LightSamplingRecord lRec;
           sampleLight->SampleLi(sampler->Next2D(), p, lRec);
           lightPdf *= lRec.pdf;
-          auto wi = event.bsdf->toLocal(lRec.wi);
-          auto wo = event.bsdf->toLocal(event.wo);
-          auto f = event.bsdf->Evaluate(wo, wi) *
-                   std::abs(Math::dot(lRec.wi, event.Ns));
+          auto wi = si.bsdf->toLocal(lRec.wi);
+          auto wo = si.bsdf->toLocal(si.wo);
+          auto f =
+              si.bsdf->Evaluate(wo, wi) * std::abs(Math::dot(lRec.wi, si.Ns));
           Intersection shadowIntersection;
           if (lightPdf > 0 &&
               !scene->Intersect(lRec.shadowRay, &shadowIntersection)) {
-            if (specular) {
-              Li += beta * f * lRec.Li / lightPdf;
-            } else {
-              auto scatteringPdf = event.bsdf->EvaluatePdf(wo, wi);
-              Li += beta * f * lRec.Li / lightPdf *
-                    MisWeight(lightPdf, scatteringPdf);
-            }
+            auto scatteringPdf = si.bsdf->EvaluatePdf(wo, wi);
+            L += pathThroughput * f * lRec.Li / lightPdf *
+                 MisWeight(lightPdf, scatteringPdf);
           }
         }
+      }
 
-        // BSDFSamplingRecord bRec(event, sampler->Next2D());
-        // event.bsdf->Sample(bRec);
-
-        auto wi = event.bsdf->toWorld(bRec.wi);
-        beta *= bRec.f * std::abs(Math::dot(wi, event.Ns)) / bRec.pdf;
-        if (depth >= rrDepth) {
-          float q = std::min(0.95f, beta.max());
-          if (sampler->Next1D() >= q) break;
-          beta /= q;
-        }
-        ray = event.SpawnRay(wi);
-        prevIts = intersection;
-        prevPdf = bRec.pdf;
-      } else {
-        Li += beta * Math::Spectrum(0);
-        break;
+      auto wi = si.bsdf->toWorld(bRec.wi);
+      if (bRec.f.isBlack() || bRec.pdf <= 0.f) break;
+      pathThroughput *= bRec.f * std::abs(Math::dot(wi, si.Ns)) / bRec.pdf;
+      ray = si.SpawnRay(wi);
+      prevIts = intersection;
+      prevPdf = bRec.pdf;
+      if (bounce >= rrDepth) {
+        float q = std::min(0.95f, pathThroughput.max());
+        if (sampler->Next1D() >= q) break;
+        pathThroughput /= q;
       }
     }
-    return Li;
+
+    return L;
+    // Math::Spectrum Li(0), beta(1);
+    // bool specular = false;
+    // Intersection prevIts;
+    // float prevPdf;
+    // for (int depth = 0; depth < maxDepth; ++depth) {
+    //   Intersection intersection;
+    //   if (scene->Intersect(ray, &intersection)) {
+    //     auto& mesh = scene->GetMesh(intersection.meshId);
+    //     auto material = mesh.GetMaterial();
+    //     // auto mesh = intersection.mesh;
+    //     if (mesh.IsEmitter()) {
+    //       if (depth == 0) {
+    //         Li += beta * mesh.Le(-ray.d);
+    //       } else {
+    //         auto light = mesh.GetLight(intersection.triId);
+    //         auto lightPdf =
+    //             light->pdfLi(prevIts, ray.d) * scene->PdfLight(light.get());
+    //         // std::cout << "prevPdf : " << prevPdf << std::endl;
+    //         if (lightPdf != 0)
+    //           // std::cout << "lightPdf : " << lightPdf << std::endl;
+    //           Li += beta * mesh.Le(-ray.d) * MisWeight(prevPdf, lightPdf);
+    //       }
+    //     }
+    //     Triangle triangle{};
+    //     mesh.GetTriangle(intersection.triId, &triangle);
+    //     auto p = ray.Point(intersection.t);
+    //     SurfaceInteraction event(-ray.d, p, triangle, intersection);
+    //     material->ComputeScatteringFunction(&event);
+
+    //     BSDFSamplingRecord bRec(event, sampler->Next2D());
+    //     event.bsdf->Sample(bRec);
+    //     if (bRec.pdf <= 0) break;
+
+    //     // light sample
+    //     specular = bRec.type & BSDFType::BSDF_SPECULAR;
+    //     float lightPdf = 0.f;
+    //     auto sampleLight = scene->SampleOneLight(sampler->Next1D(),
+    //     &lightPdf); if (sampleLight && lightPdf > 0) {
+    //       LightSamplingRecord lRec;
+    //       sampleLight->SampleLi(sampler->Next2D(), p, lRec);
+    //       lightPdf *= lRec.pdf;
+    //       auto wi = event.bsdf->toLocal(lRec.wi);
+    //       auto wo = event.bsdf->toLocal(event.wo);
+    //       auto f = event.bsdf->Evaluate(wo, wi) *
+    //                std::abs(Math::dot(lRec.wi, event.Ns));
+    //       Intersection shadowIntersection;
+    //       if (lightPdf > 0 &&
+    //           !scene->Intersect(lRec.shadowRay, &shadowIntersection)) {
+    //         if (specular) {
+    //           Li += beta * f * lRec.Li / lightPdf;
+    //         } else {
+    //           auto scatteringPdf = event.bsdf->EvaluatePdf(wo, wi);
+    //           Li += beta * f * lRec.Li / lightPdf *
+    //                 MisWeight(lightPdf, scatteringPdf);
+    //         }
+    //       }
+    //     }
+
+    //     auto wi = event.bsdf->toWorld(bRec.wi);
+    //     beta *= bRec.f * std::abs(Math::dot(wi, event.Ns)) / bRec.pdf;
+    //     if (depth >= rrDepth) {
+    //       float q = std::min(0.95f, beta.max());
+    //       if (sampler->Next1D() >= q) break;
+    //       beta /= q;
+    //     }
+    //     ray = event.SpawnRay(wi);
+    //     prevIts = intersection;
+    //     prevPdf = bRec.pdf;
+    //   } else {
+    //     Li += beta * Math::Spectrum(0);
+    //     break;
+    //   }
+    // }
+    // return Li;
   }
 
  private:
