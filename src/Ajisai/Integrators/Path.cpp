@@ -47,8 +47,14 @@ class PathIntegrator : public Integrator {
                           const std::string plugin)
       : Integrator{manager, plugin} {}
 
-  virtual Math::Spectrum Li(Core::Ray ray, Core::Scene* scene,
+  virtual Math::Spectrum Li(Core::Scene* scene, Core::Camera* camera,
+                            const Math::Vector2i& raster,
                             Core::Sampler* sampler) const override {
+    const float u =
+        (raster.x() + sampler->Next1D()) / camera->GetFilm()->Dimension().x();
+    const float v =
+        (raster.y() + sampler->Next1D()) / camera->GetFilm()->Dimension().y();
+    auto ray = camera->GenerateRay(u, v);
     Math::Spectrum L(0), pathThroughput(1);
     bool specularBounce = true;
     Intersection prevIts;
@@ -207,4 +213,4 @@ class PathIntegrator : public Integrator {
 }  // namespace Ajisai::Integrators
 
 AJISAI_PLUGIN_REGISTER(PathIntegrator, Ajisai::Integrators::PathIntegrator,
-                       "ajisai.integrators.Integrator/0.1.0")
+                       "ajisai.integrators.Integrator/0.1.1")

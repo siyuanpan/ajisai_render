@@ -47,7 +47,10 @@ class Camera {
                   float focus_distance, const Math::Vector3f& upDir, float fov,
                   /*float aspectRatio*/ const Math::Vector2f& res,
                   float lensRadius = 0.f)
-      : origin{ori}, resolution(res), lensRadius{lensRadius} {
+      : origin{ori},
+        resolution(res),
+        lensRadius{lensRadius},
+        focus_distance{focus_distance} {
     film = std::make_shared<Film>(Math::Vector2i{int(res.x()), int(res.y())});
 
     look = (ori - tar).normalized();
@@ -73,6 +76,69 @@ class Camera {
 
   std::shared_ptr<Film> GetFilm() const { return film; }
 
+  float A() const { return horitonal.length() * vertical.length(); }
+
+  void Pdf_We(const Ray& ray, float* pdfPos, float* pdfDir) const {
+    float cosTheta = Math::dot(-look, ray.d);
+    auto pFocus = ray.Point((lensRadius == 0 ? 1 : focus_distance) / cosTheta);
+
+    if (cosTheta <= 0) {
+      return;
+    }
+
+    float d = 1 / cosTheta;
+    float lensArea = lensRadius == 0 ? 1.0f
+                                     : lensRadius * lensRadius *
+                                           Math::Constants<float>::pi();
+    *pdfPos = 1 / lensArea;
+    *pdfDir = 1 / A() * d * d / cosTheta;
+  }
+
+  Math::Spectrum We(const Ray& ray, Math::Vector2f* pRaster) const {
+    float cosTheta = Math::dot(-look, ray.d);
+    Math::Vector3f pFocus =
+        ray.Point((lensRadius == 0 ? 1 : focus_distance) / cosTheta);
+    if (cosTheta <= 0) {
+      return Math::Spectrum(0);
+    }
+
+    Math::Vector2f raster{Math::dot(pFocus - origin, right),
+                          Math::dot(pFocus - origin, up)};
+    raster = (raster + Math::Vector2f{1.f}) / 2.f;
+
+    auto bounds = film->Dimension();
+    raster = Math::Vector2f{float(bounds[0]), float(bounds[1])} * raster;
+
+    if (raster.x() < 0.f || raster.x() > bounds.x() || raster.y() < 0.f ||
+        raster.y() > bounds.y())
+      return {};
+
+    *pRaster = raster;
+    float lensArea = lensRadius == 0 ? 1.0f
+                                     : lensRadius * lensRadius *
+                                           Math::Constants<float>::pi();
+    return Math::Spectrum(1 / (A() * lensArea * std::pow(cosTheta, 4)));
+  }
+
+  void Sample_Wi(const Math::Vector2f& u, const Intersect& ref,
+                 CameraSamplingRecord* sample, VisibilityTester* tester) const {
+    Math::Vector2f pLens = lensRadius * squareToUniformDiskConcentric(u);
+
+    Math::Vector3f pLensWorld = origin + pLens.x() * right + pLens.y() * up;
+    sample->normal = -look;
+    sample->wi = pLensWorld - ref.p;
+    float dist = sample->wi.length();
+    sample->wi /= dist;
+    float lensArea = lensRadius == 0 ? 1.0f
+                                     : lensRadius * lensRadius *
+                                           Math::Constants<float>::pi();
+    tester->shadowRay = Ray(pLensWorld, -sample->wi, Ray::Eps(),
+                            dist * (1.0 - Ray::ShadowEps()));
+    sample->pdf =
+        (dist * dist) / (lensArea * abs(dot(sample->normal, sample->wi)));
+    sample->I = We(tester->shadowRay, &sample->pos);
+  }
+
  private:
   Math::Vector3f origin;
   Math::Vector3f right, up, look;
@@ -80,6 +146,7 @@ class Camera {
   Math::Vector3f horitonal, vertical;
   Math::Vector2f resolution;
   float lensRadius;
+  float focus_distance;
 
   std::shared_ptr<Film> film;
 };

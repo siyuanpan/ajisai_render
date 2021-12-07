@@ -28,7 +28,8 @@ MirrorMaterial::MirrorMaterial(const Math::Color3<float> c) : color(c) {}
 
 void MirrorMaterial::ComputeScatteringFunction(
     Core::SurfaceInteraction* si) const {
-  si->bsdf = std::make_shared<Core::BSDF>(si->Ng, si->Ns);
+  si->bsdf = Util::Ptr<Core::BSDF>(new Core::BSDF(
+      si->Ng, si->Ns));  // std::make_shared<Core::BSDF>(si->Ng, si->Ns);
   si->bsdf->add(std::make_shared<Core::SpecularReflection>(color));
 }
 

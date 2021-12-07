@@ -56,92 +56,92 @@ struct Vertex {
   Vertex() noexcept = default;
 };
 
-struct Triangle {
-  std::array<Math::Vector3f, 3> v;
-  std::array<Math::Vector2f, 3> texCoords;
-  std::array<Math::Vector3f, 3> Ns;
-  Math::Vector3f Ng;
-  Math::Vector3f lerpNormal(const Math::Vector2f& uv) const {
-    return (1 - uv.x() - uv.y()) * Ns[0] + uv.x() * Ns[1] + uv.y() * Ns[2];
-  }
-  Math::Vector2f lerpTexCoord(const Math::Vector2f& uv) const {
-    return (1 - uv.x() - uv.y()) * texCoords[0] + uv.x() * texCoords[1] +
-           uv.y() * texCoords[2];
-  }
-  Math::Vector3f lerpVert(const Math::Vector2f& uv) const {
-    return (1 - uv.x() - uv.y()) * v[0] + uv.x() * v[1] + uv.y() * v[2];
-  }
-  float area() const {
-    auto e1 = v[1] - v[0];
-    auto e2 = v[2] - v[0];
-    return Math::cross(e1, e2).length() * 0.5f;
-  }
+// struct Triangle {
+//   std::array<Math::Vector3f, 3> v;
+//   std::array<Math::Vector2f, 3> texCoords;
+//   std::array<Math::Vector3f, 3> Ns;
+//   Math::Vector3f Ng;
+//   Math::Vector3f lerpNormal(const Math::Vector2f& uv) const {
+//     return (1 - uv.x() - uv.y()) * Ns[0] + uv.x() * Ns[1] + uv.y() * Ns[2];
+//   }
+//   Math::Vector2f lerpTexCoord(const Math::Vector2f& uv) const {
+//     return (1 - uv.x() - uv.y()) * texCoords[0] + uv.x() * texCoords[1] +
+//            uv.y() * texCoords[2];
+//   }
+//   Math::Vector3f lerpVert(const Math::Vector2f& uv) const {
+//     return (1 - uv.x() - uv.y()) * v[0] + uv.x() * v[1] + uv.y() * v[2];
+//   }
+//   float area() const {
+//     auto e1 = v[1] - v[0];
+//     auto e2 = v[2] - v[0];
+//     return Math::cross(e1, e2).length() * 0.5f;
+//   }
 
-  Math::Bounds3f Bounds() const {
-    Math::Bounds3f bounds(Math::Vector3f{std::numeric_limits<float>::max()},
-                          Math::Vector3f{std::numeric_limits<float>::lowest()});
-    for (std::size_t i = 0; i != 3; ++i) {
-      bounds.min() = Math::min(bounds.min(), v[i]);
-      bounds.max() = Math::max(bounds.max(), v[i]);
-    }
+//   Math::Bounds3f Bounds() const {
+//     Math::Bounds3f bounds(Math::Vector3f{std::numeric_limits<float>::max()},
+//                           Math::Vector3f{std::numeric_limits<float>::lowest()});
+//     for (std::size_t i = 0; i != 3; ++i) {
+//       bounds.min() = Math::min(bounds.min(), v[i]);
+//       bounds.max() = Math::max(bounds.max(), v[i]);
+//     }
 
-    return bounds;
-  }
+//     return bounds;
+//   }
 
-  auto Centroid() -> Math::Vector3f const { return Bounds().center(); }
+//   auto Centroid() -> Math::Vector3f const { return Bounds().center(); }
 
-  bool Intersect(const Ray& ray, Intersection* intersection) const {
-    bool hit = false;
-    auto v1 = v[0];
-    auto v2 = v[1];
-    auto v3 = v[2];
-    auto e1 = v2 - v1;
-    auto e2 = v3 - v1;
-    auto Ng = Math::cross(e1, e2).normalized();
-    float a, f, u, v;
-    auto h = Math::cross(ray.d.normalized(), e2);
-    a = Math::dot(e1, h);
-    if (a > -1e-6f && a < 1e-6f) return false;
-    f = 1.0f / a;
-    auto s = ray.o - v1;
-    u = f * Math::dot(s, h);
-    if (u < 0.0 || u > 1.0) return false;
-    auto q = Math::cross(s, e1);
-    v = f * Math::dot(ray.d.normalized(), q);
-    if (v < 0.0 || u + v > 1.0) return false;
-    float t = f * Math::dot(e2, q);
-    if (t > ray.t_min && t < ray.t_max) {
-      if (t < intersection->t) {
-        intersection->Ng = Ng;
-        intersection->t = t;
-        intersection->uv = Math::Vector2f{u, v};
-        hit = true;
-      }
-    }
-    return hit;
-  }
-};
+//   bool Intersect(const Ray& ray, Intersection* intersection) const {
+//     bool hit = false;
+//     auto v1 = v[0];
+//     auto v2 = v[1];
+//     auto v3 = v[2];
+//     auto e1 = v2 - v1;
+//     auto e2 = v3 - v1;
+//     auto Ng = Math::cross(e1, e2).normalized();
+//     float a, f, u, v;
+//     auto h = Math::cross(ray.d.normalized(), e2);
+//     a = Math::dot(e1, h);
+//     if (a > -1e-6f && a < 1e-6f) return false;
+//     f = 1.0f / a;
+//     auto s = ray.o - v1;
+//     u = f * Math::dot(s, h);
+//     if (u < 0.0 || u > 1.0) return false;
+//     auto q = Math::cross(s, e1);
+//     v = f * Math::dot(ray.d.normalized(), q);
+//     if (v < 0.0 || u + v > 1.0) return false;
+//     float t = f * Math::dot(e2, q);
+//     if (t > ray.t_min && t < ray.t_max) {
+//       if (t < intersection->t) {
+//         intersection->Ng = Ng;
+//         intersection->t = t;
+//         intersection->uv = Math::Vector2f{u, v};
+//         hit = true;
+//       }
+//     }
+//     return hit;
+//   }
+// };
 
-// struct ScatteringEvent {
-struct SurfaceInteraction {
-  Math::Vector3f wo;
-  Math::Vector3f p;
-  Math::Vector2f texCoord;
-  Math::Vector3f Ng;
-  Math::Vector3f Ns;
-  std::shared_ptr<BSDF> bsdf;
-  float rayBias = 1e-5f;
-  SurfaceInteraction(const Math::Vector3f& wo, const Math::Vector3f& p,
-                     const Triangle& triangle, const Intersection& intersection)
-      : wo(wo), p(p) {
-    texCoord = triangle.lerpTexCoord(intersection.uv);
-    Ns = triangle.lerpNormal(intersection.uv);
-    Ng = triangle.Ng;
-  }
-  Ray SpawnRay(const Math::Vector3f& w) const {
-    return Ray{p, w, rayBias / std::abs(Math::dot(w, Ng))};
-  }
-};
+// struct SurfaceInteraction {
+//   Math::Vector3f wo;
+//   Math::Vector3f p;
+//   Math::Vector2f texCoord;
+//   Math::Vector3f Ng;
+//   Math::Vector3f Ns;
+//   std::shared_ptr<BSDF> bsdf;
+//   float rayBias = 1e-5f;
+//   SurfaceInteraction(const Math::Vector3f& wo, const Math::Vector3f& p,
+//                      const Triangle& triangle, const Intersection&
+//                      intersection)
+//       : wo(wo), p(p) {
+//     texCoord = triangle.lerpTexCoord(intersection.uv);
+//     Ns = triangle.lerpNormal(intersection.uv);
+//     Ng = triangle.Ng;
+//   }
+//   Ray SpawnRay(const Math::Vector3f& w) const {
+//     return Ray{p, w, rayBias / std::abs(Math::dot(w, Ng))};
+//   }
+// };
 
 struct BSDFSamplingRecord {
   const Math::Vector3f wo;

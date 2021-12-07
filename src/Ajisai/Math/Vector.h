@@ -264,6 +264,13 @@ inline Vector<T, size> operator/(typename std::common_type<T>::type scalar,
   Type<T> operator-(const Vector<T, size>& other) const {                      \
     return Vector<T, size>::operator-(other);                                  \
   }                                                                            \
+  Type<T>& operator*=(const Vector<T, size>& other) const {                    \
+    Vector<T, size>::operator*=(other);                                        \
+    return *this;                                                              \
+  }                                                                            \
+  Type<T> operator*(const Vector<T, size>& other) const {                      \
+    return Vector<T, size>::operator*(other);                                  \
+  }                                                                            \
   Type<T>& operator*=(T scalar) {                                              \
     Vector<T, size>::operator*=(scalar);                                       \
     return *this;                                                              \

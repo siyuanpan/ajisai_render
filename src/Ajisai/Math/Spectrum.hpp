@@ -65,6 +65,21 @@ class CoefficientSpectrum : public Vector<float, size> {
   }
 
   bool isBlack() const { return this->max() <= 0; }
+  [[nodiscard]] float luminance() const {
+    return 0.2126 * (*this)[0] + 0.7152 * (*this)[1] + 0.0722 * (*this)[2];
+  }
+  [[nodiscard]] CoefficientSpectrum<size> removeNaN() const {
+    CoefficientSpectrum<size> tmp;
+    for (size_t i = 0; i < size; i++) {
+      auto x = (*this)[i];
+      if (std::isnan(x)) {
+        tmp[i] = 0;
+      } else {
+        tmp[i] = x;
+      }
+    }
+    return tmp;
+  }
 };
 }  // namespace Ajisai::Math
 

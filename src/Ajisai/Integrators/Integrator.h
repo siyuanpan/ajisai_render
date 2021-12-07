@@ -61,36 +61,17 @@ namespace Ajisai::Integrators {
 
 class Integrator : public PluginManager::AbstractPlugin {
  public:
-  // int spp = 16;
-  // explicit Integrator() {}
   explicit Integrator(PluginManager::AbstractManager& manager,
                       const std::string& plugin)
       : PluginManager::AbstractPlugin{manager, plugin} {}
-  // virtual std::shared_ptr<RenderTask> CreateRenderTask(
-  //     const RenderContext& ctx) = 0;
 
-  virtual Math::Spectrum Li(Core::Ray ray, Core::Scene* scene,
-                            Core::Sampler* sampler) const = 0;
+  virtual Math::Spectrum Li(
+      /*Core::Ray ray,*/ Core::Scene* scene, Core::Camera* camera,
+      const Math::Vector2i& raster, Core::Sampler* sampler) const = 0;
 
-  // static std::string Integrator::pluginInterface() {
-  //   return "ajisai.integrators.Integrator/0.0.1";
-  // }
   static std::string pluginInterface();
   static std::vector<std::filesystem::path> pluginSearchPaths();
-  // static std::vector<std::string> Integrator::pluginSearchPaths() {
-  //   std::cout << Util::libraryLocation(&pluginInterface) << std::endl;
-  //   return {{}};
-  // }
 };
 
-// class PathIntegrator : public Integrator {
-//  public:
-//   virtual std::shared_ptr<RenderTask> CreateRenderTask(
-//       const RenderContext& ctx) override;
-
-//  private:
-//   int spp = 16;
-//   int minDepth = 5, maxDepth = 16;
-// };
 }  // namespace Ajisai::Integrators
 #endif

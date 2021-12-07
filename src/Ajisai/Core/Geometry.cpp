@@ -22,11 +22,23 @@ DEALINGS IN THE SOFTWARE.
 
 #include <Ajisai/Core/Geometry.h>
 #include <Ajisai/Core/Mesh.h>
+#include <Ajisai/Core/Scene.h>
 
 namespace Ajisai::Core {
 
 Math::Spectrum Intersection::Le(const Math::Vector3f& wo) const {
   return mesh->Le(wo);
+}
+
+Math::Spectrum SurfaceInteraction::Le(const Math::Vector3f& wo) const {
+  return mesh->Le(wo);
+}
+
+[[nodiscard]] bool VisibilityTester::visible(const Scene& scene) const {
+  return !scene.Occlude(shadowRay);
+}
+[[nodiscard]] Math::Spectrum VisibilityTester::Tr(const Scene& scene) const {
+  return scene.Occlude(shadowRay) ? Math::Spectrum(0) : Math::Spectrum(1);
 }
 
 }  // namespace Ajisai::Core

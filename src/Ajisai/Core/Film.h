@@ -31,10 +31,38 @@ DEALINGS IN THE SOFTWARE.
 
 namespace Ajisai::Core {
 
+class AtomicFloat {
+  std::atomic<float> val;
+
+ public:
+  explicit AtomicFloat(float v = 0) : val(v) {}
+
+  AtomicFloat(const AtomicFloat& rhs) : val((float)rhs.val) {}
+
+  void add(float v) {
+    auto current = val.load();
+    while (!val.compare_exchange_weak(current, current + v)) {
+    }
+  }
+
+  [[nodiscard]] float value() const { return val.load(); }
+
+  explicit operator float() const { return value(); }
+
+  void set(float v) { val = v; }
+};
+
 struct Pixel {
   Math::Spectrum radiance = Math::Spectrum(0);
   float weight = 0;
 };
+
+struct SplatPixel {
+  std::array<AtomicFloat, 3> color;
+  static_assert(sizeof(AtomicFloat) == sizeof(float));
+  float _padding{};
+};
+static_assert(sizeof(SplatPixel) == 4 * sizeof(float));
 
 const size_t TileSize = 16;
 
@@ -90,9 +118,14 @@ class Film {
         radiance.Dimension().y(),
         [&](uint32_t y, uint32_t) {
           for (int x = 0; x < radiance.Dimension().x(); ++x) {
+            Math::Spectrum s = Math::Spectrum{splat(x, y).color[0].value(),
+                                              splat(x, y).color[1].value(),
+                                              splat(x, y).color[2].value()};
             if (weight(x, y) != 0) {
-              auto tmp = radiance(x, y) / weight(x, y);
+              auto tmp = (radiance(x, y) + s) / weight(x, y);
               image(x, y) = Math::Color4f{tmp[0], tmp[1], tmp[2], 1.f};
+            } else {
+              image(x, y) = Math::Color4f{s[0], s[1], s[2], 1.f};
             }
           }
         },
@@ -101,10 +134,18 @@ class Film {
     ImageWriter::Write(image, path);
   }
 
+  void AddSplat(const Math::Spectrum& L, const Math::Vector2f& p) {
+    Math::Vector2i ip{(int)p.x(), (int)p.y()};
+    splat(ip.x(), ip.y()).color[0].add(L[0]);
+    splat(ip.x(), ip.y()).color[1].add(L[1]);
+    splat(ip.x(), ip.y()).color[2].add(L[2]);
+  }
+
  private:
   Math::Vector2i dim;
   Image<Math::Spectrum> radiance;
   Image<float> weight;
+  Image<SplatPixel> splat;
 };
 }  // namespace Ajisai::Core
 

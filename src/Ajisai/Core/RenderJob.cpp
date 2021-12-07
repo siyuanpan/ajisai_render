@@ -48,10 +48,11 @@ void RenderJob::Run() {
         for (int x = tile.bounds.min().x(); x < tile.bounds.max().x(); ++x) {
           sampler->SetSeed(x + y * film->Dimension().x());
           for (int s = 0; s < spp; ++s) {
-            const float u = (x + sampler->Next1D()) / film->Dimension().x();
-            const float v = (y + sampler->Next1D()) / film->Dimension().y();
-            auto ray = camera->GenerateRay(u, v);
-            auto Li = integrator->Li(ray, scene.get(), sampler.get());
+            // const float u = (x + sampler->Next1D()) / film->Dimension().x();
+            // const float v = (y + sampler->Next1D()) / film->Dimension().y();
+            // auto ray = camera->GenerateRay(u, v);
+            auto Li = integrator->Li(scene.get(), camera.get(),
+                                     Math::Vector2i{x, y}, sampler.get());
             tile.AddSample(Math::Vector2i{x, y}, Li, 1.0f);
           }
         }

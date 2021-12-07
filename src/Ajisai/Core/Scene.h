@@ -67,11 +67,13 @@ class Scene {
     return hit;
   }
 
-  // void PostIntersect(const Ray& ray, Intersection* intersection) const {
+  bool Occlude(const Ray& ray) const {
+    // if (accel) {
+    return accel->Occlude(ray);
+    // }
+  }
 
-  // }
-
-  float PdfLight(AreaLight* light) const { return 1.f / lights.size(); }
+  float PdfLight(const AreaLight* light) const { return 1.f / lights.size(); }
 
   const AreaLight* SampleOneLight(/*Math::Vector2f& sample*/ float u,
                                   float* pdf) const {
