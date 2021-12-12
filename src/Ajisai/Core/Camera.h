@@ -128,6 +128,8 @@ class Camera {
     sample->normal = -look;
     sample->wi = pLensWorld - ref.p;
     float dist = sample->wi.length();
+    // printf("wi (%f %f %f) dist %f\n", sample->wi[0], sample->wi[1],
+    //        sample->wi[2], dist);
     sample->wi /= dist;
     float lensArea = lensRadius == 0 ? 1.0f
                                      : lensRadius * lensRadius *
@@ -135,8 +137,56 @@ class Camera {
     tester->shadowRay = Ray(pLensWorld, -sample->wi, Ray::Eps(),
                             dist * (1.0 - Ray::ShadowEps()));
     sample->pdf =
-        (dist * dist) / (lensArea * abs(dot(sample->normal, sample->wi)));
+        (dist * dist) / (lensArea * std::abs(dot(sample->normal, sample->wi)));
+    // printf("sample->normal (%f %f %f) dist %f\n", sample->normal[0],
+    //        sample->normal[1], sample->normal[2],
+    //        std::abs(dot(sample->normal, sample->wi)));
+    // printf("%f %f\n", sample->pdf, lensArea);
     sample->I = We(tester->shadowRay, &sample->pos);
+  }
+
+  bool ToRaster(const Math::Vector2f& u, const Intersect& ref,
+                Math::Vector3f& dirToCamera, Math::Vector2f& pRaster) const {
+    Math::Vector2f pLens = lensRadius * squareToUniformDiskConcentric(u);
+    Math::Vector3f pLensWorld = origin + pLens.x() * right + pLens.y() * up;
+
+    dirToCamera = pLensWorld - ref.p;
+    // dirToCamera = dirToCamera.normalized();
+
+    float cosTheta = Math::dot(look, dirToCamera.normalized());
+    Math::Vector3f pFocus =
+        pLensWorld -
+        dirToCamera * ((lensRadius == 0 ? 1 : focus_distance) / cosTheta);
+
+    // printf("%f pFocus (%f %f %f)\n", cosTheta, pFocus[0], pFocus[1],
+    // pFocus[2]);
+
+    if (cosTheta <= 0) {
+      return false;
+    }
+
+    Math::Vector2f raster{Math::dot(-dirToCamera, right),
+                          Math::dot(-dirToCamera, up)};
+    raster = (raster + Math::Vector2f{1.f}) / 2.f;
+
+    auto bounds = film->Dimension();
+    raster = Math::Vector2f{float(bounds[0]), float(bounds[1])} * raster;
+
+    if (raster.x() < 0.f || raster.x() > bounds.x() || raster.y() < 0.f ||
+        raster.y() > bounds.y())
+      return false;
+
+    // printf("bounds (%d %d) raster (%f %f) \n", bounds[0], bounds[1],
+    // raster[0],
+    //        raster[1]);
+
+    pRaster = raster;
+
+    return true;
+  }
+
+  int GetPixelCount() const {
+    return film->Dimension().x() * film->Dimension().y();
   }
 
  private:

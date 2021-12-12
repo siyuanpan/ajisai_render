@@ -26,11 +26,13 @@ DEALINGS IN THE SOFTWARE.
 
 #include <cstring>
 
-using Ajisai::Core::CameraSamplingRecord;
-using Ajisai::Core::Intersect;
-using Ajisai::Core::LightSamplingRecord;
-using Ajisai::Core::SurfaceInteraction;
-using Ajisai::Core::VisibilityTester;
+// using Ajisai::Core::CameraSamplingRecord;
+// using Ajisai::Core::Intersect;
+// using Ajisai::Core::LightSamplingRecord;
+// using Ajisai::Core::SurfaceInteraction;
+// using Ajisai::Core::VisibilityTester;
+using namespace Ajisai::Math;
+using namespace Ajisai::Core;
 
 namespace Ajisai::Integrators {
 
@@ -202,6 +204,7 @@ struct PathVertex {
     } else {
       std::exit(1);
     }
+
     return ConvertDensity(pdf, next);
   }
 
@@ -221,7 +224,7 @@ struct PathVertex {
     light->Pdf_Le(Core::Ray(p(), w), &pdfPos, &pdfDir);
     pdf = pdfDir * invDist2;
     if (next.IsOnSurface()) {
-      pdf *= abs(Math::dot(next.ng(), w));
+      pdf *= std::abs(Math::dot(next.ng(), w));
     }
     return pdf;
   }
@@ -243,8 +246,9 @@ struct PathVertex {
     auto w = next.p() - p();
     if (Math::dot(w, w) == 0) return 0;
     float invDist2 = 1 / Math::dot(w, w);
-    if (next.IsOnSurface())
-      pdf *= std::abs(Math::dot(next.ng(), w * std::sqrt(invDist2)));
+    w = w.normalized();
+    if (next.IsOnSurface()) pdf *= std::abs(Math::dot(next.ng(), w));
+    // pdf *= std::abs(Math::dot(next.ng(), w * std::sqrt(invDist2)));
     return pdf * invDist2;
   }
 
@@ -270,8 +274,8 @@ struct PathVertex {
     float g = 1 / Math::dot(d, d);
     // d *= std::sqrt(g);
     d = d.normalized();
-    if (v0.IsOnSurface()) g *= abs(Math::dot(v0.Ns(), d));
-    if (v1.IsOnSurface()) g *= abs(Math::dot(v1.Ns(), d));
+    if (v0.IsOnSurface()) g *= std::abs(Math::dot(v0.Ns(), d));
+    if (v1.IsOnSurface()) g *= std::abs(Math::dot(v1.Ns(), d));
     VisibilityTester vis(v0.GetInteraction(), v1.GetInteraction());
     return g * vis.Tr(scene);
   }
@@ -320,6 +324,29 @@ class BDPTIntegrator : public Integrator {
   explicit BDPTIntegrator(PluginManager::AbstractManager& manager,
                           const std::string plugin)
       : Integrator{manager, plugin} {}
+
+  struct Vertex {
+    Spectrum throughput;
+    uint32_t length;
+
+    SurfaceInteraction si;
+    Vector3f inDir;
+
+    float DVCM;
+    float DVC;
+  };
+
+  struct PathState {
+    Vector3f origin;
+    Vector3f direction;
+    Spectrum throughput;
+    uint PathLength : 30;
+    bool isFiniteLight : 1;
+    bool SpecularPath : 1;
+
+    float DVCM;
+    float DVC;
+  };
 
   size_t RandomWalk(const Core::Scene& scene, Core::Sampler& sampler,
                     Core::Ray& ray, Math::Spectrum& beta, float pdf,
@@ -394,7 +421,7 @@ class BDPTIntegrator : public Integrator {
       return 0;
     }
     return RandomWalk(scene, sampler, ray, beta, pdfDir, depth - 1,
-                      TransportMode::Radiance, path + 1) +
+                      TransportMode::Importance, path + 1) +
            1;
   }
 
@@ -417,9 +444,9 @@ class BDPTIntegrator : public Integrator {
     path[0] = PathVertex::CreateLight(sampleLight, ray, nLight, Le,
                                       pdfPos * lightPdf);
     Math::Spectrum beta =
-        Le * abs(Math::dot(nLight, ray.d)) / (lightPdf * pdfPos * pdfDir);
+        Le * std::abs(Math::dot(nLight, ray.d)) / (lightPdf * pdfPos * pdfDir);
     return 1 + RandomWalk(scene, sampler, ray, beta, pdfDir, depth - 1,
-                          TransportMode::Importance, path + 1);
+                          TransportMode::Radiance, path + 1);
   }
 
   template <int Power>
@@ -428,7 +455,9 @@ class BDPTIntegrator : public Integrator {
                   PathVertex* lightVertices, size_t s,
                   PathVertex& sampled) const {
     if (s + t == 2) return 1;
-    auto remap0 = [](float x) { return x != 0 ? std::pow(x, Power) : 1.0f; };
+    auto remap0 = [](float x) -> float {
+      return x != 0 ? std::pow(x, Power) : 1.0f;
+    };
     (void)remap0;
     float sumRi = 0;
 
@@ -444,9 +473,9 @@ class BDPTIntegrator : public Integrator {
       _a1 = {qs, sampled};
     else if (t == 1)
       _a1 = {pt, sampled};
-    //        if(s == 1){
-    //            printf("b %f\n",lightPath[s-1].pdfFwd);
-    //        }
+    // if (s == 1) {
+    //   printf("b %f\n", lightVertices[s - 1].pdfFwd);
+    // }
     ScopedAssignment<bool> _a2, _a3;
     if (pt) _a2 = {&pt->delta, false};
     if (qs) _a3 = {&qs->delta, false};
@@ -463,11 +492,15 @@ class BDPTIntegrator : public Integrator {
       } else {
         pdfRev = pt->PdfLightOrigin(scene, *ptMinus);
       }
+      // if (s != 0)
+      //   printf("before rev %f s %d pdfRev %f\n", pt->pdfRev, (int)s, pdfRev);
       _a4 = {&pt->pdfRev, pdfRev};
     }
+    // if (pt) printf("after rev %f\n", pt->pdfRev);
 
     // now ptMinus->pdfRev
     ScopedAssignment<float> _a5;
+    // if (ptMinus) printf("before rev %f\n", ptMinus->pdfRev);
     if (ptMinus) {
       float pdfRev;
       if (s > 0) {
@@ -477,13 +510,14 @@ class BDPTIntegrator : public Integrator {
       }
       _a5 = {&ptMinus->pdfRev, pdfRev};
     }
+    // if (ptMinus) printf("after rev %f\n", ptMinus->pdfRev);
 
     // now qs
     ScopedAssignment<float> _a6;
     if (qs) {
       _a6 = {&qs->pdfRev, pt->Pdf(scene, ptMinus, *qs)};
     }
-    //        printf("%f\n",sampled.pdfFwd);
+    // printf("%f\n", sampled.pdfFwd);
     // now qsMinus
     ScopedAssignment<float> _a7;
     if (qsMinus) {
@@ -532,7 +566,7 @@ class BDPTIntegrator : public Integrator {
           sampled = PathVertex::CreateCamera(camera, vis.shadowRay,
                                              cRec.I / cRec.pdf);
           L = qs.beta * qs.f(sampled) * sampled.beta;
-          if (qs.IsOnSurface()) L *= abs(Math::dot(cRec.wi, qs.Ns()));
+          if (qs.IsOnSurface()) L *= std::abs(Math::dot(cRec.wi, qs.Ns()));
           // Only check visibility after we know that the path would
           // make a non-zero contribution.
           if (!L.isBlack()) L *= vis.Tr(scene);
@@ -555,7 +589,7 @@ class BDPTIntegrator : public Integrator {
               ei, lRec.Li / (scene.PdfLight(light) * lRec.pdf), 0);
           sampled.pdfFwd = sampled.PdfLightOrigin(scene, pt);
           L = pt.beta * pt.f(sampled) * sampled.beta;
-          if (pt.IsOnSurface()) L *= abs(Math::dot(lRec.wi, pt.Ns()));
+          if (pt.IsOnSurface()) L *= std::abs(Math::dot(lRec.wi, pt.Ns()));
           // Only check visibility if the path would carry radiance.
           if (!L.isBlack()) L *= vis.Tr(scene);
         }
@@ -578,6 +612,8 @@ class BDPTIntegrator : public Integrator {
 
     if (L.isBlack()) return {};
     float misWeight = 1.0f / (s + t);
+
+    // if (s == 1) printf("t %d s %d\n", (int)t, (int)s);
     misWeight = MisWeight<1>(scene, sampler, cameraVertices, t, lightVertices,
                              s, sampled);
     assert(misWeight >= 0);
@@ -585,47 +621,282 @@ class BDPTIntegrator : public Integrator {
     return L.removeNaN();
   }
 
+  template <int pow>
+  float MIS(float fVal) const {
+    // Use power heuristic
+    return std::pow(fVal, pow);
+  }
+
+  PathState SampleLightSource(Scene* scene, Sampler* sampler) const {
+    PathState ret;
+
+    float lightPdf = 0.f;
+    auto sampleLight = scene->SampleOneLight(sampler->Next1D(), &lightPdf);
+    // printf("lightPdf %f\n", lightPdf);
+
+    Ray lightRay;
+    Vector3f nLight;
+    float posPdf, dirPdf;
+
+    sampleLight->Sample_Le(sampler->Next2D(), sampler->Next2D(), &lightRay,
+                           nLight, &posPdf, &dirPdf, ret.throughput);
+    // printf(
+    //     "ray.o (%f %f %f) ray.d (%f %f %f) nLight (%f %f %f) posPdf (%f) "
+    //     "dirPdf(%f) E (%f %f %f)\n",
+    //     lightRay.o[0], lightRay.o[1], lightRay.o[2], lightRay.d[0],
+    //     lightRay.d[1], lightRay.d[2], nLight.x(), nLight.y(), nLight.z(),
+    //     posPdf, dirPdf, ret.throughput[0], ret.throughput[1],
+    //     ret.throughput[2]);
+    if (dirPdf == 0.0f) return ret;
+
+    // dirPdf *= lightPdf;
+    // posPdf *= lightPdf;
+    // printf("dirPdf %f, posPdf %f, lightPdf %f emitPdf %f\n", dirPdf, posPdf,
+    //        lightPdf, dirPdf * posPdf * lightPdf);
+    ret.throughput /= (dirPdf * posPdf * lightPdf);
+    ret.isFiniteLight = sampleLight->isFinite();
+    ret.SpecularPath = true;
+    ret.PathLength = 1;
+    ret.direction = lightRay.d;
+    ret.origin = lightRay.o;
+
+    float emitCos = dot(nLight, lightRay.d);
+    ret.DVCM = MIS<pow>(1.f / dirPdf);
+    ret.DVC = sampleLight->isDelta()
+                  ? 0.f
+                  : (sampleLight->isFinite()
+                         ? MIS<pow>(emitCos / (dirPdf * posPdf * lightPdf))
+                         : MIS<pow>(1.f / (dirPdf * posPdf * lightPdf)));
+    // printf("E (%f %f %f), emitCos %f, DVCM %f DVC %f\n", ret.throughput[0],
+    //        ret.throughput[1], ret.throughput[2], emitCos, ret.DVCM, ret.DVC);
+
+    return ret;
+  }
+
+  Spectrum ConnectToCamera(Scene* scene, Camera* camera, Sampler* sampler,
+                           SurfaceInteraction& si, Vertex& lightVertex,
+                           Vector2f& pRaster) const {
+    Vector3f dirToCamera;
+    // Vector2f pRaster;
+    if (!camera->ToRaster(sampler->Next2D(), si, dirToCamera, pRaster))
+      return {};
+
+    float distToCamera = dirToCamera.length();
+    dirToCamera = dirToCamera.normalized();
+
+    Spectrum f = si.bsdf->Evaluate(dirToCamera, lightVertex.inDir) *
+                 std::abs(dot(lightVertex.inDir, si.Ns)) /
+                 std::abs(dot(lightVertex.inDir, si.Ng));
+
+    if (f.isBlack()) return {};
+    // printf("(%f %f %f)\n", f[0], f[1], f[2]);
+    float pdf = si.bsdf->EvaluatePdf(si.bsdf->toLocal(lightVertex.inDir),
+                                     si.bsdf->toLocal(dirToCamera));
+    float revPdf = si.bsdf->EvaluatePdf(si.bsdf->toLocal(dirToCamera),
+                                        si.bsdf->toLocal(lightVertex.inDir));
+    // printf("%f %f\n", pdf, revPdf);
+    if (pdf == 0.f || revPdf == 0.f) return {};
+
+    float cosToCam = dot(si.Ng, dirToCamera);
+
+    CameraSamplingRecord cRec;
+    VisibilityTester tester;
+    camera->Sample_Wi(sampler->Next2D(), si, &cRec, &tester);
+    (void)tester;
+    // printf("%f\n", cRec.pdf);
+
+    float cameraPdfA =
+        cRec.pdf * std::abs(cosToCam) / (distToCamera * distToCamera);
+    // printf("%d\n", camera->GetPixelCount());
+    float WLight = MIS<pow>(cameraPdfA / (float)camera->GetPixelCount()) *
+                   (lightVertex.DVCM + lightVertex.DVC * MIS<pow>(revPdf));
+    float MISWeight = 1.f / (WLight + 1.f);
+    // printf("%f\n", MISWeight);
+    Spectrum contrib = MISWeight * lightVertex.throughput * f * cameraPdfA /
+                       (float)camera->GetPixelCount();
+    // printf("%f %f %f\n", contrib[0], contrib[1], contrib[2]);
+
+    Ray rayToCam =
+        Ray(si.p, dirToCamera, Ray::Eps(), distToCamera * (1.f - Ray::Eps()));
+
+    if (!contrib.isBlack() && !scene->Occlude(rayToCam)) {
+      // printf("%f %f %f\n", contrib[0], contrib[1], contrib[2]);
+      return contrib;
+    }
+    return {};
+  }
+
+  int GenerateLightPath(Scene* scene, Sampler* sampler, const int maxDepth,
+                        Vertex* lightVertices, Camera* camera,
+                        int* vertexCount) const {
+    if (maxDepth == 0) {
+      *vertexCount = 0;
+      return 0;
+    }
+
+    PathState lightPathState = SampleLightSource(scene, sampler);
+    if (lightPathState.throughput.isBlack()) return 0;
+    // printf("(%f %f %f) \n", lightPathState.throughput[0],
+    //        lightPathState.throughput[1], lightPathState.throughput[2]);
+
+    if (lightPathState.PathLength >= maxDepth) {
+      *vertexCount = 0;
+      return lightPathState.PathLength;
+    }
+
+    *vertexCount = 0;
+    while (true) {
+      Ray pathRay(lightPathState.origin, lightPathState.direction);
+      Intersection isect;
+      if (!scene->Intersect(pathRay, &isect)) {
+        return lightPathState.PathLength;
+      }
+
+      if (lightPathState.PathLength > 1 || lightPathState.isFiniteLight) {
+        // printf("1 %f %f\n", lightPathState.DVCM, isect.t);
+        lightPathState.DVCM *= MIS<pow>(isect.t * isect.t);
+        // printf("2 %f\n", lightPathState.DVCM);
+      }
+
+      float cosIn = std::abs(dot(isect.Ng, -pathRay.d));
+      lightPathState.DVCM /= MIS<2>(cosIn);
+      lightPathState.DVC /= MIS<2>(cosIn);
+      // printf("%f %f\n", lightPathState.DVCM, lightPathState.DVC);
+
+      Triangle triangle{};
+      isect.mesh->GetTriangle(isect.triId, &triangle);
+      auto p = pathRay.Point(isect.t);
+      SurfaceInteraction si(-pathRay.d, p, triangle, isect);
+      isect.mesh->GetMaterial()->ComputeScatteringFunction(&si);
+
+      BSDFSamplingRecord bRec(si, sampler->Next2D());
+      si.bsdf->Sample(bRec);
+      if (bRec.pdf <= 0.f) break;
+
+      auto specular = bRec.type & BSDFType::BSDF_SPECULAR;
+      if (!specular) {
+        Vertex& lightVertex = lightVertices[(*vertexCount)++];
+        lightVertex.throughput = lightPathState.throughput;
+        lightVertex.length = lightPathState.PathLength + 1;
+        lightVertex.si = si;
+        lightVertex.inDir = -lightPathState.direction;
+        lightVertex.DVCM = lightPathState.DVCM;
+        lightVertex.DVC = lightPathState.DVC;
+
+        // connect to camera
+        Vector2f ptRaster;
+        Spectrum connectRadiance =
+            ConnectToCamera(scene, camera, sampler, si, lightVertex, ptRaster);
+
+        if (connectRadiance.isBlack()) break;
+
+        // printf("(%f %f %f) (%f %f)\n", connectRadiance[0],
+        // connectRadiance[1],
+        //        connectRadiance[2], ptRaster[0], ptRaster[1]);
+
+        camera->GetFilm()->AddSplat(connectRadiance, ptRaster);
+      }
+
+      if (++lightPathState.PathLength >= maxDepth) break;
+
+      // if (!SampleScattering()) break;
+
+      Spectrum f = bRec.f;
+      Vector3f wi = bRec.wi;
+      float scatteredPdf = bRec.pdf;
+
+      float revPdf = si.bsdf->EvaluatePdf(wi, si.bsdf->toLocal(-pathRay.d));
+
+      if (f.isBlack() || scatteredPdf == 0.f) break;
+      // printf("(%f %f %f) %f\n", f[0], f[1], f[2], scatteredPdf);
+
+      if (!specular && rrDepth != -1 && lightPathState.PathLength > rrDepth) {
+        float q = std::min(0.95f, lightPathState.throughput.max());
+        if (sampler->Next1D() >= q) break;
+        lightPathState.throughput /= q;
+      }
+
+      lightPathState.origin = si.p;
+      lightPathState.direction = bRec.wi;
+
+      float cosOut = std::abs(dot(si.Ns, si.bsdf->toWorld(bRec.wi)));
+      if (!specular) {
+        lightPathState.SpecularPath &= 0;
+
+        lightPathState.DVCM =
+            MIS<pow>(cosOut / scatteredPdf) *
+            (lightPathState.DVC * MIS<pow>(revPdf) + lightPathState.DVCM);
+        lightPathState.DVC = MIS<pow>(1.0f / scatteredPdf);
+        // printf("%f %f\n", lightPathState.DVCM, lightPathState.DVC);
+      } else {
+        lightPathState.SpecularPath &= 1;
+
+        lightPathState.DVCM = 0.f;
+        lightPathState.DVC *= MIS<pow>(cosOut);
+        // printf("%f %f\n", lightPathState.DVCM, lightPathState.DVC);
+      }
+
+      lightPathState.throughput *= f * cosOut / scatteredPdf;
+      // printf("(%f %f %f) \n", lightPathState.throughput[0],
+      //        lightPathState.throughput[1], lightPathState.throughput[2]);
+    }
+
+    return lightPathState.PathLength;
+  }
+
+  // bool SampleScattering() const {}
+
   virtual Math::Spectrum Li(Core::Scene* scene, Core::Camera* camera,
                             const Math::Vector2i& raster,
                             Core::Sampler* sampler) const override {
-    PathVertex* cameraVertices = new PathVertex[maxDepth + 2];
-    PathVertex* lightVertices = new PathVertex[maxDepth + 1];
+    Vertex* lightVertices = (Vertex*)calloc(maxDepth, sizeof(Vertex));
+    int numLightVertex;
+    int lightPathLen = GenerateLightPath(
+        scene, sampler, maxDepth + 1, lightVertices, camera, &numLightVertex);
 
-    size_t nCamera = GenerateCameraSubpath(*scene, *camera, raster, *sampler,
-                                           maxDepth + 2, cameraVertices);
-    size_t nLight =
-        GenerateLightSubpath(*scene, *sampler, maxDepth + 1, lightVertices);
+    // PathVertex* cameraVertices = new PathVertex[maxDepth + 2];
+    // PathVertex* lightVertices = new PathVertex[maxDepth + 1];
+
+    // size_t nCamera = GenerateCameraSubpath(*scene, *camera, raster, *sampler,
+    //                                        maxDepth + 2, cameraVertices);
+    // size_t nLight =
+    //     GenerateLightSubpath(*scene, *sampler, maxDepth + 1, lightVertices);
 
     Math::Spectrum L(0.f);
-    for (size_t t = 1; t <= nCamera; ++t) {
-      for (size_t s = 0; s <= nLight; ++s) {
-        int depth = int(t + s) - 2;
-        if ((s == 1 && t == 1) || depth < 0 || depth > maxDepth) continue;
-        Math::Vector2f pRaster{(float)raster.x(), (float)raster.y()};
-        Math::Spectrum LPath = ConnectPath(*scene, *sampler, cameraVertices, t,
-                                           lightVertices, s, &pRaster);
-        if (t != 1) {
-          // if (visualizeMIS) {
-          //   pyramid.at(BufferIndex(s, t))->AddSplat(LPath, raster);
-          // }
-          L += LPath;
-        } else {
-          // if (visualizeMIS) {
-          //   pyramid.at(BufferIndex(s, t))->AddSplat(LPath, pRaster);
-          // }
-          camera->GetFilm()->AddSplat(LPath, pRaster);
-          // film->AddSplat(LPath, pRaster);
-        }
-      }
-    }
+    // for (size_t t = 1; t <= nCamera; ++t) {
+    //   for (size_t s = 0; s <= nLight; ++s) {
+    //     int depth = int(t + s) - 2;
+    //     if ((s == 1 && t == 1) || depth < 0 || depth > maxDepth) continue;
+    //     Math::Vector2f pRaster{(float)raster.x(), (float)raster.y()};
+    //     Math::Spectrum LPath = ConnectPath(*scene, *sampler, cameraVertices,
+    //     t,
+    //                                        lightVertices, s, &pRaster);
+    //     if (t != 1) {
+    //       // if (visualizeMIS) {
+    //       //   pyramid.at(BufferIndex(s, t))->AddSplat(LPath, raster);
+    //       // }
+    //       L += LPath;
+    //     } else {
+    //       // if (visualizeMIS) {
+    //       //   pyramid.at(BufferIndex(s, t))->AddSplat(LPath, pRaster);
+    //       // }
+    //       camera->GetFilm()->AddSplat(LPath, pRaster);
+    //       // film->AddSplat(LPath, pRaster);
+    //     }
+    //   }
+    // }
 
-    delete[] lightVertices;
-    delete[] cameraVertices;
+    // delete[] lightVertices;
+    // delete[] cameraVertices;
     return L;
   }
 
  private:
-  int rrDepth = 5, maxDepth = 16;
+  // int rrDepth = 5, maxDepth = 16;
+  int rrDepth = 5, maxDepth = 2;
+
+  // heuristic
+  static constexpr int pow = 2;
 };
 
 }  // namespace Ajisai::Integrators

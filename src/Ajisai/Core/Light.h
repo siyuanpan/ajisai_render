@@ -117,6 +117,10 @@ class AreaLight {
            (1.f / triangle.area());
   }
 
+  bool isFinite() const { return true; }
+
+  bool isDelta() const { return false; }
+
   void Sample_Le(const Math::Vector2f& u1, const Math::Vector2f& u2, Ray* ray,
                  Math::Vector3f& nLight, float* pdfPos, float* pdfDir,
                  Math::Spectrum& E) const {
@@ -134,9 +138,10 @@ class AreaLight {
 
     auto wi = squareToCosineHemisphere(u2);
     *pdfDir = absCosTheta(wi) / Math::Constants<float>::pi();
-    wi = frame.toWorld(wi);
-    *ray = Ray(x, wi);
-    E = Math::dot(wi, triangle.Ng) > 0 ? radiance : Math::Spectrum{};
+    auto wiW = frame.toWorld(wi);
+    *ray = Ray(x, wiW);
+    E = Math::dot(wiW, triangle.Ng) > 0 ? radiance * absCosTheta(wi)
+                                        : Math::Spectrum{};
   }
 
   void Pdf_Le(const Ray& ray, float* pdfPos, float* pdfDir) const {

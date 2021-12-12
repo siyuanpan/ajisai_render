@@ -94,7 +94,7 @@ struct Tile {
 class Film {
  public:
   constexpr explicit Film(const Math::Vector2i& _dim)
-      : dim{_dim}, radiance(_dim), weight(_dim) {}
+      : dim{_dim}, radiance(_dim), weight(_dim), splat(_dim) {}
 
   Math::Vector2i Dimension() const { return dim; }
 
@@ -122,7 +122,7 @@ class Film {
                                               splat(x, y).color[1].value(),
                                               splat(x, y).color[2].value()};
             if (weight(x, y) != 0) {
-              auto tmp = (radiance(x, y) + s) / weight(x, y);
+              auto tmp = (radiance(x, y)) / weight(x, y) + s;
               image(x, y) = Math::Color4f{tmp[0], tmp[1], tmp[2], 1.f};
             } else {
               image(x, y) = Math::Color4f{s[0], s[1], s[2], 1.f};

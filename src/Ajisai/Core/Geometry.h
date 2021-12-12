@@ -208,7 +208,7 @@ struct VisibilityTester {
     auto w = p2.p - p1.p;
     auto dist = w.length();
     w /= dist;
-    shadowRay = Ray(p1.p, w, Ray::Eps() / abs(dot(w, p1.Ng)),
+    shadowRay = Ray(p1.p, w, Ray::Eps() / std::abs(dot(w, p1.Ng)),
                     dist * (1.0 - Ray::ShadowEps()));
   }
   [[nodiscard]] bool visible(const Scene& scene) const;
