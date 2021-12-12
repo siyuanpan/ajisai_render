@@ -42,7 +42,7 @@ struct Ray {
 
   Ray() = default;
   Ray(const Math::Vector3f& o, const Math::Vector3f& d,
-      float t_min = 0.001 /*ray bias*/,
+      float t_min = Ray::Eps(),  // 0.001 /*ray bias*/,
       float t_max = std::numeric_limits<float>::infinity())
       : o(o), d(d.normalized()), t_min(t_min), t_max(t_max) {}
 
@@ -208,7 +208,7 @@ struct VisibilityTester {
     auto w = p2.p - p1.p;
     auto dist = w.length();
     w /= dist;
-    shadowRay = Ray(p1.p, w, Ray::Eps() / abs(dot(w, p1.Ng)),
+    shadowRay = Ray(p1.p, w, Ray::Eps() / std::abs(dot(w, p1.Ng)),
                     dist * (1.0 - Ray::ShadowEps()));
   }
   [[nodiscard]] bool visible(const Scene& scene) const;

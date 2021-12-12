@@ -29,6 +29,7 @@ DEALINGS IN THE SOFTWARE.
 #include <utility>
 
 #include "Ajisai/Math/BoolVector.h"
+#include "Ajisai/Math/TypeTraits.h"
 
 namespace Ajisai::Math {
 
@@ -50,6 +51,11 @@ constexpr T repeat(T value, std::size_t) {
   return value;
 }
 }  // namespace Impl
+
+namespace Impl {
+template <class, std::size_t>
+struct MatrixDeterminant;
+}
 
 template <class, std::size_t>
 class Vector;
@@ -90,6 +96,10 @@ class Vector {
                          std::is_same<T, U>::value && size != 1, T>::type>
   constexpr explicit Vector(U value) noexcept
       : Vector(std::make_index_sequence<size>{}, value) {}
+
+  template <class U>
+  constexpr explicit Vector(const Vector<U, size>& other) noexcept
+      : Vector{std::make_index_sequence<size>{}, other} {}
 
   constexpr Vector(const Vector<T, size>&) noexcept = default;
 
@@ -191,6 +201,8 @@ class Vector {
 
   T length() const { return T(std::sqrt(dot())); }
 
+  bool isNormalized() const { return isNormalizedSquared(dot()); }
+
   template <class U = T>
   typename std::enable_if<std::is_floating_point<U>::value, T>::type invLength()
       const {
@@ -214,12 +226,24 @@ class Vector {
   T _data[size];
 
  private:
+  template <class, std::size_t>
+  friend class Matrix;
+  template <class, std::size_t>
+  friend struct Impl::MatrixDeterminant;
+  template <class, std::size_t, std::size_t>
+  friend class RectangularMatrix;
+
   template <class U, std::size_t size_>
   friend U dot(const Vector<U, size_>&, const Vector<U, size_>&);
 
   template <std::size_t... sequence>
   constexpr explicit Vector(std::index_sequence<sequence...>, T value) noexcept
       : _data{Impl::repeat(value, sequence)...} {}
+
+  template <class U, std::size_t... sequence>
+  constexpr explicit Vector(std::index_sequence<sequence...>,
+                            const Vector<U, size>& other) noexcept
+      : _data{T(other[sequence])...} {}
 };
 
 template <class T, std::size_t size>

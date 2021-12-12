@@ -20,44 +20,15 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef AJISAI_MATH_VECTOR2_H_
-#define AJISAI_MATH_VECTOR2_H_
+#ifndef AJISAI_MATH_TYPETRAITS_H_
+#define AJISAI_MATH_TYPETRAITS_H_
 
-#include "Ajisai/Math/Vector.h"
-
-namespace Ajisai::Math {
+#include <type_traits>
 
 template <class T>
-class Vector2 : public Vector<T, 2> {
- public:
-  constexpr static Vector2<T> xScale(T scale) { return {scale, T(1)}; }
-
-  constexpr static Vector2<T> yScale(T scale) { return {T(1), scale}; }
-
-  constexpr Vector2() noexcept : Vector<T, 2>{} {}
-
-  constexpr explicit Vector2(T value) noexcept : Vector<T, 2>(value) {}
-
-  constexpr Vector2(T x, T y) noexcept : Vector<T, 2>(x, y) {}
-
-  constexpr Vector2(const Vector<T, 2>& other) noexcept : Vector<T, 2>(other) {}
-
-  T& x() { return Vector<T, 2>::_data[0]; }
-  constexpr T x() const { return Vector<T, 2>::_data[0]; }
-  T& y() { return Vector<T, 2>::_data[1]; }
-  constexpr T y() const { return Vector<T, 2>::_data[1]; }
-
-  template <class U = T>
-  typename std::enable_if<std::is_floating_point<U>::value, T>::type
-  aspectRatio() const {
-    return x() / y();
-  }
-
-  VECTOR_SUBCLASS_OPERATOR_IMPL(Vector2, 2)
-};
-
-VECTOR_FUNCTION_IMPL(Vector2, 2)
-
-}  // namespace Ajisai::Math
+inline bool isNormalizedSquared(T lengthSquared) {
+  return std::abs(lengthSquared - T(1)) <
+         T(2) * std::numeric_limits<T>::epsilon();
+}
 
 #endif

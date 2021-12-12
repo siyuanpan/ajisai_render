@@ -90,7 +90,7 @@ class BVHAccel final : public Accel {
   }
 
   virtual bool Intersect(const Core::Ray& ray,
-                         Core::Intersection* intersection) const {
+                         Core::Intersection* intersection) const override {
     bool hit = false;
     auto invDir = 1.f / ray.d;
     auto dirIsNeg = invDir < Math::Vector3f(0);
@@ -131,7 +131,7 @@ class BVHAccel final : public Accel {
     return hit;
   }
 
-  virtual bool Occlude(const Core::Ray& ray) const {
+  virtual bool Occlude(const Core::Ray& ray) const override {
     Core::Intersection intersection;
     auto invDir = 1.f / ray.d;
     auto dirIsNeg = invDir < Math::Vector3f(0);

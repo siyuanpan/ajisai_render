@@ -40,6 +40,18 @@ namespace Ajisai::Math {
 template <class T>
 class Vector3 : public Vector<T, 3> {
  public:
+  constexpr static Vector3<T> xAxis(T length = T(1)) {
+    return {length, T(0), T(0)};
+  }
+
+  constexpr static Vector3<T> yAxis(T length = T(1)) {
+    return {T(0), length, T(0)};
+  }
+
+  constexpr static Vector3<T> zAxis(T length = T(1)) {
+    return {T(0), T(0), length};
+  }
+
   constexpr Vector3() noexcept : Vector<T, 3>{} {}
 
   constexpr explicit Vector3(T value) noexcept : Vector<T, 3>(value) {}
@@ -61,6 +73,11 @@ class Vector3 : public Vector<T, 3> {
   constexpr T g() const { return Vector<T, 3>::_data[1]; }
   T& b() { return Vector<T, 3>::_data[2]; }
   constexpr T b() const { return Vector<T, 3>::_data[2]; }
+
+  Vector2<T>& xy() { return Vector2<T>::from(Vector<T, 3>::data()); }
+  constexpr const Vector2<T> xy() const {
+    return {Vector<T, 3>::_data[0], Vector<T, 3>::_data[1]};
+  }
 
   VECTOR_SUBCLASS_OPERATOR_IMPL(Vector3, 3)
 

@@ -56,9 +56,7 @@ class EmbreeAccel final : public Accel {
       rtcSetSharedGeometryBuffer(rtcGeo, RTC_BUFFER_TYPE_INDEX, 0,
                                  RTC_FORMAT_UINT3, mesh->GetIndexBuffer(), 0,
                                  3 * sizeof(uint32_t), mesh->GetTriSize());
-      sizeof(std::size_t);
-      sizeof(unsigned int);
-      sizeof(uint64_t);
+
       rtcCommitGeometry(rtcGeo);
       rtcAttachGeometry(rtcScene, rtcGeo);
       rtcReleaseGeometry(rtcGeo);

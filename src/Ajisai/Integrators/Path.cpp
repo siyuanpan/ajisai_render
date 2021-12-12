@@ -54,7 +54,21 @@ class PathIntegrator : public Integrator {
         (raster.x() + sampler->Next1D()) / camera->GetFilm()->Dimension().x();
     const float v =
         (raster.y() + sampler->Next1D()) / camera->GetFilm()->Dimension().y();
-    auto ray = camera->GenerateRay(u, v);
+    // auto ray1 = camera->GenerateRay(u, v);
+    // printf("old (%f %f %f) (%f %f %f)\n", ray.o[0], ray.o[1], ray.o[2],
+    //        ray.d[0], ray.d[1], ray.d[2]);
+    auto ray =
+        camera->GenerateRay(sampler->Next2D(), sampler->Next2D(), raster);
+    // printf("old (%f %f %f) (%f %f %f) new (%f %f %f) (%f %f %f)\n",
+    // ray1.o[0],
+    //        ray1.o[1], ray1.o[2], ray1.d[0], ray1.d[1], ray1.d[2], ray.o[0],
+    //        ray.o[1], ray.o[2], ray.d[0], ray.d[1], ray.d[2]);
+    // ray.o = ray1.o;
+    // ray.d = ray1.d;
+    // printf("(%f %f %f) %f (%f %f %f) %f\n", ray1.d[0], ray1.d[1], ray1.d[2],
+    //        Math::dot(ray1.d, ray.d), ray.d[0], ray.d[1], ray.d[2],
+    //        ray.d.length());
+
     Math::Spectrum L(0), pathThroughput(1);
     bool specularBounce = true;
     Intersection prevIts;

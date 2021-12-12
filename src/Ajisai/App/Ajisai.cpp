@@ -186,8 +186,8 @@ int main(int argc, char** argv) {
 
   PluginManager::Manager<Integrator> manager;
 
-  auto integrator = manager.load("PathIntegrator");
-  // auto integrator = manager.load("BDPTIntegrator");
+  // auto integrator = manager.load("PathIntegrator");
+  auto integrator = manager.load("BDPTIntegrator");
 
   PluginManager::Manager<Accel> accel_manager;
 

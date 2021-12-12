@@ -65,6 +65,8 @@ class Integrator : public PluginManager::AbstractPlugin {
                       const std::string& plugin)
       : PluginManager::AbstractPlugin{manager, plugin} {}
 
+  virtual ~Integrator() = default;
+
   virtual Math::Spectrum Li(
       /*Core::Ray ray,*/ Core::Scene* scene, Core::Camera* camera,
       const Math::Vector2i& raster, Core::Sampler* sampler) const = 0;

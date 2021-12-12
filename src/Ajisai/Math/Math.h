@@ -25,12 +25,17 @@ DEALINGS IN THE SOFTWARE.
 
 #include <cstddef>
 
+#include "Ajisai/Math/Angle.h"
 #include "Ajisai/Math/BoolVector.h"
 #include "Ajisai/Math/Bounds.hpp"
 #include "Ajisai/Math/Color.h"
 #include "Ajisai/Math/Constants.h"
 #include "Ajisai/Math/Functions.h"
+#include "Ajisai/Math/Matrix.h"
+#include "Ajisai/Math/Matrix4.h"
+#include "Ajisai/Math/RectangularMatrix.h"
 #include "Ajisai/Math/Spectrum.hpp"
+#include "Ajisai/Math/Unit.h"
 #include "Ajisai/Math/Vector2.h"
 #include "Ajisai/Math/Vector3.h"
 #include "Ajisai/Math/Vector4.h"
@@ -73,6 +78,11 @@ typedef RGBSpectrum Spectrum;
 
 typedef Bounds<int, 2> Bounds2i;
 typedef Bounds<float, 3> Bounds3f;
+
+typedef RectangularMatrix<float, 2, 2> RectangularMatrix2x2f;
+typedef RectangularMatrix<float, 3, 3> RectangularMatrix3x3f;
+
+typedef Matrix4<float> Matrix4f;
 
 }  // namespace Ajisai::Math
 

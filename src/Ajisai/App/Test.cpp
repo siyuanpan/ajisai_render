@@ -163,4 +163,68 @@ int main(int argc, char** argv) {
               << "c.max.x " << c.max().x() << "\n"
               << "c.max.y " << c.max().y() << "\n";
   }
+
+  {
+    // RectangularMatrix<float, 2, 3> matrix{Vector3f{1.f, 2.f, 3.f},
+    //                                       Vector3f{4.f, 5.f, 6.f}};
+    RectangularMatrix3x3f matrix{3.4f};
+    RectangularMatrix<double, 4, 3> matrixd{IdentityInit};
+
+    Matrix<float, 3> lookat(Vector3f{0.f, 1.f, 2.f}, Vector3f{}, Vector3f{});
+    // Matrix<float, 3> lookat(5.f);
+    Matrix<float, 4> ll(lookat);
+
+    Vector3f translation{5.3f, -8.9f, -10.0f};
+    Vector3f target{19.0f, 29.3f, 0.0f};
+    Matrix4<float> M4 =
+        Matrix4<float>::lookAt(translation, target, Vector3f::xAxis());
+
+    Matrix4<float> MT = Matrix4<float>::translation(Vector3f{1.0f, 2.f, 7.f});
+    Matrix3x3<float> a(Vector3(std::sqrt(3.f) / 2.0f, 0.5f, 0.0f),
+                       Vector3(-0.5f, std::sqrt(3.f) / 2.0f, 0.0f),
+                       Vector3(0.0f, 0.0f, 1.0f));
+    std::cout << matrix.data()[0] << std::endl;
+    std::cout << matrixd << std::endl;
+    std::cout << matrixd.transposed() << std::endl;
+    std::cout << lookat << std::endl;
+    std::cout << lookat.transposed() << std::endl;
+    std::cout << ll << std::endl;
+    std::cout << M4 << std::endl;
+    std::cout << MT << std::endl;
+    std::cout << MT.transposed() << std::endl;
+    std::cout << a << std::endl;
+    std::cout << a.invertedOrthogonal() * a << std::endl;
+    std::cout << a.inverted() * a << std::endl;
+    Matrix4x4<float> m(
+        Vector4(3.0f, 5.0f, 8.0f, 4.0f), Vector4(4.0f, 4.0f, 7.0f, 3.0f),
+        Vector4(7.0f, -1.0f, 8.0f, 0.0f), Vector4(9.0f, 4.0f, 5.0f, 9.0f));
+    Matrix4x4<float> inverse(
+        Vector4(-60 / 103.0f, 71 / 103.0f, -4 / 103.0f, 3 / 103.0f),
+        Vector4(-66 / 103.0f, 109 / 103.0f, -25 / 103.0f, -7 / 103.0f),
+        Vector4(177 / 412.0f, -97 / 206.0f, 53 / 412.0f, -7 / 206.0f),
+        Vector4(259 / 412.0f, -185 / 206.0f, 31 / 412.0f, 27 / 206.0f));
+    std::cout << m * inverse << std::endl;
+    std::cout << m.inverted() * m << std::endl;
+
+    std::cout << M4 << std::endl;
+    std::cout << M4.inverted() * M4 << std::endl;
+    std::cout << M4.invertedRigid() * M4 << std::endl;
+  }
+
+  {
+    Matrix4f expected({4.0f, 0.0f, 0.0f, 0.0f}, {0.0f, 7.111111f, 0.0f, 0.0f},
+                      {0.0f, 0.0f, -1.9411764f, -1.0f},
+                      {0.0f, 0.0f, -94.1176452f, 0.0f});
+    Matrix4f actual = Matrix4f::perspectiveProjection(
+        {-9.0f, 5.0f}, {7.0f, -4.0f}, 32.0f, 100.0f);
+    std::cout << expected << std::endl;
+    std::cout << actual << std::endl;
+    std::cout << actual.transformPoint({7.0f, 4.0f, -32.0f}) << std::endl;
+    std::cout << actual.transformPoint({0.0f, 0.0f, -100.0f}) << std::endl;
+    std::cout << Matrix4f::perspectiveProjection(
+                     {-8.0f, 4.5f}, {8.0f, -4.5f}, 32.0f,
+                     std::numeric_limits<float>::infinity())
+              << std::endl;
+    // Rad<float> rad;
+  }
 }

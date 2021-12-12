@@ -32,25 +32,21 @@ DEALINGS IN THE SOFTWARE.
 
 namespace Ajisai::Core {
 
-// struct Intersection {
-//   float t = std::numeric_limits<float>::infinity();
-//   int meshId = -1;
-//   int triId = -1;
-//   Math::Vector3f Ng;
-//   Math::Vector2f uv;
-//   Math::Vector3f p;
-// };
-
 class Camera {
  public:
   explicit Camera(const Math::Vector3f& ori, const Math::Vector3f& tar,
                   float focus_distance, const Math::Vector3f& upDir, float fov,
                   /*float aspectRatio*/ const Math::Vector2f& res,
-                  float lensRadius = 0.f)
+                  float lensRadius = 0.f, float near = 1.0f, float far = 1000.f)
       : origin{ori},
         resolution(res),
         lensRadius{lensRadius},
         focus_distance{focus_distance} {
+    world2camera = Math::Matrix4f::lookAt(ori, tar, upDir);
+    camera2world = world2camera.invertedRigid();
+
+    init(fov, near, far);
+
     film = std::make_shared<Film>(Math::Vector2i{int(res.x()), int(res.y())});
 
     look = (ori - tar).normalized();
@@ -63,7 +59,10 @@ class Camera {
         origin - halfW * right - halfH * up - focus_distance * look;
     horitonal = 2.f * halfW * right;
     vertical = 2.f * halfH * up;
+    imagePlaneDist = resolution.y() / (2.f * std::tan(fov * 0.5f));
   }
+
+  void init(float fov, float near, float far);
 
   Ray GenerateRay(float s, float t) const {
     PCG32 rnd(s * t);
@@ -74,9 +73,15 @@ class Camera {
                                     offset - origin};
   }
 
+  Ray GenerateRay(const Math::Vector2f& u1, const Math::Vector2f& u2,
+                  const Math::Vector2i& raster) const;
+
   std::shared_ptr<Film> GetFilm() const { return film; }
 
-  float A() const { return horitonal.length() * vertical.length(); }
+  float A() const {
+    //  return horitonal.length() * vertical.length();
+    return 0.5f * Math::cross(horitonal, vertical).length();
+  }
 
   void Pdf_We(const Ray& ray, float* pdfPos, float* pdfDir) const {
     float cosTheta = Math::dot(-look, ray.d);
@@ -120,6 +125,10 @@ class Camera {
     return Math::Spectrum(1 / (A() * lensArea * std::pow(cosTheta, 4)));
   }
 
+  Math::Vector3f GetDir() const { return -look; }
+
+  float GetImagePlaneDist() const { return imagePlaneDist; }
+
   void Sample_Wi(const Math::Vector2f& u, const Intersect& ref,
                  CameraSamplingRecord* sample, VisibilityTester* tester) const {
     Math::Vector2f pLens = lensRadius * squareToUniformDiskConcentric(u);
@@ -128,6 +137,8 @@ class Camera {
     sample->normal = -look;
     sample->wi = pLensWorld - ref.p;
     float dist = sample->wi.length();
+    // printf("wi (%f %f %f) dist %f\n", sample->wi[0], sample->wi[1],
+    //        sample->wi[2], dist);
     sample->wi /= dist;
     float lensArea = lensRadius == 0 ? 1.0f
                                      : lensRadius * lensRadius *
@@ -135,8 +146,71 @@ class Camera {
     tester->shadowRay = Ray(pLensWorld, -sample->wi, Ray::Eps(),
                             dist * (1.0 - Ray::ShadowEps()));
     sample->pdf =
-        (dist * dist) / (lensArea * abs(dot(sample->normal, sample->wi)));
+        (dist * dist) / (lensArea * std::abs(dot(sample->normal, sample->wi)));
+    // printf("sample->normal (%f %f %f) dist %f\n", sample->normal[0],
+    //        sample->normal[1], sample->normal[2],
+    //        std::abs(dot(sample->normal, sample->wi)));
+    // printf("%f %f\n", sample->pdf, lensArea);
     sample->I = We(tester->shadowRay, &sample->pos);
+  }
+
+  bool ToRaster(const Math::Vector2f& u, const Intersect& ref,
+                Math::Vector3f& dirToCamera, Math::Vector2f& pRaster) const {
+    // Math::Vector2f pLens = lensRadius * squareToUniformDiskConcentric(u);
+    // Math::Vector3f pLensWorld = origin + pLens.x() * right + pLens.y() * up;
+
+    // dirToCamera = pLensWorld - ref.p;
+    // dirToCamera = dirToCamera.normalized();
+
+    // float cosTheta = Math::dot(look, dirToCamera.normalized());
+    // Math::Vector3f pFocus =
+    //     pLensWorld -
+    //     dirToCamera * ((lensRadius == 0 ? 1 : focus_distance) / cosTheta);
+
+    // printf("%f pFocus (%f %f %f)\n", cosTheta, pFocus[0], pFocus[1],
+    // pFocus[2]);
+
+    // if (cosTheta <= 0) {
+    //   return false;
+    // }
+
+    // Math::Vector3f raster = pFocus - lowerLeftCorner;
+    // printf("raster %f %f %f\n", raster[0], raster[1], raster[2]);
+
+    // raster = Math::Vector3f{Math::dot(raster, right) / horitonal.length(),
+    //                         Math::dot(raster, up) / vertical.length(), 1.f};
+
+    // Math::Vector2f raster{Math::dot(-dirToCamera, right),
+    //                       Math::dot(-dirToCamera, up)};
+    // raster = (raster + Math::Vector2f{1.f}) / 2.f;
+
+    // auto bounds = film->Dimension();
+    // raster = Math::Vector3f{float(bounds[0]), float(bounds[1]), 1.f} *
+    // raster;
+
+    // if (raster.x() < 0.f || raster.x() > bounds.x() || raster.y() < 0.f ||
+    //     raster.y() > bounds.y())
+    //   return false;
+
+    // printf("bounds (%d %d) raster (%f %f) \n", bounds[0], bounds[1],
+    // raster[0],
+    //        raster[1]);
+
+    // pRaster = raster;
+    // pRaster = {raster.x(), raster.y()};
+    auto raster = world2Raster.transformPoint(ref.p);
+    if (raster.x() < resolution.x() && raster.x() >= 0.f &&
+        raster.y() < resolution.y() && raster.y() >= 0.f) {
+      pRaster = raster.xy();
+
+      return true;
+    }
+
+    return false;
+  }
+
+  int GetPixelCount() const {
+    return film->Dimension().x() * film->Dimension().y();
   }
 
  private:
@@ -147,8 +221,20 @@ class Camera {
   Math::Vector2f resolution;
   float lensRadius;
   float focus_distance;
+  float imagePlaneDist;
 
   std::shared_ptr<Film> film;
+
+  Math::Matrix4f world2camera;
+  Math::Matrix4f camera2world;
+  Math::Matrix4f camera2screen;
+  // Math::Matrix4f screen2camera;
+  Math::Matrix4f screen2raster;
+  // Math::Matrix4f raster2screen;
+  Math::Matrix4f raster2camera;
+  Math::Matrix4f camera2raster;
+  Math::Matrix4f raster2world;
+  Math::Matrix4f world2Raster;
 };
 }  // namespace Ajisai::Core
 
