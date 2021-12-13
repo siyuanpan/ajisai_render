@@ -209,7 +209,7 @@ int main(int argc, char** argv) {
   job.ctx.scene = scene;
   job.ctx.sampler = std::make_shared<Sampler>();
   job.ctx.integrator = std::move(integrator);
-  job.spp = 100;
+  job.spp = 4;
 
   load_scene_file(job, inputFile);
 

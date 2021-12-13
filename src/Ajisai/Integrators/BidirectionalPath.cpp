@@ -647,13 +647,14 @@ class BDPTIntegrator : public Integrator {
     //     lightRay.d[1], lightRay.d[2], nLight.x(), nLight.y(), nLight.z(),
     //     posPdf, dirPdf, ret.throughput[0], ret.throughput[1],
     //     ret.throughput[2]);
-    if (dirPdf == 0.0f) return ret;
+    if ((posPdf * dirPdf) == 0.0f) return ret;
 
     // dirPdf *= lightPdf;
     // posPdf *= lightPdf;
     // printf("dirPdf %f, posPdf %f, lightPdf %f emitPdf %f\n", dirPdf, posPdf,
     //        lightPdf, dirPdf * posPdf * lightPdf);
-    ret.throughput /= (dirPdf * posPdf * lightPdf);
+    float emitPdf = dirPdf * posPdf * lightPdf;
+    ret.throughput /= emitPdf;
     ret.isFiniteLight = sampleLight->isFinite();
     ret.SpecularPath = true;
     ret.PathLength = 1;
@@ -661,12 +662,14 @@ class BDPTIntegrator : public Integrator {
     ret.origin = lightRay.o;
 
     float emitCos = dot(nLight, lightRay.d);
-    ret.DVCM = MIS<pow>(1.f / dirPdf);
+    ret.DVCM = MIS<pow>((posPdf * lightPdf) / emitPdf);
     ret.DVC = sampleLight->isDelta()
                   ? 0.f
                   : (sampleLight->isFinite()
                          ? MIS<pow>(emitCos / (dirPdf * posPdf * lightPdf))
                          : MIS<pow>(1.f / (dirPdf * posPdf * lightPdf)));
+    // printf("dirPdf %f, posPdf %f, lightPdf %f emitPdf %f\n", dirPdf, posPdf,
+    //        lightPdf, emitPdf);
     // printf("E (%f %f %f), emitCos %f, DVCM %f DVC %f\n", ret.throughput[0],
     //        ret.throughput[1], ret.throughput[2], emitCos, ret.DVCM, ret.DVC);
 
@@ -684,10 +687,20 @@ class BDPTIntegrator : public Integrator {
     float distToCamera = dirToCamera.length();
     dirToCamera = dirToCamera.normalized();
 
+    // printf("(%f %f %f) (%f %f)\n", lightVertex.throughput[0],
+    //        lightVertex.throughput[1], lightVertex.throughput[2], pRaster[0],
+    //        pRaster[1]);
+
     Spectrum f = si.bsdf->Evaluate(dirToCamera, lightVertex.inDir) *
                  std::abs(dot(lightVertex.inDir, si.Ns)) /
                  std::abs(dot(lightVertex.inDir, si.Ng));
-
+    // printf("(%f %f %f) (%f %f %f) %f %f (%f %f %f)\n", dirToCamera[0],
+    //        dirToCamera[1], dirToCamera[2],
+    //        si.bsdf->Evaluate(dirToCamera, lightVertex.inDir)[0],
+    //        si.bsdf->Evaluate(dirToCamera, lightVertex.inDir)[1],
+    //        si.bsdf->Evaluate(dirToCamera, lightVertex.inDir)[2],
+    //        std::abs(dot(lightVertex.inDir, si.Ns)),
+    //        std::abs(dot(lightVertex.inDir, si.Ng)), f[0], f[1], f[2]);
     if (f.isBlack()) return {};
     // printf("(%f %f %f)\n", f[0], f[1], f[2]);
     float pdf = si.bsdf->EvaluatePdf(si.bsdf->toLocal(lightVertex.inDir),
@@ -708,13 +721,20 @@ class BDPTIntegrator : public Integrator {
     float cameraPdfA =
         cRec.pdf * std::abs(cosToCam) / (distToCamera * distToCamera);
     // printf("%d\n", camera->GetPixelCount());
-    float WLight = MIS<pow>(cameraPdfA / (float)camera->GetPixelCount()) *
-                   (lightVertex.DVCM + lightVertex.DVC * MIS<pow>(revPdf));
+    float WLight =
+        MIS<pow>(cameraPdfA / camera->A()  //(float)camera->GetPixelCount()
+                 ) *
+        (lightVertex.DVCM + lightVertex.DVC * MIS<pow>(revPdf));
     float MISWeight = 1.f / (WLight + 1.f);
     // printf("%f\n", MISWeight);
-    Spectrum contrib = MISWeight * lightVertex.throughput * f * cameraPdfA /
-                       (float)camera->GetPixelCount();
+    Spectrum contrib =
+        MISWeight * lightVertex.throughput * f * cameraPdfA / camera->A();
+    //  (float)camera->GetPixelCount();
     // printf("%f %f %f\n", contrib[0], contrib[1], contrib[2]);
+    // printf("(%f %f %f) MISWeight %f f (%f %f %f) cameraPdfA %f A %f\n",
+    //        lightVertex.throughput[0], lightVertex.throughput[1],
+    //        lightVertex.throughput[2], MISWeight, f[0], f[1], f[2],
+    //        cameraPdfA, camera->A());
 
     Ray rayToCam =
         Ray(si.p, dirToCamera, Ray::Eps(), distToCamera * (1.f - Ray::Eps()));
@@ -747,6 +767,8 @@ class BDPTIntegrator : public Integrator {
     *vertexCount = 0;
     while (true) {
       Ray pathRay(lightPathState.origin, lightPathState.direction);
+      // printf("(%f %f %f) (%f %f %f)\n", pathRay.o[0], pathRay.o[1],
+      //        pathRay.o[2], pathRay.d[0], pathRay.d[1], pathRay.d[2]);
       Intersection isect;
       if (!scene->Intersect(pathRay, &isect)) {
         return lightPathState.PathLength;
@@ -759,9 +781,10 @@ class BDPTIntegrator : public Integrator {
       }
 
       float cosIn = std::abs(dot(isect.Ng, -pathRay.d));
-      lightPathState.DVCM /= MIS<2>(cosIn);
-      lightPathState.DVC /= MIS<2>(cosIn);
-      // printf("%f %f\n", lightPathState.DVCM, lightPathState.DVC);
+      lightPathState.DVCM /= MIS<pow>(cosIn);
+      lightPathState.DVC /= MIS<pow>(cosIn);
+      // printf("cosIn %f DVCM %f DVC %f\n", cosIn, lightPathState.DVCM,
+      //        lightPathState.DVC);
 
       Triangle triangle{};
       isect.mesh->GetTriangle(isect.triId, &triangle);
@@ -771,7 +794,7 @@ class BDPTIntegrator : public Integrator {
 
       BSDFSamplingRecord bRec(si, sampler->Next2D());
       si.bsdf->Sample(bRec);
-      if (bRec.pdf <= 0.f) break;
+      // if (bRec.pdf <= 0.f) break;
 
       auto specular = bRec.type & BSDFType::BSDF_SPECULAR;
       if (!specular) {
@@ -782,6 +805,9 @@ class BDPTIntegrator : public Integrator {
         lightVertex.inDir = -lightPathState.direction;
         lightVertex.DVCM = lightPathState.DVCM;
         lightVertex.DVC = lightPathState.DVC;
+
+        // printf("(%f %f %f) \n", lightVertex.throughput[0],
+        //        lightVertex.throughput[1], lightVertex.throughput[2]);
 
         // connect to camera
         Vector2f ptRaster;
@@ -865,7 +891,8 @@ class BDPTIntegrator : public Integrator {
     initPathState.SpecularPath = true;
 
     initPathState.DVC = 0.f;
-    initPathState.DVCM = MIS<pow>(camera->GetPixelCount() / cRec.pdf);
+    initPathState.DVCM = MIS<pow>(  // camera->GetPixelCount()
+        camera->A() / cRec.pdf);
     // printf("%d %f %f\n", camera->GetPixelCount(), cRec.pdf,
     // initPathState.DVCM);
   }
@@ -1137,6 +1164,8 @@ class BDPTIntegrator : public Integrator {
 
     free((void*)lightVertices);
 
+    // Li = Spectrum(0.f);
+
     // PathVertex* cameraVertices = new PathVertex[maxDepth + 2];
     // PathVertex* lightVertices = new PathVertex[maxDepth + 1];
 
@@ -1171,15 +1200,15 @@ class BDPTIntegrator : public Integrator {
 
     // delete[] lightVertices;
     // delete[] cameraVertices;
-    return L * 50.f;
+    return L;
   }
 
  private:
   // int rrDepth = 5, maxDepth = 16;
-  int rrDepth = 5, maxDepth = 8;
+  int rrDepth = 5, maxDepth = 5;
 
   // heuristic
-  static constexpr int pow = 1;
+  static constexpr int pow = 2;
 };
 
 }  // namespace Ajisai::Integrators
