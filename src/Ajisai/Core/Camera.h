@@ -32,15 +32,6 @@ DEALINGS IN THE SOFTWARE.
 
 namespace Ajisai::Core {
 
-// struct Intersection {
-//   float t = std::numeric_limits<float>::infinity();
-//   int meshId = -1;
-//   int triId = -1;
-//   Math::Vector3f Ng;
-//   Math::Vector2f uv;
-//   Math::Vector3f p;
-// };
-
 class Camera {
  public:
   explicit Camera(const Math::Vector3f& ori, const Math::Vector3f& tar,
@@ -63,6 +54,7 @@ class Camera {
         origin - halfW * right - halfH * up - focus_distance * look;
     horitonal = 2.f * halfW * right;
     vertical = 2.f * halfH * up;
+    imagePlaneDist = resolution.y() / (2.f * std::tan(fov * 0.5f));
   }
 
   Ray GenerateRay(float s, float t) const {
@@ -76,7 +68,10 @@ class Camera {
 
   std::shared_ptr<Film> GetFilm() const { return film; }
 
-  float A() const { return horitonal.length() * vertical.length(); }
+  float A() const {
+    //  return horitonal.length() * vertical.length();
+    return 0.5f * Math::cross(horitonal, vertical).length();
+  }
 
   void Pdf_We(const Ray& ray, float* pdfPos, float* pdfDir) const {
     float cosTheta = Math::dot(-look, ray.d);
@@ -122,7 +117,7 @@ class Camera {
 
   Math::Vector3f GetDir() const { return -look; }
 
-  float GetFocusDistance() const { return focus_distance; }
+  float GetImagePlaneDist() const { return imagePlaneDist; }
 
   void Sample_Wi(const Math::Vector2f& u, const Intersect& ref,
                  CameraSamplingRecord* sample, VisibilityTester* tester) const {
@@ -169,12 +164,18 @@ class Camera {
       return false;
     }
 
-    Math::Vector2f raster{Math::dot(-dirToCamera, right),
-                          Math::dot(-dirToCamera, up)};
-    raster = (raster + Math::Vector2f{1.f}) / 2.f;
+    Math::Vector3f raster = pFocus - lowerLeftCorner;
+    // printf("raster %f %f %f\n", raster[0], raster[1], raster[2]);
+
+    raster = Math::Vector3f{Math::dot(raster, right) / horitonal.length(),
+                            Math::dot(raster, up) / vertical.length(), 1.f};
+
+    // Math::Vector2f raster{Math::dot(-dirToCamera, right),
+    //                       Math::dot(-dirToCamera, up)};
+    // raster = (raster + Math::Vector2f{1.f}) / 2.f;
 
     auto bounds = film->Dimension();
-    raster = Math::Vector2f{float(bounds[0]), float(bounds[1])} * raster;
+    raster = Math::Vector3f{float(bounds[0]), float(bounds[1]), 1.f} * raster;
 
     if (raster.x() < 0.f || raster.x() > bounds.x() || raster.y() < 0.f ||
         raster.y() > bounds.y())
@@ -184,7 +185,8 @@ class Camera {
     // raster[0],
     //        raster[1]);
 
-    pRaster = raster;
+    // pRaster = raster;
+    pRaster = {raster.x(), raster.y()};
 
     return true;
   }
@@ -201,6 +203,7 @@ class Camera {
   Math::Vector2f resolution;
   float lensRadius;
   float focus_distance;
+  float imagePlaneDist;
 
   std::shared_ptr<Film> film;
 };

@@ -658,7 +658,7 @@ class BDPTIntegrator : public Integrator {
     ret.isFiniteLight = sampleLight->isFinite();
     ret.SpecularPath = true;
     ret.PathLength = 1;
-    ret.direction = lightRay.d;
+    ret.direction = lightRay.d.normalized();
     ret.origin = lightRay.o;
 
     float emitCos = dot(nLight, lightRay.d);
@@ -722,13 +722,14 @@ class BDPTIntegrator : public Integrator {
         cRec.pdf * std::abs(cosToCam) / (distToCamera * distToCamera);
     // printf("%d\n", camera->GetPixelCount());
     float WLight =
-        MIS<pow>(cameraPdfA / camera->A()  //(float)camera->GetPixelCount()
+        MIS<pow>(cameraPdfA /
+                 camera->GetPixelCount()  //(float)camera->GetPixelCount()
                  ) *
         (lightVertex.DVCM + lightVertex.DVC * MIS<pow>(revPdf));
     float MISWeight = 1.f / (WLight + 1.f);
     // printf("%f\n", MISWeight);
-    Spectrum contrib =
-        MISWeight * lightVertex.throughput * f * cameraPdfA / camera->A();
+    Spectrum contrib = MISWeight * lightVertex.throughput * f * cameraPdfA /
+                       camera->GetPixelCount();
     //  (float)camera->GetPixelCount();
     // printf("%f %f %f\n", contrib[0], contrib[1], contrib[2]);
     // printf("(%f %f %f) MISWeight %f f (%f %f %f) cameraPdfA %f A %f\n",
@@ -777,6 +778,8 @@ class BDPTIntegrator : public Integrator {
       if (lightPathState.PathLength > 1 || lightPathState.isFiniteLight) {
         // printf("1 %f %f\n", lightPathState.DVCM, isect.t);
         lightPathState.DVCM *= MIS<pow>(isect.t * isect.t);
+        // printf("(%f) (%f)\n", (pathRay.Point(isect.t) - pathRay.o).length(),
+        //        isect.t);
         // printf("2 %f\n", lightPathState.DVCM);
       }
 
@@ -843,7 +846,7 @@ class BDPTIntegrator : public Integrator {
       }
 
       lightPathState.origin = si.p;
-      lightPathState.direction = bRec.wi;
+      lightPathState.direction = si.bsdf->toWorld(bRec.wi);
 
       float cosOut = std::abs(dot(si.Ns, si.bsdf->toWorld(bRec.wi)));
       if (!specular) {
@@ -874,25 +877,36 @@ class BDPTIntegrator : public Integrator {
 
   void SampleCamera(Camera* camera, Ray& ray, Sampler* sampler,
                     PathState& initPathState) const {
-    CameraSamplingRecord cRec;
-    VisibilityTester tester;
-    SurfaceInteraction si;
-    si.p = ray.Point(camera->GetFocusDistance());
-    camera->Sample_Wi(sampler->Next2D(), si, &cRec, &tester);
-    (void)tester;
+    // CameraSamplingRecord cRec;
+    // VisibilityTester tester;
+    // SurfaceInteraction si;
+    // ray.d = ray.d.normalized();
+    // si.p = ray.Point(camera->GetFocusDistance());
+    // camera->Sample_Wi(sampler->Next2D(), si, &cRec, &tester);
+    // (void)tester;
     // float cosAtCam = Math::Dot(pCamera->mDir, primRay.mDir);
     // float rasterToCamDist = pCamera->GetImagePlaneDistance() / cosAtCam;
     // float cameraPdfW = rasterToCamDist * rasterToCamDist / cosAtCam;
+    float virtualImagePlaneDistance = camera->GetImagePlaneDist();
+    float cosThetaCamera = dot(camera->GetDir(), ray.d.normalized());
+    float imagePointToCameraDistance =
+        virtualImagePlaneDistance / cosThetaCamera;
+    float invSolidAngleMeasure = imagePointToCameraDistance *
+                                 imagePointToCameraDistance / cosThetaCamera;
+    float revCameraPdfW = (1.0f / invSolidAngleMeasure);
+    // printf("%f %f %f %f %f\n", virtualImagePlaneDistance, cosThetaCamera,
+    //        imagePointToCameraDistance, invSolidAngleMeasure, revCameraPdfW);
 
     initPathState.origin = ray.o;
-    initPathState.direction = ray.d;
+    initPathState.direction = ray.d.normalized();
     initPathState.throughput = Spectrum{1.f};
     initPathState.PathLength = 1;
     initPathState.SpecularPath = true;
 
     initPathState.DVC = 0.f;
-    initPathState.DVCM = MIS<pow>(  // camera->GetPixelCount()
-        camera->A() / cRec.pdf);
+    initPathState.DVCM = MIS<pow>(revCameraPdfW * camera->GetPixelCount());
+    // initPathState.DVCM = MIS<pow>(  // camera->GetPixelCount()
+    //     camera->A() / cRec.pdf);
     // printf("%d %f %f\n", camera->GetPixelCount(), cRec.pdf,
     // initPathState.DVCM);
   }
@@ -1142,7 +1156,7 @@ class BDPTIntegrator : public Integrator {
       }
 
       cameraPathState.origin = si.p;
-      cameraPathState.direction = bRec.wi;
+      cameraPathState.direction = si.bsdf->toWorld(bRec.wi);
 
       float cosOut = std::abs(dot(si.Ns, si.bsdf->toWorld(bRec.wi)));
       if (!specular) {
@@ -1205,10 +1219,10 @@ class BDPTIntegrator : public Integrator {
 
  private:
   // int rrDepth = 5, maxDepth = 16;
-  int rrDepth = 5, maxDepth = 5;
+  int rrDepth = 5, maxDepth = 16;
 
   // heuristic
-  static constexpr int pow = 2;
+  static constexpr int pow = 1;
 };
 
 }  // namespace Ajisai::Integrators
