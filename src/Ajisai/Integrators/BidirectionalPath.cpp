@@ -846,6 +846,187 @@ class BDPTIntegrator : public Integrator {
 
   // bool SampleScattering() const {}
 
+  void SampleCamera(Camera* camera, Ray& ray, Sampler* sampler,
+                    PathState& initPathState) const {
+    CameraSamplingRecord cRec;
+    VisibilityTester tester;
+    SurfaceInteraction si;
+    si.p = ray.Point(camera->GetFocusDistance());
+    camera->Sample_Wi(sampler->Next2D(), si, &cRec, &tester);
+    (void)tester;
+    // float cosAtCam = Math::Dot(pCamera->mDir, primRay.mDir);
+    // float rasterToCamDist = pCamera->GetImagePlaneDistance() / cosAtCam;
+    // float cameraPdfW = rasterToCamDist * rasterToCamDist / cosAtCam;
+
+    initPathState.origin = ray.o;
+    initPathState.direction = ray.d;
+    initPathState.throughput = Spectrum{1.f};
+    initPathState.PathLength = 1;
+    initPathState.SpecularPath = true;
+
+    initPathState.DVC = 0.f;
+    initPathState.DVCM = MIS<pow>(camera->GetPixelCount() / cRec.pdf);
+    // printf("%d %f %f\n", camera->GetPixelCount(), cRec.pdf,
+    // initPathState.DVCM);
+  }
+
+  Spectrum HittingLightSource(Scene* scene, Ray& ray, Intersection& isect,
+                              AreaLight* light,
+                              PathState& cameraPathState) const {
+    float pickPdf = scene->PdfLight(light);
+    float emitPdfW, directPdfA;
+    Spectrum emittedRadiance =
+        light->Emit(-ray.d, isect.Ng, &emitPdfW, &directPdfA);
+    // printf("(%f %f %f) %f %f\n", emittedRadiance[0], emittedRadiance[1],
+    //        emittedRadiance[2], emitPdfW, directPdfA);
+    if (emittedRadiance.isBlack()) return {};
+
+    // printf("%d\n", cameraPathState.PathLength);
+
+    if (cameraPathState.PathLength == 2) {
+      return emittedRadiance;
+    }
+
+    directPdfA *= pickPdf;
+    emitPdfW *= pickPdf;
+    float WCamera = MIS<pow>(directPdfA) * cameraPathState.DVCM +
+                    MIS<pow>(emitPdfW) * cameraPathState.DVC;
+    float MISWeight = 1.0f / (1.0f + WCamera);
+    // printf("%f %f %f %f %f\n", directPdfA, emitPdfW, cameraPathState.DVCM,
+    //        cameraPathState.DVC, WCamera);
+
+    return MISWeight * emittedRadiance;
+  }
+
+  Spectrum ConnectToLight(const Scene* scene, Ray& pathRay,
+                          const SurfaceInteraction& si, Sampler* sampler,
+                          PathState& cameraPathState) const {
+    // Sample light source and get radiance
+    float lightPdf = 0.f;
+    auto sampleLight = scene->SampleOneLight(sampler->Next1D(), &lightPdf);
+
+    const Vector3f& pos = si.p;
+    Vector3f vIn;
+    VisibilityTester visibility;
+    float lightPdfW;
+    float cosAtLight;
+    float emitPdfW;
+    Spectrum radiance =
+        sampleLight->Illuminate(si, sampler->Next2D(), vIn, visibility,
+                                &lightPdfW, &cosAtLight, &emitPdfW);
+    // printf("(%f %f %f) %f %f %f\n", radiance[0], radiance[1], radiance[2],
+    //        lightPdfW, cosAtLight, emitPdfW);
+
+    if (radiance.isBlack() || lightPdfW == 0.0f) {
+      return {};
+    }
+
+    Vector3f vOut = -pathRay.d;
+    Spectrum bsdfFac = si.bsdf->Evaluate(vOut, vIn);
+    if (bsdfFac.isBlack()) {
+      return {};
+    }
+
+    float bsdfPdfW = si.bsdf->EvaluatePdf(vOut, vIn);
+    if (bsdfPdfW == 0.f) return {};
+    if (sampleLight->isDelta()) bsdfPdfW = 0.f;
+
+    float bsdfRevPdfW = si.bsdf->EvaluatePdf(vIn, vOut);
+
+    float WLight = MIS<pow>(bsdfPdfW / (lightPdfW * lightPdf));
+
+    // printf("%f\n", WLight);
+
+    float cosToLight = std::abs(Math::dot(si.Ns, vIn));
+    float WCamera =
+        MIS<pow>(emitPdfW * cosToLight / (lightPdfW * cosAtLight)) *
+        (cameraPathState.DVCM + cameraPathState.DVC * MIS<pow>(bsdfRevPdfW));
+
+    // printf("%f\n", WCamera);
+
+    float fMISWeight = 1.0f / (WLight + 1.0f + WCamera);
+    Spectrum contribution =
+        (fMISWeight * cosToLight / (lightPdfW * lightPdf)) * bsdfFac * radiance;
+
+    if (contribution.isBlack() || !visibility.visible(*scene)) {
+      return {};
+    }
+
+    // printf("%f %f %f\n", contribution[0], contribution[1], contribution[2]);
+
+    return contribution;
+  }
+
+  Spectrum ConnectVertex(Scene* scene, SurfaceInteraction& si,
+                         const Vertex& lightVertex,
+                         PathState& cameraState) const {
+    const Vector3f& cameraPos = si.p;
+
+    auto dirToLight = lightVertex.si.p - cameraPos;
+    float distToLightSqr = dot(dirToLight, dirToLight);
+    float distToLight = dirToLight.length();
+
+    auto vOutCam = -cameraState.direction;
+    Spectrum cameraBsdfFac = si.bsdf->Evaluate(vOutCam, dirToLight);
+    float cosAtCam = dot(si.Ns, dirToLight);
+    auto cameraDirPdfW = si.bsdf->EvaluatePdf(vOutCam, dirToLight);
+    float cameraReversePdfW = si.bsdf->EvaluatePdf(dirToLight, vOutCam);
+
+    if (cameraBsdfFac.isBlack() || cameraDirPdfW == 0.0f ||
+        cameraReversePdfW == 0.0f)
+      return {};
+
+    Vector3f dirToCamera = -dirToLight;
+    Spectrum lightBsdfFac =
+        lightVertex.si.bsdf->Evaluate(lightVertex.inDir, dirToCamera);
+    float cosAtLight = Math::dot(lightVertex.si.Ns, dirToCamera);
+    float lightDirPdfW =
+        lightVertex.si.bsdf->EvaluatePdf(lightVertex.inDir, dirToCamera);
+    float lightRevPdfW =
+        lightVertex.si.bsdf->EvaluatePdf(dirToCamera, lightVertex.inDir);
+
+    if (lightBsdfFac.isBlack() || lightDirPdfW == 0.0f || lightRevPdfW == 0.0f)
+      return {};
+
+    // printf("%f %f %f %f\n", cameraDirPdfW, cameraReversePdfW, lightDirPdfW,
+    //        lightRevPdfW);
+
+    float geometryTerm = cosAtLight * cosAtCam / distToLightSqr;
+    if (geometryTerm < 0.0f) {
+      return {};
+    }
+
+    // printf("%f\n", geometryTerm);
+
+    float cameraDirPdfA =
+        cameraDirPdfW * std::abs(cosAtLight) / (distToLight * distToLight);
+    float lightDirPdfA =
+        lightDirPdfW * std::abs(cosAtCam) / (distToLight * distToLight);
+    float WLight =
+        MIS<pow>(cameraDirPdfA) *
+        (lightVertex.DVCM + lightVertex.DVC * MIS<pow>(lightRevPdfW));
+    float WCamera =
+        MIS<pow>(lightDirPdfA) *
+        (cameraState.DVCM + cameraState.DVC * MIS<pow>(cameraReversePdfW));
+
+    float fMISWeight = 1.0f / (WLight + 1.0f + WCamera);
+    // printf("%f %f %f\n", fMISWeight, WLight, WCamera);
+
+    Spectrum contribution =
+        (fMISWeight * geometryTerm) * lightBsdfFac * cameraBsdfFac;
+
+    Ray rayToLight = Ray(cameraPos, dirToLight, Ray::Eps(),
+                         distToLight * (1.f - Ray::Eps()));
+    if (contribution.isBlack() || scene->Occlude(rayToLight)) {
+      // printf("%f %f %f\n", contribution[0], contribution[1],
+      // contribution[2]);
+      return {};
+    }
+
+    // printf("%f %f %f\n", contribution[0], contribution[1], contribution[2]);
+    return contribution;
+  }
+
   virtual Math::Spectrum Li(Core::Scene* scene, Core::Camera* camera,
                             const Math::Vector2i& raster,
                             Core::Sampler* sampler) const override {
@@ -853,6 +1034,108 @@ class BDPTIntegrator : public Integrator {
     int numLightVertex;
     int lightPathLen = GenerateLightPath(
         scene, sampler, maxDepth + 1, lightVertices, camera, &numLightVertex);
+
+    const float u =
+        (raster.x() + sampler->Next1D()) / camera->GetFilm()->Dimension().x();
+    const float v =
+        (raster.y() + sampler->Next1D()) / camera->GetFilm()->Dimension().y();
+    auto ray = camera->GenerateRay(u, v);
+    PathState cameraPathState;
+    SampleCamera(camera, ray, sampler, cameraPathState);
+
+    Math::Spectrum L(0.f);
+    while (true) {
+      Ray pathRay(cameraPathState.origin, cameraPathState.direction);
+      Intersection isect;
+      if (!scene->Intersect(pathRay, &isect)) {
+        break;
+      }
+
+      float cosIn = std::abs(dot(isect.Ng, -pathRay.d));
+      cameraPathState.DVCM *= MIS<pow>(isect.t * isect.t);
+      cameraPathState.DVCM /= MIS<pow>(cosIn);
+      cameraPathState.DVC /= MIS<pow>(cosIn);
+      // printf("%f %f\n", cameraPathState.DVCM, cameraPathState.DVC);
+
+      if (isect.mesh->IsEmitter()) {
+        cameraPathState.PathLength++;
+
+        L += cameraPathState.throughput *
+             HittingLightSource(scene, pathRay, isect,
+                                isect.mesh->GetLight(isect.triId).get(),
+                                cameraPathState);
+
+        break;
+      }
+
+      if (++cameraPathState.PathLength >= maxDepth + 2) {
+        break;
+      }
+
+      Triangle triangle{};
+      isect.mesh->GetTriangle(isect.triId, &triangle);
+      auto p = pathRay.Point(isect.t);
+      SurfaceInteraction si(-pathRay.d, p, triangle, isect);
+      isect.mesh->GetMaterial()->ComputeScatteringFunction(&si);
+
+      BSDFSamplingRecord bRec(si, sampler->Next2D());
+      si.bsdf->Sample(bRec);
+      if (bRec.pdf <= 0.f) break;
+
+      auto specular = bRec.type & BSDFType::BSDF_SPECULAR;
+      if (!specular) {
+        L += cameraPathState.throughput *
+             ConnectToLight(scene, pathRay, si, sampler, cameraPathState);
+
+        for (int i = 0; i < numLightVertex; i++) {
+          const Vertex& lightVertex = lightVertices[i];
+
+          if (lightVertex.length + cameraPathState.PathLength - 2 > maxDepth) {
+            break;
+          }
+
+          L += lightVertex.throughput * cameraPathState.throughput *
+               ConnectVertex(scene, si, lightVertex, cameraPathState);
+        }
+      }
+
+      Spectrum f = bRec.f;
+      Vector3f wi = bRec.wi;
+      float scatteredPdf = bRec.pdf;
+
+      float revPdf = si.bsdf->EvaluatePdf(wi, si.bsdf->toLocal(-pathRay.d));
+
+      if (f.isBlack() || scatteredPdf == 0.f) break;
+      // printf("(%f %f %f) %f\n", f[0], f[1], f[2], scatteredPdf);
+
+      if (!specular && rrDepth != -1 && cameraPathState.PathLength > rrDepth) {
+        float q = std::min(0.95f, cameraPathState.throughput.max());
+        if (sampler->Next1D() >= q) break;
+        cameraPathState.throughput /= q;
+      }
+
+      cameraPathState.origin = si.p;
+      cameraPathState.direction = bRec.wi;
+
+      float cosOut = std::abs(dot(si.Ns, si.bsdf->toWorld(bRec.wi)));
+      if (!specular) {
+        cameraPathState.SpecularPath &= 0;
+
+        cameraPathState.DVCM =
+            MIS<pow>(cosOut / scatteredPdf) *
+            (cameraPathState.DVC * MIS<pow>(revPdf) + cameraPathState.DVCM);
+        cameraPathState.DVC = MIS<pow>(1.0f / scatteredPdf);
+      } else {
+        cameraPathState.SpecularPath &= 1;
+
+        cameraPathState.DVCM = 0.f;
+        cameraPathState.DVC *= MIS<pow>(cosOut);
+      }
+
+      cameraPathState.throughput *= f * cosOut / scatteredPdf;
+    }
+
+    free((void*)lightVertices);
 
     // PathVertex* cameraVertices = new PathVertex[maxDepth + 2];
     // PathVertex* lightVertices = new PathVertex[maxDepth + 1];
@@ -862,7 +1145,7 @@ class BDPTIntegrator : public Integrator {
     // size_t nLight =
     //     GenerateLightSubpath(*scene, *sampler, maxDepth + 1, lightVertices);
 
-    Math::Spectrum L(0.f);
+    // Math::Spectrum L(0.f);
     // for (size_t t = 1; t <= nCamera; ++t) {
     //   for (size_t s = 0; s <= nLight; ++s) {
     //     int depth = int(t + s) - 2;
@@ -888,15 +1171,15 @@ class BDPTIntegrator : public Integrator {
 
     // delete[] lightVertices;
     // delete[] cameraVertices;
-    return L;
+    return L * 50.f;
   }
 
  private:
   // int rrDepth = 5, maxDepth = 16;
-  int rrDepth = 5, maxDepth = 2;
+  int rrDepth = 5, maxDepth = 8;
 
   // heuristic
-  static constexpr int pow = 2;
+  static constexpr int pow = 1;
 };
 
 }  // namespace Ajisai::Integrators

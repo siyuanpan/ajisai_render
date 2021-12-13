@@ -120,6 +120,10 @@ class Camera {
     return Math::Spectrum(1 / (A() * lensArea * std::pow(cosTheta, 4)));
   }
 
+  Math::Vector3f GetDir() const { return -look; }
+
+  float GetFocusDistance() const { return focus_distance; }
+
   void Sample_Wi(const Math::Vector2f& u, const Intersect& ref,
                  CameraSamplingRecord* sample, VisibilityTester* tester) const {
     Math::Vector2f pLens = lensRadius * squareToUniformDiskConcentric(u);

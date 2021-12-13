@@ -121,6 +121,40 @@ class AreaLight {
 
   bool isDelta() const { return false; }
 
+  Math::Spectrum Illuminate(const SurfaceInteraction& si,
+                            const Math::Vector2f& u, Math::Vector3f& vin,
+                            VisibilityTester& tester, float* pPdf,
+                            float* pCosAtLight = nullptr,
+                            float* pEmitPdfW = nullptr) const {
+    auto uv = u;
+    if (uv.x() + uv.y() > 1) {
+      uv.x() = 1 - uv.x();
+      uv.y() = 1 - uv.y();
+    }
+    auto x = triangle.lerpVert(uv);
+    auto lightNormal = triangle.lerpNormal(uv);
+    // *pdfPos = 1.f / triangle.area();
+    auto lightVec = x - si.p;
+    vin = lightVec.normalized();
+
+    const float dist = lightVec.length();
+    *pPdf = (dist * dist) / std::abs(Math::dot(lightNormal, -vin)) *
+            (1.f / triangle.area());
+
+    const float cosNormalDir = Math::dot(lightNormal, -vin);
+    if (cosNormalDir < 1e-6f) return {};
+
+    if (pCosAtLight != nullptr) {
+      *pCosAtLight = cosNormalDir;
+    }
+    if (pEmitPdfW != nullptr) {
+      *pEmitPdfW = (1.f / triangle.area()) *
+                   std::fmax(0.0f, cosNormalDir / Math::Constants<float>::pi());
+    }
+
+    return radiance;
+  }
+
   void Sample_Le(const Math::Vector2f& u1, const Math::Vector2f& u2, Ray* ray,
                  Math::Vector3f& nLight, float* pdfPos, float* pdfDir,
                  Math::Spectrum& E) const {
@@ -148,6 +182,21 @@ class AreaLight {
     *pdfPos = 1 / triangle.area();
     *pdfDir = std::fmax(
         0.0f, Math::dot(triangle.Ng, ray.d) / Math::Constants<float>::pi());
+  }
+
+  Math::Spectrum Emit(const Math::Vector3f dir, const Math::Vector3f normal,
+                      float* pPdf, float* pDirectPdf) const {
+    if (Math::dot(normal, dir) <= 0.f) return {};
+
+    if (pDirectPdf) *pDirectPdf = 1 / triangle.area();
+
+    if (pPdf) {
+      *pPdf = std::fmax(0.0f,
+                        Math::dot(normal, dir) / Math::Constants<float>::pi());
+      *pPdf *= 1 / triangle.area();
+    }
+
+    return radiance;
   }
 
   Mesh* mesh;
