@@ -31,6 +31,7 @@ DEALINGS IN THE SOFTWARE.
 #include "Ajisai/Math/Constants.h"
 #include "Ajisai/Math/Functions.h"
 #include "Ajisai/Math/Matrix.h"
+#include "Ajisai/Math/Matrix4.h"
 #include "Ajisai/Math/RectangularMatrix.h"
 #include "Ajisai/Math/Spectrum.hpp"
 #include "Ajisai/Math/Vector2.h"

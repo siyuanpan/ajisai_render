@@ -70,6 +70,12 @@ class Matrix : public RectangularMatrix<T, size, size> {
       const RectangularMatrix<U, size, size>& other) noexcept
       : RectangularMatrix<T, size, size>(other) {}
 
+  //   template <std::size_t otherCols, std::size_t otherRows>
+  //   constexpr explicit Matrix(
+  //       IdentityInitT, const RectangularMatrix<T, otherCols, otherRows>&
+  //       other, T value = T(1)) noexcept : RectangularMatrix<T, size,
+  //       size>{IdentityInit, other, value} {}
+
   template <std::size_t otherSize>
   constexpr explicit Matrix(
       const RectangularMatrix<T, otherSize, otherSize>& other) noexcept
@@ -86,6 +92,15 @@ class Matrix : public RectangularMatrix<T, size, size> {
       : RectangularMatrix<T, size, size>{
             valueOrIdentityVector<size, col>(other)...} {}
 };
+
+template <class T>
+using Matrix2x2 = Matrix<T, 2>;
+
+template <class T>
+using Matrix3x3 = Matrix<T, 3>;
+
+template <class T>
+using Matrix4x4 = Matrix<T, 4>;
 
 }  // namespace Ajisai::Math
 

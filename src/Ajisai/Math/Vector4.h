@@ -39,6 +39,10 @@ class Vector4 : public Vector<T, 4> {
   constexpr Vector4(const Vector3<T>& xyz, T w) noexcept
       : Vector<T, 4>(xyz[0], xyz[1], xyz[2], w) {}
 
+  template <class U>
+  constexpr explicit Vector4(const Vector<U, 4>& other) noexcept
+      : Vector<T, 4>(other) {}
+
   constexpr Vector4(const Vector<T, 4>& other) noexcept : Vector<T, 4>(other) {}
 
   T& x() { return Vector<T, 4>::_data[0]; }

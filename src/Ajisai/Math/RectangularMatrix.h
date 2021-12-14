@@ -30,6 +30,32 @@ DEALINGS IN THE SOFTWARE.
 
 namespace Ajisai::Math {
 
+template <class, std::size_t, std::size_t>
+class RectangularMatrix;
+
+namespace {
+
+// template <std::size_t cols, std::size_t rows, std::size_t otherCols,
+//           std::size_t otherRows, class T, std::size_t col, std::size_t...
+//           row>
+// constexpr Vector<T, rows> valueOrIdentityVector(
+//     std::index_sequence<rows>,
+//     const RectangularMatrix<T, otherCols, otherRows>& other, T value) {
+//   return {(col < otherCols && row < otherRows ? other[col][row]
+//            : col == row                       ? value
+//                                               : T{0})...};
+// }
+
+// template <std::size_t cols, std::size_t rows, std::size_t otherCols,
+//           std::size_t otherRows, class T, std::size_t col>
+// constexpr Vector<T, rows> valueOrIdentityVector(
+//     const RectangularMatrix<T, otherCols, otherRows>& other, T value) {
+//   return valueOrIdentityVector<cols, rows, otherCols, otherRows, T, col>(
+//       std::index_sequence<rows>{}, other, value);
+// }
+
+}  // namespace
+
 template <class T, std::size_t cols, std::size_t rows>
 class RectangularMatrix {
   static_assert(rows != 0 && cols != 0,
@@ -52,6 +78,13 @@ class RectangularMatrix {
       : RectangularMatrix<T, cols, rows>{
             std::make_index_sequence<DiagonalSize>{},
             Vector<T, DiagonalSize>(value)} {}
+
+  // template <std::size_t otherCols, std::size_t otherRows>
+  // constexpr explicit RectangularMatrix(
+  //     IdentityInitT, const RectangularMatrix<T, otherCols, otherRows>& other,
+  //     T value = T(1)) noexcept
+  //     : RectangularMatrix<T, cols, rows>{
+  //           IdentityInit, std::make_index_sequence<cols>{}, other, value} {}
 
   template <class... U>
   constexpr RectangularMatrix(const Vector<T, rows>& first,
@@ -99,6 +132,14 @@ class RectangularMatrix {
       std::index_sequence<sequence...>,
       const RectangularMatrix<U, cols, rows>& other) noexcept
       : _data{Vector<T, rows>{other[sequence]}...} {}
+
+  // template <std::size_t otherCols, std::size_t otherRows, std::size_t... col>
+  // constexpr explicit RectangularMatrix(
+  //     IdentityInitT, std::index_sequence<col...>,
+  //     const RectangularMatrix<T, otherCols, otherRows>& other, T value)
+  //     noexcept : RectangularMatrix<T, cols, rows>{
+  //           valueOrIdentityVector<cols, rows, otherCols, otherRows, T, col>(
+  //               other, value)...} {}
 
   Vector<T, rows> _data[cols];
 };

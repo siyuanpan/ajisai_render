@@ -40,6 +40,18 @@ namespace Ajisai::Math {
 template <class T>
 class Vector3 : public Vector<T, 3> {
  public:
+  constexpr static Vector3<T> xAxis(T length = T(1)) {
+    return {length, T(0), T(0)};
+  }
+
+  constexpr static Vector3<T> yAxis(T length = T(1)) {
+    return {T(0), length, T(0)};
+  }
+
+  constexpr static Vector3<T> zAxis(T length = T(1)) {
+    return {T(0), T(0), length};
+  }
+
   constexpr Vector3() noexcept : Vector<T, 3>{} {}
 
   constexpr explicit Vector3(T value) noexcept : Vector<T, 3>(value) {}

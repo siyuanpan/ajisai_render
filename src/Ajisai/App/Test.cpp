@@ -172,10 +172,19 @@ int main(int argc, char** argv) {
 
     // Matrix<float, 3> lookat(Vector3f{0.f, 1.f, 2.f}, Vector3f{}, Vector3f{});
     Matrix<float, 3> lookat(5.f);
-    Matrix<float, 2> ll(lookat);
+    Matrix<float, 4> ll(lookat);
+
+    Vector3f translation{5.3f, -8.9f, -10.0f};
+    Vector3f target{19.0f, 29.3f, 0.0f};
+    Matrix4<float> M4 =
+        Matrix4<float>::lookAt(translation, target, Vector3f::xAxis());
+
+    Matrix4<float> MT = Matrix4<float>::translation(Vector3f{1.0f, 2.f, 7.f});
     std::cout << matrix.data()[0] << std::endl;
     std::cout << matrixd << std::endl;
     std::cout << lookat << std::endl;
     std::cout << ll << std::endl;
+    std::cout << M4 << std::endl;
+    std::cout << MT << std::endl;
   }
 }
