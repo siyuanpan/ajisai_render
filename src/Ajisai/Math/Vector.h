@@ -91,6 +91,10 @@ class Vector {
   constexpr explicit Vector(U value) noexcept
       : Vector(std::make_index_sequence<size>{}, value) {}
 
+  template <class U>
+  constexpr explicit Vector(const Vector<U, size>& other) noexcept
+      : Vector{std::make_index_sequence<size>{}, other} {}
+
   constexpr Vector(const Vector<T, size>&) noexcept = default;
 
   T* data() { return _data; }
@@ -220,6 +224,11 @@ class Vector {
   template <std::size_t... sequence>
   constexpr explicit Vector(std::index_sequence<sequence...>, T value) noexcept
       : _data{Impl::repeat(value, sequence)...} {}
+
+  template <class U, std::size_t... sequence>
+  constexpr explicit Vector(std::index_sequence<sequence...>,
+                            const Vector<U, size>& other) noexcept
+      : _data{T(other[sequence])...} {}
 };
 
 template <class T, std::size_t size>

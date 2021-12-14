@@ -163,4 +163,19 @@ int main(int argc, char** argv) {
               << "c.max.x " << c.max().x() << "\n"
               << "c.max.y " << c.max().y() << "\n";
   }
+
+  {
+    // RectangularMatrix<float, 2, 3> matrix{Vector3f{1.f, 2.f, 3.f},
+    //                                       Vector3f{4.f, 5.f, 6.f}};
+    RectangularMatrix3x3f matrix{3.4f};
+    RectangularMatrix<double, 4, 3> matrixd{IdentityInit};
+
+    // Matrix<float, 3> lookat(Vector3f{0.f, 1.f, 2.f}, Vector3f{}, Vector3f{});
+    Matrix<float, 3> lookat(5.f);
+    Matrix<float, 2> ll(lookat);
+    std::cout << matrix.data()[0] << std::endl;
+    std::cout << matrixd << std::endl;
+    std::cout << lookat << std::endl;
+    std::cout << ll << std::endl;
+  }
 }
