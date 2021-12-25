@@ -40,3 +40,7 @@ target_link_libraries(PathIntegrator PRIVATE Ajisai::PluginManager)
 add_plugin(BDPTIntegrator BidirectionalPath.cpp)
 
 target_link_libraries(BDPTIntegrator PRIVATE Ajisai::PluginManager)
+
+add_plugin(MMLTIntegrator MultiplexedMLT.cpp)
+
+target_link_libraries(MMLTIntegrator PRIVATE Ajisai::PluginManager)

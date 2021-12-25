@@ -76,6 +76,8 @@ class Camera {
   Ray GenerateRay(const Math::Vector2f& u1, const Math::Vector2f& u2,
                   const Math::Vector2i& raster) const;
 
+  Ray GenerateRay(const Math::Vector2f& raster) const;
+
   std::shared_ptr<Film> GetFilm() const { return film; }
 
   float A() const {

@@ -219,6 +219,9 @@ class PathIntegrator : public Integrator {
     // return Li;
   }
 
+  virtual void Render(Core::Scene* scene, Core::Camera* camera,
+                      Core::Sampler* sampler) const {}
+
  private:
   int spp = 16;
   int rrDepth = 5, maxDepth = 16;

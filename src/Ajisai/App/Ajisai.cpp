@@ -187,7 +187,8 @@ int main(int argc, char** argv) {
   PluginManager::Manager<Integrator> manager;
 
   // auto integrator = manager.load("PathIntegrator");
-  auto integrator = manager.load("BDPTIntegrator");
+  auto integrator1 = manager.load("BDPTIntegrator");
+  auto integrator = manager.load("MMLTIntegrator");
 
   PluginManager::Manager<Accel> accel_manager;
 
@@ -215,8 +216,11 @@ int main(int argc, char** argv) {
 
   job.ctx.scene->SetAccel(accel);
 
-  job.Run();
-  job.Join();
+  job.ctx.integrator->Render(job.ctx.scene.get(), job.ctx.camera.get(),
+                             job.ctx.sampler.get());
+
+  // job.Run();
+  // job.Join();
   auto filmUpdate = job.ctx.camera->GetFilm();
 
   std::cout << "outfile : " << outputFile << std::endl;

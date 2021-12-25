@@ -122,7 +122,7 @@ class Film {
                                               splat(x, y).color[1].value(),
                                               splat(x, y).color[2].value()};
             if (weight(x, y) != 0) {
-              auto tmp = (radiance(x, y)) / weight(x, y) + s;
+              auto tmp = (radiance(x, y)) / weight(x, y) + s * SplatScale;
               image(x, y) = Math::Color4f{tmp[0], tmp[1], tmp[2], 1.f};
             } else {
               image(x, y) = Math::Color4f{s[0], s[1], s[2], 1.f};
@@ -141,11 +141,14 @@ class Film {
     splat(ip.x(), ip.y()).color[2].add(L[2]);
   }
 
+  void ScaleToPixel(const float scale) { SplatScale = scale; }
+
  private:
   Math::Vector2i dim;
   Image<Math::Spectrum> radiance;
   Image<float> weight;
   Image<SplatPixel> splat;
+  float SplatScale = 1.f;
 };
 }  // namespace Ajisai::Core
 

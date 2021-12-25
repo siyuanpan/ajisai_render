@@ -26,9 +26,6 @@ DEALINGS IN THE SOFTWARE.
 #include <filesystem>
 
 namespace Ajisai::Integrators {
-// Integrators::Integrator(PluginManager::AbstractManager& manager,
-//                         const std::string& plugin)
-//     : PluginManager::AbstractPlugin{manager, plugin} {}
 
 std::string Integrator::pluginInterface() {
   return "ajisai.integrators.Integrator/0.0.1";
@@ -38,4 +35,5 @@ std::vector<std::filesystem::path> Integrator::pluginSearchPaths() {
   std::filesystem::path path = Util::libraryLocation(&pluginInterface);
   return {path.parent_path()};
 }
+
 }  // namespace Ajisai::Integrators

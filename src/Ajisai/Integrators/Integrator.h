@@ -23,41 +23,14 @@ DEALINGS IN THE SOFTWARE.
 #ifndef AJISAI_INTEGRATORS_INTEGRATOR_H_
 #define AJISAI_INTEGRATORS_INTEGRATOR_H_
 
-// #include <future>
-// #include <mutex>
-
-// #include "Ajisai/Core/Camera.h"
 #include <Ajisai/Core/Film.h>
-// #include "Ajisai/Core/Mesh.h"
-// #include "Ajisai/Core/Parallel.hpp"
-// #include "Ajisai/Core/Sampler.h"
+
 #include <Ajisai/Core/Scene.h>
 #include <Ajisai/Math/Math.h>
 #include <Ajisai/PluginManager/AbstractPlugin.h>
 #include <Ajisai/Util/Directory.h>
 
 namespace Ajisai::Integrators {
-
-// struct RenderContext {
-//   std::shared_ptr<Ajisai::Core::Camera> camera;
-//   std::shared_ptr<Ajisai::Core::Scene> scene;
-//   std::shared_ptr<Ajisai::Core::Sampler> sampler;
-// };
-
-// class RenderTask {
-//  public:
-
-//   virtual ~RenderTask() {}
-
-//   virtual void Wait() = 0;
-
-//   virtual Math::Spectrum Li(Core::Ray ray, Core::Sampler* sampler) = 0;
-
-//   virtual void Start() = 0;
-
-//   virtual std::shared_ptr<const Core::Film> GetFilm() = 0;
-
-// };
 
 class Integrator : public PluginManager::AbstractPlugin {
  public:
@@ -67,9 +40,12 @@ class Integrator : public PluginManager::AbstractPlugin {
 
   virtual ~Integrator() = default;
 
-  virtual Math::Spectrum Li(
-      /*Core::Ray ray,*/ Core::Scene* scene, Core::Camera* camera,
-      const Math::Vector2i& raster, Core::Sampler* sampler) const = 0;
+  virtual Math::Spectrum Li(Core::Scene* scene, Core::Camera* camera,
+                            const Math::Vector2i& raster,
+                            Core::Sampler* sampler) const = 0;
+
+  virtual void Render(Core::Scene* scene, Core::Camera* camera,
+                      Core::Sampler* sampler) const = 0;
 
   static std::string pluginInterface();
   static std::vector<std::filesystem::path> pluginSearchPaths();

@@ -53,6 +53,22 @@ void Camera::init(float fov, float near, float far) {
   //             << world2Raster << std::endl;
 }
 
+Ray Camera::GenerateRay(const Math::Vector2f& raster) const {
+  Math::Vector3f p_film{raster.x(), raster.y(), 0.f};
+  Math::Vector3f camCoord = raster2camera.transformPoint(p_film);
+
+  Math::Vector3f origin{0.f};
+  Math::Vector3f direction = camCoord.normalized();
+
+  if (lensRadius > 0 && focus_distance > 0) {
+    // TODO not PinHole model
+    assert(false);
+  }
+
+  return Ray{camera2world.transformPoint(origin),
+             camera2world.transformVector(direction)};
+}
+
 Ray Camera::GenerateRay(const Math::Vector2f& u1, const Math::Vector2f& u2,
                         const Math::Vector2i& raster) const {
   auto rd = lensRadius * squareToUniformDiskConcentric(u1);

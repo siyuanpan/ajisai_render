@@ -35,12 +35,15 @@ class Sampler {
 
  public:
   Sampler() = default;
-  void SetSeed(std::size_t seed) { rng = PCG32(seed); }
-  std::shared_ptr<Sampler> Copy() const {
+  virtual ~Sampler() {}
+  virtual void SetSeed(std::size_t seed) { rng = PCG32(seed); }
+  virtual std::shared_ptr<Sampler> Copy() const {
     return std::make_shared<Sampler>(*this);
   }
-  float Next1D() { return rng.next_float(); }
-  Math::Vector2f Next2D() { return {rng.next_float(), rng.next_float()}; }
+  virtual float Next1D() { return rng.next_float(); }
+  virtual Math::Vector2f Next2D() {
+    return {rng.next_float(), rng.next_float()};
+  }
 };
 }  // namespace Ajisai::Core
 
