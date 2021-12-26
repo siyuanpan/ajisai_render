@@ -209,6 +209,7 @@ class MMLTIntegrator : public Integrator {
             Vector2f rasterPos;
             boostrapWeights[seed] =
                 EvalSample(scene, &sampler, camera, depth, &rasterPos, rng)
+                    .removeNaN()
                     .luminance();
             // printf("%f\n", boostrapWeights[seed]);
           }
@@ -217,6 +218,7 @@ class MMLTIntegrator : public Integrator {
 
     Distribution bootstrapDist(boostrapWeights.data(), boostrapWeights.size());
     float b = bootstrapDist.funcInt * (maxDepth + 1);
+    printf("b %f Int %f\n", b, bootstrapDist.funcInt);
 
     uint64_t numTotalMutations = spp * camera->GetPixelCount();
     uint64_t totalSamples;
@@ -242,8 +244,6 @@ class MMLTIntegrator : public Integrator {
           Vector2f currentRaster;
           auto currentLum =
               EvalSample(scene, &sampler, camera, depth, &currentRaster, rng);
-          printf("%f %f %f %f %f %d\n", currentRaster[0], currentRaster[1],
-                 currentLum[0], currentLum[1], currentLum[2], depth);
 
           // Run the Markov chain for numChainMutations steps
           for (uint64_t j = 0; j < numChainMutations; ++j) {
@@ -263,6 +263,11 @@ class MMLTIntegrator : public Integrator {
               camera->GetFilm()->AddSplat(
                   proposedLum * acceptProb / (proposedLum.luminance() + 1e-4f),
                   proposedRaster);
+
+              // auto tmp =
+              //     proposedLum * acceptProb / (proposedLum.luminance() +
+              //     1e-4f);
+              // printf("%f %f %f\n", tmp[0], tmp[1], tmp[2]);
             }
 
             camera->GetFilm()->AddSplat(currentLum * (1 - acceptProb) /
@@ -281,6 +286,7 @@ class MMLTIntegrator : public Integrator {
         1024);
 
     camera->GetFilm()->ScaleToPixel(b / spp);
+    printf("%f\n", b / spp);
   }
 
   Spectrum EvalSample(Scene* scene, MetropolisSampler* pSampler, Camera* camera,
@@ -392,6 +398,9 @@ class MMLTIntegrator : public Integrator {
       if (lightLen == 0) {
         if (isect.mesh->IsEmitter()) {
           auto ray = Ray(cameraPathState.origin, cameraPathState.direction);
+          // auto tmp = BDPTIntegrator::HittingLightSource(
+          //     scene, ray, isect, isect.mesh->GetLight(isect.triId).get(),
+          //     cameraPathState);
           ret = cameraPathState.throughput *
                 BDPTIntegrator::HittingLightSource(
                     scene, ray, isect, isect.mesh->GetLight(isect.triId).get(),
@@ -441,12 +450,12 @@ class MMLTIntegrator : public Integrator {
   }
 
  private:
-  static constexpr int numBootstrap = 100000;  //(1 << 17);
-  static constexpr int maxDepth = 8;
+  static constexpr int numBootstrap = (1 << 15);  // 100000;  //(1 << 17);
+  static constexpr int maxDepth = 8;              // 8;
   static constexpr float sigma = 0.01f;
   static constexpr float largeStepProb = 0.3f;
-  static constexpr int spp = 16;         // 4096;
-  static constexpr int numChains = 100;  // 2048;
+  static constexpr int spp = 1024;       // 16;         // 4096;
+  static constexpr int numChains = 512;  // 100;  // 2048;
 };
 
 }  // namespace Ajisai::Integrators

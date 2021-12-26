@@ -120,9 +120,10 @@ class Film {
           for (int x = 0; x < radiance.Dimension().x(); ++x) {
             Math::Spectrum s = Math::Spectrum{splat(x, y).color[0].value(),
                                               splat(x, y).color[1].value(),
-                                              splat(x, y).color[2].value()};
+                                              splat(x, y).color[2].value()} *
+                               SplatScale;
             if (weight(x, y) != 0) {
-              auto tmp = (radiance(x, y)) / weight(x, y) + s * SplatScale;
+              auto tmp = (radiance(x, y)) / weight(x, y) + s;
               image(x, y) = Math::Color4f{tmp[0], tmp[1], tmp[2], 1.f};
             } else {
               image(x, y) = Math::Color4f{s[0], s[1], s[2], 1.f};
