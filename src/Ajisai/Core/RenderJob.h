@@ -35,6 +35,10 @@ class Scene;
 class Sampler;
 class Camera;
 
+// struct SimpleRenderJob {
+
+// };
+
 struct RenderJob {
   RenderJob();
 

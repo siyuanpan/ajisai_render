@@ -48,7 +48,8 @@ class AbstractManager {
   explicit AbstractManager(const std::vector<std::filesystem::path>&);
   ~AbstractManager();
 
-  void* loadImpl(const std::string& plugin);
+  void loadImpl(const std::string& plugin);
+  void* loadAndInstantiateImpl(const std::string& plugin);
 
   std::vector<std::filesystem::path> searchPath;
   std::map<std::string, Constructor> plugins;

@@ -186,16 +186,17 @@ int main(int argc, char** argv) {
 
   PluginManager::Manager<Integrator> manager;
 
-  // auto integrator = manager.load("PathIntegrator");
-  auto integrator1 = manager.load("BDPTIntegrator");
-  auto integrator = manager.load("MMLTIntegrator");
+  // auto integrator = manager.loadAndInstantiate("PathIntegrator");
+  // auto integrator1 =
+  manager.load("BDPTIntegrator");
+  auto integrator = manager.loadAndInstantiate("MMLTIntegrator");
 
   PluginManager::Manager<Accel> accel_manager;
 
 #if AJISAI_USE_EMBREE
-  auto accel = accel_manager.load("EmbreeAccel");
+  auto accel = accel_manager.loadAndInstantiate("EmbreeAccel");
 #else
-  auto accel = accel_manager.load("BVHAccel");
+  auto accel = accel_manager.loadAndInstantiate("BVHAccel");
 #endif
 
   // RenderContext ctx;

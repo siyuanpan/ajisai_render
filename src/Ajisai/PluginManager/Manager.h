@@ -42,19 +42,13 @@ class Manager : public AbstractManager {
   //   Manager<T>& operator=(const Manager<T>&) = delete;
   //   Manager<T>& operator=(Manager<T>&&) = delete;
 
-  Util::Ptr<T> load(const std::string& plugin) {
-    // auto tmp = loadImpl(plugin);
-    // std::cout << tmp << std::endl;
-    // std::cout << reinterpret_cast<T*>(tmp) << std::endl;
-    // std::cout << static_cast<T*>(tmp) << std::endl;
-    // return static_cast<T*>(tmp);
-    return Util::Ptr<T>(static_cast<T*>(loadImpl(plugin)));
-    // return reinterpret_cast<T*>(loadImpl(plugin));
-    //     void* lib = dlopen(plugin.data(), RTLD_NOW | RTLD_GLOBAL);
-    //     if (!lib) {
-    //       std::cerr << "PluginManager::Manager::load(): cannot load plugin "
-    //                 << plugin << std::endl;
-    //     }
+  void load(const std::string& plugin) {
+    loadImpl(plugin);
+    // return Util::Ptr<T>(static_cast<T*>(loadImpl(plugin)));
+  }
+
+  Util::Ptr<T> loadAndInstantiate(const std::string& plugin) {
+    return Util::Ptr<T>(static_cast<T*>(loadAndInstantiateImpl(plugin)));
   }
 };
 
