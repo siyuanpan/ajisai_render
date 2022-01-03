@@ -39,10 +39,25 @@ namespace Ajisai::Core {
 struct BSDFSamplingRecord;
 class BxDF;
 
-enum BSDFType : uint32_t {
-  BSDF_NONE = 0u,
-  BSDF_DIFFUSE = 1u << 0u,
-  BSDF_SPECULAR = 1u << 1u
+// enum BSDFType : uint32_t {
+//   BSDF_NONE = 0u,
+//   BSDF_DIFFUSE = 1u << 0u,
+//   BSDF_SPECULAR = 1u << 1u
+// };
+
+float FrDielectric(float cosThetaI, float etaI, float etaT);
+
+Math::Spectrum FrConductor(float cosThetaI, const Math::Spectrum& etaI,
+                           const Math::Spectrum& etaT, const Math::Spectrum& k);
+
+enum BxDFType {
+  BSDF_REFLECTION = 1 << 0,
+  BSDF_TRANSMISSION = 1 << 1,
+  BSDF_DIFFUSE = 1 << 2,
+  BSDF_GLOSSY = 1 << 3,
+  BSDF_SPECULAR = 1 << 4,
+  BSDF_ALL = BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_SPECULAR | BSDF_REFLECTION |
+             BSDF_TRANSMISSION,
 };
 
 class BSDF {
@@ -73,20 +88,24 @@ class BSDF {
 class BxDF {
  public:
   BxDF() {}
+  BxDF(BxDFType type) : type(type) {}
+  bool MatchesFlags(BxDFType t) const { return (type & t) == type; }
 
-  virtual BSDFType GetType() const = 0;
+  virtual BxDFType GetType() const = 0;
   virtual void Sample(BSDFSamplingRecord& rec) const = 0;
   virtual Math::Spectrum Evaluate(const Math::Vector3f&,
                                   const Math::Vector3f&) const = 0;
   virtual float EvaluatePdf(const Math::Vector3f&,
                             const Math::Vector3f&) const = 0;
+
+  BxDFType type;
 };
 
 class LambertianReflection : public BxDF {
  public:
   LambertianReflection(const Math::Spectrum& R) : R(R) {}
 
-  virtual BSDFType GetType() const { return BSDFType::BSDF_DIFFUSE; }
+  virtual BxDFType GetType() const { return BxDFType::BSDF_DIFFUSE; }
   virtual void Sample(BSDFSamplingRecord& rec) const;
   virtual Math::Spectrum Evaluate(const Math::Vector3f&,
                                   const Math::Vector3f&) const;
@@ -100,7 +119,7 @@ class SpecularReflection : public BxDF {
  public:
   SpecularReflection(const Math::Spectrum& R) : R(R) {}
 
-  virtual BSDFType GetType() const { return BSDFType::BSDF_SPECULAR; }
+  virtual BxDFType GetType() const { return BxDFType::BSDF_SPECULAR; }
   virtual void Sample(BSDFSamplingRecord& rec) const;
   virtual Math::Spectrum Evaluate(const Math::Vector3f&,
                                   const Math::Vector3f&) const;

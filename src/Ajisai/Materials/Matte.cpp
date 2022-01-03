@@ -33,4 +33,11 @@ void MatteMaterial::ComputeScatteringFunction(
   si->bsdf->add(std::make_shared<Core::LambertianReflection>(color));
 }
 
+void MatteMaterial::ComputeScatteringFunction(
+    Core::DifferentialGeom* diffGeom) const {
+  diffGeom->_bsdf = Util::Ptr<Core::BSDF>(
+      new Core::BSDF(diffGeom->_geomNormal, diffGeom->_normal));
+  diffGeom->_bsdf->add(std::make_shared<Core::LambertianReflection>(color));
+}
+
 }  // namespace Ajisai::Materials

@@ -23,25 +23,23 @@ DEALINGS IN THE SOFTWARE.
 #ifndef AJISAI_MATERIALS_MATERIAL_H_
 #define AJISAI_MATERIALS_MATERIAL_H_
 
-// #include "Ajisai/Math/Math.h"
-
 namespace Ajisai::Core {
 
 struct SurfaceInteraction;
 
-}
+struct DifferentialGeom;
+
+}  // namespace Ajisai::Core
 
 namespace Ajisai::Materials {
 class Material {
  public:
-  // enum Type { Diffuse };
   Material() {}
-  // Material(const Math::Color3<float> c) : color(c), type(t) {}
-  // Math::Color3<float> color;
-  // Type type;
 
   virtual void ComputeScatteringFunction(
       Core::SurfaceInteraction* si) const = 0;
+
+  virtual void ComputeScatteringFunction(Core::DifferentialGeom* diffGeom) const = 0;
 };
 }  // namespace Ajisai::Materials
 

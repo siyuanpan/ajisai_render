@@ -35,6 +35,8 @@ namespace Ajisai::Core {
 class Mesh;
 class BSDF;
 class Scene;
+class AreaLight;
+struct DifferentialGeom;
 
 struct Ray {
   Math::Vector3f o, d;
@@ -128,6 +130,8 @@ struct Triangle {
     }
     return hit;
   }
+
+  bool Intersect(const Ray& ray, DifferentialGeom* diffGeom) const;
 };
 
 struct Intersect {
@@ -213,6 +217,29 @@ struct VisibilityTester {
   }
   [[nodiscard]] bool visible(const Scene& scene) const;
   [[nodiscard]] Math::Spectrum Tr(const Scene& scene) const;
+};
+
+struct Scatter {
+  Math::Vector3f _position;
+  Math::Vector3f _normal;
+};
+
+struct Intersection1 {
+  unsigned int _geomID;
+  unsigned int _primID;
+  Math::Vector2f _uv;
+  float _dist = std::numeric_limits<float>::infinity();
+};
+
+struct DifferentialGeom : public Scatter, public Intersection1 {
+  Math::Vector3f _geomNormal;
+  Math::Vector2f _texcoord;
+
+  // const BSDF* _bsdf;
+  Util::Ptr<BSDF> _bsdf;
+  const AreaLight* _areaLight;
+
+  Math::Spectrum emit(const Math::Vector3f& dir) const;
 };
 
 }  // namespace Ajisai::Core

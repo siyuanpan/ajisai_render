@@ -36,6 +36,9 @@ class MatteMaterial : public Material {
   virtual void ComputeScatteringFunction(
       Core::SurfaceInteraction* si) const override;
 
+  virtual void ComputeScatteringFunction(
+      Core::DifferentialGeom* diffGeom) const override;
+
  private:
   Math::Color3<float> color;
 };

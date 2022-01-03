@@ -199,6 +199,8 @@ class AreaLight {
     return radiance;
   }
 
+  Math::Spectrum Emit(const Math::Vector3f dir) const { return radiance; }
+
   Mesh* mesh;
   int triId;
   Math::Spectrum radiance;

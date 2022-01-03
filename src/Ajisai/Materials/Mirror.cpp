@@ -33,4 +33,11 @@ void MirrorMaterial::ComputeScatteringFunction(
   si->bsdf->add(std::make_shared<Core::SpecularReflection>(color));
 }
 
+void MirrorMaterial::ComputeScatteringFunction(
+    Core::DifferentialGeom* diffGeom) const {
+  diffGeom->_bsdf = Util::Ptr<Core::BSDF>(
+      new Core::BSDF(diffGeom->_geomNormal, diffGeom->_normal));
+  diffGeom->_bsdf->add(std::make_shared<Core::SpecularReflection>(color));
+}
+
 }  // namespace Ajisai::Materials

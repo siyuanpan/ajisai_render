@@ -50,24 +50,15 @@ class PathIntegrator : public Integrator {
   virtual Math::Spectrum Li(Core::Scene* scene, Core::Camera* camera,
                             const Math::Vector2i& raster,
                             Core::Sampler* sampler) const override {
-    const float u =
-        (raster.x() + sampler->Next1D()) / camera->GetFilm()->Dimension().x();
-    const float v =
-        (raster.y() + sampler->Next1D()) / camera->GetFilm()->Dimension().y();
-    // auto ray1 = camera->GenerateRay(u, v);
-    // printf("old (%f %f %f) (%f %f %f)\n", ray.o[0], ray.o[1], ray.o[2],
-    //        ray.d[0], ray.d[1], ray.d[2]);
+    // const float u =
+    //     (raster.x() + sampler->Next1D()) /
+    //     camera->GetFilm()->Dimension().x();
+    // const float v =
+    //     (raster.y() + sampler->Next1D()) /
+    //     camera->GetFilm()->Dimension().y();
+
     auto ray =
         camera->GenerateRay(sampler->Next2D(), sampler->Next2D(), raster);
-    // printf("old (%f %f %f) (%f %f %f) new (%f %f %f) (%f %f %f)\n",
-    // ray1.o[0],
-    //        ray1.o[1], ray1.o[2], ray1.d[0], ray1.d[1], ray1.d[2], ray.o[0],
-    //        ray.o[1], ray.o[2], ray.d[0], ray.d[1], ray.d[2]);
-    // ray.o = ray1.o;
-    // ray.d = ray1.d;
-    // printf("(%f %f %f) %f (%f %f %f) %f\n", ray1.d[0], ray1.d[1], ray1.d[2],
-    //        Math::dot(ray1.d, ray.d), ray.d[0], ray.d[1], ray.d[2],
-    //        ray.d.length());
 
     Math::Spectrum L(0), pathThroughput(1);
     bool specularBounce = true;
@@ -76,13 +67,18 @@ class PathIntegrator : public Integrator {
     // auto pathRay = ray;
     for (auto bounce = 0;; bounce++) {
       Intersection intersection;
+      // DifferentialGeom diffGeom{};
       auto intersected = scene->Intersect(ray, &intersection);
+      // auto intersected = scene->Intersect(ray, &diffGeom);
 
       if (pathThroughput.isBlack()) break;
+
+      // scene->PostIntersect(ray, &diffGeom);
 
       if (specularBounce) {
         if (intersected) {
           L += pathThroughput * intersection.Le(-ray.d);
+          // L += pathThroughput * diffGeom.emit(-ray.d);
         }
       } else {
         if (intersected && intersection.mesh->IsEmitter()) {
@@ -107,7 +103,7 @@ class PathIntegrator : public Integrator {
       si.bsdf->Sample(bRec);
       if (bRec.pdf <= 0.f) break;
 
-      specularBounce = bRec.type & BSDFType::BSDF_SPECULAR;
+      specularBounce = bRec.type & BxDFType::BSDF_SPECULAR;
       if (!specularBounce) {
         float lightPdf = 0.f;
         auto sampleLight = scene->SampleOneLight(sampler->Next1D(), &lightPdf);
@@ -143,80 +139,6 @@ class PathIntegrator : public Integrator {
     }
 
     return L;
-    // Math::Spectrum Li(0), beta(1);
-    // bool specular = false;
-    // Intersection prevIts;
-    // float prevPdf;
-    // for (int depth = 0; depth < maxDepth; ++depth) {
-    //   Intersection intersection;
-    //   if (scene->Intersect(ray, &intersection)) {
-    //     auto& mesh = scene->GetMesh(intersection.meshId);
-    //     auto material = mesh.GetMaterial();
-    //     // auto mesh = intersection.mesh;
-    //     if (mesh.IsEmitter()) {
-    //       if (depth == 0) {
-    //         Li += beta * mesh.Le(-ray.d);
-    //       } else {
-    //         auto light = mesh.GetLight(intersection.triId);
-    //         auto lightPdf =
-    //             light->pdfLi(prevIts, ray.d) * scene->PdfLight(light.get());
-    //         // std::cout << "prevPdf : " << prevPdf << std::endl;
-    //         if (lightPdf != 0)
-    //           // std::cout << "lightPdf : " << lightPdf << std::endl;
-    //           Li += beta * mesh.Le(-ray.d) * MisWeight(prevPdf, lightPdf);
-    //       }
-    //     }
-    //     Triangle triangle{};
-    //     mesh.GetTriangle(intersection.triId, &triangle);
-    //     auto p = ray.Point(intersection.t);
-    //     SurfaceInteraction event(-ray.d, p, triangle, intersection);
-    //     material->ComputeScatteringFunction(&event);
-
-    //     BSDFSamplingRecord bRec(event, sampler->Next2D());
-    //     event.bsdf->Sample(bRec);
-    //     if (bRec.pdf <= 0) break;
-
-    //     // light sample
-    //     specular = bRec.type & BSDFType::BSDF_SPECULAR;
-    //     float lightPdf = 0.f;
-    //     auto sampleLight = scene->SampleOneLight(sampler->Next1D(),
-    //     &lightPdf); if (sampleLight && lightPdf > 0) {
-    //       LightSamplingRecord lRec;
-    //       sampleLight->SampleLi(sampler->Next2D(), p, lRec);
-    //       lightPdf *= lRec.pdf;
-    //       auto wi = event.bsdf->toLocal(lRec.wi);
-    //       auto wo = event.bsdf->toLocal(event.wo);
-    //       auto f = event.bsdf->Evaluate(wo, wi) *
-    //                std::abs(Math::dot(lRec.wi, event.Ns));
-    //       Intersection shadowIntersection;
-    //       if (lightPdf > 0 &&
-    //           !scene->Intersect(lRec.shadowRay, &shadowIntersection)) {
-    //         if (specular) {
-    //           Li += beta * f * lRec.Li / lightPdf;
-    //         } else {
-    //           auto scatteringPdf = event.bsdf->EvaluatePdf(wo, wi);
-    //           Li += beta * f * lRec.Li / lightPdf *
-    //                 MisWeight(lightPdf, scatteringPdf);
-    //         }
-    //       }
-    //     }
-
-    //     auto wi = event.bsdf->toWorld(bRec.wi);
-    //     beta *= bRec.f * std::abs(Math::dot(wi, event.Ns)) / bRec.pdf;
-    //     if (depth >= rrDepth) {
-    //       float q = std::min(0.95f, beta.max());
-    //       if (sampler->Next1D() >= q) break;
-    //       beta /= q;
-    //     }
-    //     ray = event.SpawnRay(wi);
-    //     prevIts = intersection;
-    //     prevPdf = bRec.pdf;
-    //   } else {
-    //     Li += beta * Math::Spectrum(0);
-    //     break;
-    //   }
-    // }
-    // return Li;
   }
 
   virtual void Render(Core::Scene* scene, Core::Camera* camera,

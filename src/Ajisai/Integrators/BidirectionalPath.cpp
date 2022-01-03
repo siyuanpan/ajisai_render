@@ -820,7 +820,7 @@ int BDPTIntegrator::GenerateLightPath(Scene* scene, Sampler* sampler,
     si.bsdf->Sample(bRec);
     // if (bRec.pdf <= 0.f) break;
 
-    auto specular = bRec.type & BSDFType::BSDF_SPECULAR;
+    auto specular = bRec.type & BxDFType::BSDF_SPECULAR;
     if (!specular) {
       Vertex& lightVertex = lightVertices[(*vertexCount)++];
       lightVertex.throughput = lightPathState.throughput;
@@ -1147,7 +1147,7 @@ Math::Spectrum BDPTIntegrator::Li(Core::Scene* scene, Core::Camera* camera,
     si.bsdf->Sample(bRec);
     if (bRec.pdf <= 0.f) break;
 
-    auto specular = bRec.type & BSDFType::BSDF_SPECULAR;
+    auto specular = bRec.type & BxDFType::BSDF_SPECULAR;
     if (!specular) {
       L += cameraPathState.throughput *
            ConnectToLight(scene, pathRay, si, sampler, cameraPathState);

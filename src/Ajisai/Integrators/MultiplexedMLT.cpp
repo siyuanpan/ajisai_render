@@ -372,7 +372,7 @@ class MMLTIntegrator : public Integrator {
       cameraPathState.direction = si.bsdf->toWorld(bRec.wi);
 
       float cosOut = std::abs(dot(si.Ns, si.bsdf->toWorld(bRec.wi)));
-      specular = bRec.type & BSDFType::BSDF_SPECULAR;
+      specular = bRec.type & BxDFType::BSDF_SPECULAR;
       if (!specular) {
         cameraPathState.SpecularPath &= 0;
 

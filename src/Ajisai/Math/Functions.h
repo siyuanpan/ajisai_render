@@ -30,6 +30,14 @@ DEALINGS IN THE SOFTWARE.
 #include "Ajisai/Math/Vector.h"
 
 namespace Ajisai::Math {
+
+template <class T, std::size_t size>
+inline Vector<T, size> sqrt(const Vector<T, size>& a) {
+  Vector<T, size> out{};
+  for (std::size_t i = 0; i != size; ++i) out[i] = std::sqrt(a[i]);
+  return out;
+}
+
 template <class T>
 inline typename std::enable_if<std::is_scalar<T>::value, T>::type pow(
     T base, T exponent) {

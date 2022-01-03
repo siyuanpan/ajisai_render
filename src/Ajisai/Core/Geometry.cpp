@@ -41,4 +41,39 @@ Math::Spectrum SurfaceInteraction::Le(const Math::Vector3f& wo) const {
   return scene.Occlude(shadowRay) ? Math::Spectrum(0) : Math::Spectrum(1);
 }
 
+Math::Spectrum DifferentialGeom::emit(const Math::Vector3f& dir) const {
+  return _areaLight ? _areaLight->Emit(dir) : Math::Spectrum{0.f};
+}
+
+bool Triangle::Intersect(const Ray& ray, DifferentialGeom* diffGeom) const {
+  bool hit = false;
+  auto v1 = v[0];
+  auto v2 = v[1];
+  auto v3 = v[2];
+  auto e1 = v2 - v1;
+  auto e2 = v3 - v1;
+  auto Ng = Math::cross(e1, e2).normalized();
+  float a, f, u, v;
+  auto h = Math::cross(ray.d.normalized(), e2);
+  a = Math::dot(e1, h);
+  if (a > -1e-6f && a < 1e-6f) return false;
+  f = 1.0f / a;
+  auto s = ray.o - v1;
+  u = f * Math::dot(s, h);
+  if (u < 0.0 || u > 1.0) return false;
+  auto q = Math::cross(s, e1);
+  v = f * Math::dot(ray.d.normalized(), q);
+  if (v < 0.0 || u + v > 1.0) return false;
+  float t = f * Math::dot(e2, q);
+  if (t > ray.t_min && t < ray.t_max) {
+    if (t < diffGeom->_dist) {
+      diffGeom->_geomNormal = Ng;
+      diffGeom->_dist = t;
+      diffGeom->_uv = Math::Vector2f{u, v};
+      hit = true;
+    }
+  }
+  return hit;
+}
+
 }  // namespace Ajisai::Core

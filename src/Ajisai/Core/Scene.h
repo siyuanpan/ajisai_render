@@ -50,6 +50,10 @@ class Scene {
     return meshes;
   }
 
+  bool Intersect(const Ray& ray, DifferentialGeom* diffGeom) const;
+
+  void PostIntersect(const Ray& ray, DifferentialGeom* diffGeom) const;
+
   bool Intersect(const Ray& ray, Intersection* intersection) const {
     bool hit = false;
     if (accel) {

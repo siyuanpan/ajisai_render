@@ -64,7 +64,7 @@ class Camera {
 
   void init(float fov, float near, float far);
 
-  Ray GenerateRay(float s, float t) const {
+  [[deprecated]] Ray GenerateRay(float s, float t) const {
     PCG32 rnd(s * t);
     auto rd = lensRadius * squareToUniformDiskConcentric(
                                {rnd.next_float(), rnd.next_float()});

@@ -66,6 +66,44 @@ class EmbreeAccel final : public Accel {
   }
 
   virtual bool Intersect(const Core::Ray& ray,
+                         Core::DifferentialGeom* diffGeom) const {
+    RTCIntersectContext ctx;
+    rtcInitIntersectContext(&ctx);
+
+    RTCRayHit rayhit;
+    rayhit.ray.org_x = ray.o.x();
+    rayhit.ray.org_y = ray.o.y();
+    rayhit.ray.org_z = ray.o.z();
+    rayhit.ray.dir_x = ray.d.x();
+    rayhit.ray.dir_y = ray.d.y();
+    rayhit.ray.dir_z = ray.d.z();
+    rayhit.ray.tnear = ray.t_min;
+    rayhit.ray.tfar = ray.t_max;
+    rayhit.ray.mask = -1;
+    rayhit.ray.flags = 0;
+    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+    rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
+    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+
+    rtcIntersect1(rtcScene, &ctx, &rayhit);
+    if (rayhit.hit.geomID == RTC_INVALID_GEOMETRY_ID ||
+        rayhit.hit.primID == RTC_INVALID_GEOMETRY_ID)
+      return false;
+
+    // if (rayhit.hit.geomID == 7) std::cout << rayhit.hit.geomID << std::endl;
+
+    diffGeom->_primID = rayhit.hit.primID;
+    diffGeom->_geomID = rayhit.hit.geomID;
+    diffGeom->_geomNormal =
+        Math::Vector3f(rayhit.hit.Ng_x, rayhit.hit.Ng_y, rayhit.hit.Ng_z)
+            .normalized();
+    diffGeom->_uv = Math::Vector2f(rayhit.hit.u, rayhit.hit.v);
+    diffGeom->_dist = rayhit.ray.tfar;
+
+    return true;
+  }
+
+  virtual bool Intersect(const Core::Ray& ray,
                          Core::Intersection* intersection) const {
     RTCIntersectContext ctx;
     rtcInitIntersectContext(&ctx);

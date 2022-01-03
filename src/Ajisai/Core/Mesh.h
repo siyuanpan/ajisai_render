@@ -149,7 +149,7 @@ struct BSDFSamplingRecord {
   Math::Vector3f wi;
   float pdf = -1;
   Math::Spectrum f;
-  BSDFType type;
+  BxDFType type;
   inline BSDFSamplingRecord(const SurfaceInteraction& event,
                             const Math::Vector2f& u)
       : wo(event.bsdf->toLocal(event.wo)), u(u) {}
