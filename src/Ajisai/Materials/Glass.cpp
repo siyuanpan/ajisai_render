@@ -20,31 +20,30 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef AJISAI_MATERIALS_MATTEMATERIAL_H_
-#define AJISAI_MATERIALS_MATTEMATERIAL_H_
-
-#include <Ajisai/Core/Mesh.h>
-#include <Ajisai/Materials/Material.h>
-#include <Ajisai/Math/Math.h>
+#include <Ajisai/Core/Geometry.h>
+#include <Ajisai/Materials/Glass.h>
 
 namespace Ajisai::Materials {
 
-class MatteMaterial : public Material {
- public:
-  MatteMaterial(const Math::Color3<float> c);
+GlassMaterial::GlassMaterial(const Math::Color3<float> R,
+                             const Math::Color3<float> T, float etaI,
+                             float etaT)
+    : R(R), T(T), etaI(etaI), etaT(etaT) {}
 
-  virtual void ComputeScatteringFunction(
-      Core::SurfaceInteraction* si,
-      Core::TransportMode mode =
-          Core::TransportMode::eImportance) const override;
+void GlassMaterial::ComputeScatteringFunction(Core::SurfaceInteraction* si,
+                                              Core::TransportMode mode) const {
+  si->bsdf = Util::Ptr<Core::BSDF>(new Core::BSDF(
+      si->Ng, si->Ns));  // std::make_shared<Core::BSDF>(si->Ng, si->Ns);
+  si->bsdf->add(
+      std::make_shared<Core::FresnelSpecular>(R, T, etaI, etaT, mode));
+}
 
-  virtual void ComputeScatteringFunction(
-      Core::DifferentialGeom* diffGeom) const override;
-
- private:
-  Math::Color3<float> color;
-};
+void GlassMaterial::ComputeScatteringFunction(
+    Core::DifferentialGeom* diffGeom) const {
+  //   diffGeom->_bsdf = Util::Ptr<Core::BSDF>(
+  //       new Core::BSDF(diffGeom->_geomNormal, diffGeom->_normal));
+  //   diffGeom->_bsdf->add(std::make_shared<Core::SpecularReflection>(
+  //       color, new Core::FresnelNoOp()));
+}
 
 }  // namespace Ajisai::Materials
-
-#endif

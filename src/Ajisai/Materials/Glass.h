@@ -20,31 +20,30 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef AJISAI_MATERIALS_MATTEMATERIAL_H_
-#define AJISAI_MATERIALS_MATTEMATERIAL_H_
+#ifndef AJISAI_MATERIALS_GLASS_H_
+#define AJISAI_MATERIALS_GLASS_H_
 
 #include <Ajisai/Core/Mesh.h>
 #include <Ajisai/Materials/Material.h>
 #include <Ajisai/Math/Math.h>
 
 namespace Ajisai::Materials {
-
-class MatteMaterial : public Material {
+class GlassMaterial : public Material {
  public:
-  MatteMaterial(const Math::Color3<float> c);
+  GlassMaterial(const Math::Color3<float> R = Math::Color3<float>(1.f),
+                const Math::Color3<float> T = Math::Color3<float>(1.f),
+                float etaI = 1.f, float etaT = 1.5f);
 
   virtual void ComputeScatteringFunction(
-      Core::SurfaceInteraction* si,
-      Core::TransportMode mode =
-          Core::TransportMode::eImportance) const override;
+      Core::SurfaceInteraction* si, Core::TransportMode mode) const override;
 
   virtual void ComputeScatteringFunction(
       Core::DifferentialGeom* diffGeom) const override;
 
  private:
-  Math::Color3<float> color;
+  Math::Color3<float> R, T;
+  float etaI, etaT;
 };
-
 }  // namespace Ajisai::Materials
 
 #endif

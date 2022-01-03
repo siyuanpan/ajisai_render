@@ -25,6 +25,7 @@ DEALINGS IN THE SOFTWARE.
 
 #include <cassert>
 #include "Ajisai/Core/CoordinateSystem.h"
+// #include "Ajisai/Core/Geometry.h"
 #include "Ajisai/Core/Sampler.h"
 #include "Ajisai/Math/Math.h"
 #include "Ajisai/Math/Spectrum.hpp"
@@ -38,6 +39,7 @@ namespace Ajisai::Core {
 
 struct BSDFSamplingRecord;
 class BxDF;
+enum class TransportMode;
 
 // enum BSDFType : uint32_t {
 //   BSDF_NONE = 0u,
@@ -89,6 +91,7 @@ class BxDF {
  public:
   BxDF() {}
   BxDF(BxDFType type) : type(type) {}
+  virtual ~BxDF() {}
   bool MatchesFlags(BxDFType t) const { return (type & t) == type; }
 
   virtual BxDFType GetType() const = 0;
@@ -99,6 +102,38 @@ class BxDF {
                             const Math::Vector3f&) const = 0;
 
   BxDFType type;
+};
+
+class Fresnel {
+ public:
+  virtual ~Fresnel();
+  virtual Math::Spectrum Evaluate(float cosI) const = 0;
+  // virtual std::string ToString() const = 0;
+};
+
+class FresnelConductor : public Fresnel {
+ public:
+  Math::Spectrum Evaluate(float cosThetaI) const;
+  FresnelConductor(const Math::Spectrum& etaI, const Math::Spectrum& etaT,
+                   const Math::Spectrum& k)
+      : etaI(etaI), etaT(etaT), k(k) {}
+
+ private:
+  Math::Spectrum etaI, etaT, k;
+};
+
+class FresnelDielectric : public Fresnel {
+ public:
+  Math::Spectrum Evaluate(float cosThetaI) const;
+  FresnelDielectric(float etaI, float etaT) : etaI(etaI), etaT(etaT) {}
+
+ private:
+  float etaI, etaT;
+};
+
+class FresnelNoOp : public Fresnel {
+ public:
+  Math::Spectrum Evaluate(float) const { return Math::Spectrum(1.); }
 };
 
 class LambertianReflection : public BxDF {
@@ -117,7 +152,13 @@ class LambertianReflection : public BxDF {
 
 class SpecularReflection : public BxDF {
  public:
-  SpecularReflection(const Math::Spectrum& R) : R(R) {}
+  SpecularReflection(const Math::Spectrum& R, const Fresnel* fresnel)
+      : BxDF(BxDFType(BSDF_REFLECTION | BSDF_SPECULAR)),
+        R(R),
+        fresnel(fresnel) {}
+  virtual ~SpecularReflection() {
+    if (fresnel) delete fresnel;
+  }
 
   virtual BxDFType GetType() const { return BxDFType::BSDF_SPECULAR; }
   virtual void Sample(BSDFSamplingRecord& rec) const;
@@ -127,6 +168,55 @@ class SpecularReflection : public BxDF {
 
  private:
   Math::Spectrum R;
+  const Fresnel* fresnel;
+};
+
+class SpecularTransmission : public BxDF {
+ public:
+  SpecularTransmission(const Math::Spectrum& T, float etaA, float etaB,
+                       TransportMode mode)
+      : BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)),
+        T(T),
+        etaA(etaA),
+        etaB(etaB),
+        fresnel(etaA, etaB),
+        mode(mode) {}
+
+  virtual BxDFType GetType() const { return BxDFType::BSDF_SPECULAR; }
+  virtual void Sample(BSDFSamplingRecord& rec) const;
+  virtual Math::Spectrum Evaluate(const Math::Vector3f&,
+                                  const Math::Vector3f&) const;
+  virtual float EvaluatePdf(const Math::Vector3f&, const Math::Vector3f&) const;
+
+ private:
+  const Math::Spectrum T;
+  const float etaA, etaB;
+  const FresnelDielectric fresnel;
+  const TransportMode mode;
+};
+
+class FresnelSpecular : public BxDF {
+ public:
+  FresnelSpecular(const Math::Spectrum& R, const Math::Spectrum& T, float etaA,
+                  float etaB, TransportMode mode)
+      : BxDF(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_SPECULAR)),
+        R(R),
+        T(T),
+        etaA(etaA),
+        etaB(etaB),
+        mode(mode) {}
+
+  virtual BxDFType GetType() const { return BxDFType::BSDF_SPECULAR; }
+  virtual void Sample(BSDFSamplingRecord& rec) const;
+  virtual Math::Spectrum Evaluate(const Math::Vector3f&,
+                                  const Math::Vector3f&) const;
+  virtual float EvaluatePdf(const Math::Vector3f&, const Math::Vector3f&) const;
+
+ private:
+  const Math::Spectrum R;
+  const Math::Spectrum T;
+  const float etaA, etaB;
+  const TransportMode mode;
 };
 
 }  // namespace Ajisai::Core

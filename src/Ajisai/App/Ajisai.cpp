@@ -36,6 +36,7 @@ DEALINGS IN THE SOFTWARE.
 #include "Ajisai/Core/RenderJob.h"
 #include "Ajisai/Core/Scene.h"
 #include "Ajisai/Integrators/Integrator.h"
+#include "Ajisai/Materials/Glass.h"
 #include "Ajisai/Materials/Matte.h"
 #include "Ajisai/Materials/Mirror.h"
 #include "Ajisai/Math/Math.h"
@@ -164,6 +165,9 @@ void load_scene_file(  // Ajisai::Integrators::RenderContext& ctx,
                "mirror") {
       mesh->SetMaterial(std::make_shared<MirrorMaterial>(
           Color3<float>(config["shape"][i]["bsdf"]["rgb"].as<Vector3f>())));
+    } else if (config["shape"][i]["bsdf"]["type"].as<std::string>() ==
+               "glass") {
+      mesh->SetMaterial(std::make_shared<GlassMaterial>());
     }
     if (config["shape"][i]["emitter"].IsDefined()) {
       mesh->SetEmitter(std::make_shared<Emitter>(
@@ -187,7 +191,7 @@ int main(int argc, char** argv) {
   PluginManager::Manager<Integrator> manager;
 
   auto integrator = manager.loadAndInstantiate("PathIntegrator");
-  // auto integrator1 =
+  // auto integrator = manager.loadAndInstantiate("BDPTIntegrator");
   // manager.load("BDPTIntegrator");
   // auto integrator = manager.loadAndInstantiate("MMLTIntegrator");
 
@@ -211,7 +215,7 @@ int main(int argc, char** argv) {
   job.ctx.scene = scene;
   job.ctx.sampler = std::make_shared<Sampler>();
   job.ctx.integrator = std::move(integrator);
-  job.spp = 500;
+  job.spp = 100;
 
   load_scene_file(job, inputFile);
 

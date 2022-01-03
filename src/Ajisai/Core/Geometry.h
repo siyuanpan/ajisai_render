@@ -242,6 +242,15 @@ struct DifferentialGeom : public Scatter, public Intersection1 {
   Math::Spectrum emit(const Math::Vector3f& dir) const;
 };
 
+// TransportMode Declarations
+enum class TransportMode { eRadiance, eImportance };
+
+template <typename T>
+inline Math::Vector3<T> Faceforward(const Math::Vector3<T>& v,
+                                    const Math::Vector3<T>& v2) {
+  return (Math::dot(v, v2) < 0.f) ? -v : v;
+}
+
 }  // namespace Ajisai::Core
 
 #endif

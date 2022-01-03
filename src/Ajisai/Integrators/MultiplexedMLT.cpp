@@ -354,7 +354,8 @@ class MMLTIntegrator : public Integrator {
       auto p = pathRay.Point(isect.t);
       // SurfaceInteraction si(-pathRay.d, p, triangle, isect);
       si = SurfaceInteraction(-pathRay.d, p, triangle, isect);
-      isect.mesh->GetMaterial()->ComputeScatteringFunction(&si);
+      isect.mesh->GetMaterial()->ComputeScatteringFunction(
+          &si, Core::TransportMode::eImportance);
 
       BSDFSamplingRecord bRec(si, pSampler->Next2D());
       si.bsdf->Sample(bRec);

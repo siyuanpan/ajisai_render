@@ -33,7 +33,9 @@ class MirrorMaterial : public Material {
   MirrorMaterial(const Math::Color3<float> c);
 
   virtual void ComputeScatteringFunction(
-      Core::SurfaceInteraction* si) const override;
+      Core::SurfaceInteraction* si,
+      Core::TransportMode mode =
+          Core::TransportMode::eImportance) const override;
 
   virtual void ComputeScatteringFunction(
       Core::DifferentialGeom* diffGeom) const override;

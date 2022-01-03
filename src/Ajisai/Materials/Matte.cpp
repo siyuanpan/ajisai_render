@@ -26,8 +26,8 @@ namespace Ajisai::Materials {
 
 MatteMaterial::MatteMaterial(const Math::Color3<float> c) : color(c) {}
 
-void MatteMaterial::ComputeScatteringFunction(
-    Core::SurfaceInteraction* si) const {
+void MatteMaterial::ComputeScatteringFunction(Core::SurfaceInteraction* si,
+                                              Core::TransportMode mode) const {
   si->bsdf = Util::Ptr<Core::BSDF>(new Core::BSDF(
       si->Ng, si->Ns));  // std::make_shared<Core::BSDF>(si->Ng, si->Ns);
   si->bsdf->add(std::make_shared<Core::LambertianReflection>(color));

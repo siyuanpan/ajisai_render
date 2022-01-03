@@ -29,6 +29,8 @@ struct SurfaceInteraction;
 
 struct DifferentialGeom;
 
+enum class TransportMode;
+
 }  // namespace Ajisai::Core
 
 namespace Ajisai::Materials {
@@ -36,10 +38,11 @@ class Material {
  public:
   Material() {}
 
-  virtual void ComputeScatteringFunction(
-      Core::SurfaceInteraction* si) const = 0;
+  virtual void ComputeScatteringFunction(Core::SurfaceInteraction* si,
+                                         Core::TransportMode mode) const = 0;
 
-  virtual void ComputeScatteringFunction(Core::DifferentialGeom* diffGeom) const = 0;
+  virtual void ComputeScatteringFunction(
+      Core::DifferentialGeom* diffGeom) const = 0;
 };
 }  // namespace Ajisai::Materials
 

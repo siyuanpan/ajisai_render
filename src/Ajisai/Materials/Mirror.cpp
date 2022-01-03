@@ -26,18 +26,20 @@ namespace Ajisai::Materials {
 
 MirrorMaterial::MirrorMaterial(const Math::Color3<float> c) : color(c) {}
 
-void MirrorMaterial::ComputeScatteringFunction(
-    Core::SurfaceInteraction* si) const {
+void MirrorMaterial::ComputeScatteringFunction(Core::SurfaceInteraction* si,
+                                               Core::TransportMode mode) const {
   si->bsdf = Util::Ptr<Core::BSDF>(new Core::BSDF(
       si->Ng, si->Ns));  // std::make_shared<Core::BSDF>(si->Ng, si->Ns);
-  si->bsdf->add(std::make_shared<Core::SpecularReflection>(color));
+  si->bsdf->add(std::make_shared<Core::SpecularReflection>(
+      color, new Core::FresnelNoOp()));
 }
 
 void MirrorMaterial::ComputeScatteringFunction(
     Core::DifferentialGeom* diffGeom) const {
   diffGeom->_bsdf = Util::Ptr<Core::BSDF>(
       new Core::BSDF(diffGeom->_geomNormal, diffGeom->_normal));
-  diffGeom->_bsdf->add(std::make_shared<Core::SpecularReflection>(color));
+  diffGeom->_bsdf->add(std::make_shared<Core::SpecularReflection>(
+      color, new Core::FresnelNoOp()));
 }
 
 }  // namespace Ajisai::Materials

@@ -97,7 +97,8 @@ class PathIntegrator : public Integrator {
       intersection.mesh->GetTriangle(intersection.triId, &triangle);
       auto p = ray.Point(intersection.t);
       SurfaceInteraction si(-ray.d, p, triangle, intersection);
-      intersection.mesh->GetMaterial()->ComputeScatteringFunction(&si);
+      intersection.mesh->GetMaterial()->ComputeScatteringFunction(
+          &si, Core::TransportMode::eImportance);
 
       BSDFSamplingRecord bRec(si, sampler->Next2D());
       si.bsdf->Sample(bRec);

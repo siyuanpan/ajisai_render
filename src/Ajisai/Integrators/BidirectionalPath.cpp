@@ -814,7 +814,8 @@ int BDPTIntegrator::GenerateLightPath(Scene* scene, Sampler* sampler,
     isect.mesh->GetTriangle(isect.triId, &triangle);
     auto p = pathRay.Point(isect.t);
     SurfaceInteraction si(-pathRay.d, p, triangle, isect);
-    isect.mesh->GetMaterial()->ComputeScatteringFunction(&si);
+    isect.mesh->GetMaterial()->ComputeScatteringFunction(
+        &si, Core::TransportMode::eRadiance);
 
     BSDFSamplingRecord bRec(si, sampler->Next2D());
     si.bsdf->Sample(bRec);
@@ -1141,7 +1142,8 @@ Math::Spectrum BDPTIntegrator::Li(Core::Scene* scene, Core::Camera* camera,
     isect.mesh->GetTriangle(isect.triId, &triangle);
     auto p = pathRay.Point(isect.t);
     SurfaceInteraction si(-pathRay.d, p, triangle, isect);
-    isect.mesh->GetMaterial()->ComputeScatteringFunction(&si);
+    isect.mesh->GetMaterial()->ComputeScatteringFunction(
+        &si, Core::TransportMode::eImportance);
 
     BSDFSamplingRecord bRec(si, sampler->Next2D());
     si.bsdf->Sample(bRec);
