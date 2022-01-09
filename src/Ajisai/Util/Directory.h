@@ -26,7 +26,7 @@ DEALINGS IN THE SOFTWARE.
 #include <string>
 
 namespace Ajisai::Util {
-std::string libraryLocation(const void* address);
+AJISAI_API std::string libraryLocation(const void* address);
 
 namespace Impl {
 struct FunctionPointer {
@@ -37,7 +37,7 @@ struct FunctionPointer {
 };
 }  // namespace Impl
 
-std::string libraryLocation(Impl::FunctionPointer address);
+AJISAI_API std::string libraryLocation(Impl::FunctionPointer address);
 
 }  // namespace Ajisai::Util
 

@@ -19,18 +19,50 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-
+#include <Ajisai/Ajisai.h>
 #include <Ajisai/Util/Directory.h>
-#include <dlfcn.h>
+#ifdef AJISAI_TARGET_UNIX
+#  include <dlfcn.h>
+#endif
+
+#ifdef AJISAI_TARGET_WINDOWS
+#  include <windows.h>
+#endif
+
+#include "Unicode.h"
+
+#include <algorithm>
 
 namespace Ajisai::Util {
+
+std::string fromNativeSeparators(std::string path) {
+#ifdef AJISAI_TARGET_WINDOWS
+  std::replace(path.begin(), path.end(), '\\', '/');
+#endif
+  return path;
+}
+
 std::string libraryLocation(const void* address) {
+#ifdef AJISAI_TARGET_UNIX
   Dl_info info{nullptr, nullptr, nullptr, nullptr};
   if (!dladdr(address, &info)) {
     return {};
   }
 
   return info.dli_fname;
+#elif defined(AJISAI_TARGET_WINDOWS) && !defined(AJISAI_TARGET_WINDOWS_RT)
+  HMODULE module{};
+  if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                              GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                          reinterpret_cast<const char*>(address), &module)) {
+    return {};
+  }
+  /** @todo get rid of MAX_PATH */
+  std::wstring path(MAX_PATH, L'\0');
+  std::size_t size = GetModuleFileNameW(module, &path[0], path.size());
+  path.resize(size);
+  return fromNativeSeparators(narrow(path));
+#endif
 }
 
 std::string libraryLocation(Impl::FunctionPointer address) {

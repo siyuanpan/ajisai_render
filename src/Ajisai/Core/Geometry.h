@@ -29,6 +29,7 @@ DEALINGS IN THE SOFTWARE.
 #include <Ajisai/Util/Ptr.h>
 
 #include <cstring>
+#include <array>
 
 namespace Ajisai::Core {
 

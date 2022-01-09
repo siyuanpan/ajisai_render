@@ -30,7 +30,7 @@ DEALINGS IN THE SOFTWARE.
 
 namespace Ajisai::Integrators {
 
-class BDPTIntegrator : public Integrator {
+class AJISAI_API BDPTIntegrator : public Integrator {
  public:
   explicit BDPTIntegrator(PluginManager::AbstractManager& manager,
                           const std::string plugin)
@@ -51,7 +51,7 @@ class BDPTIntegrator : public Integrator {
     Math::Vector3f origin;
     Math::Vector3f direction;
     Math::Spectrum throughput;
-    uint PathLength : 30;
+    unsigned int PathLength : 30;
     bool isFiniteLight : 1;
     bool SpecularPath : 1;
 
@@ -103,7 +103,8 @@ class BDPTIntegrator : public Integrator {
 
  private:
   // int rrDepth = 5, maxDepth = 16;
-  static constexpr int rrDepth = 5, maxDepth = 16;
+  static constexpr int rrDepth = 5;  //, maxDepth = 16;
+  static constexpr int maxDepth = 16;
 
   // heuristic
   static constexpr int pow = 1;

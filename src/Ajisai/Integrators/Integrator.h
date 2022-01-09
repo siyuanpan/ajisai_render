@@ -32,7 +32,7 @@ DEALINGS IN THE SOFTWARE.
 
 namespace Ajisai::Integrators {
 
-class Integrator : public PluginManager::AbstractPlugin {
+class AJISAI_API Integrator : public PluginManager::AbstractPlugin {
  public:
   explicit Integrator(PluginManager::AbstractManager& manager,
                       const std::string& plugin)

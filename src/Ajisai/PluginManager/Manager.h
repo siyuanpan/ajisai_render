@@ -31,7 +31,7 @@ DEALINGS IN THE SOFTWARE.
 
 namespace Ajisai::PluginManager {
 template <class T>
-class Manager : public AbstractManager {
+class AJISAI_API Manager : public AbstractManager {
  public:
   //   static const int Version;
 

@@ -28,19 +28,19 @@ add_library(AjisaiIntegrators SHARED ${INTEGRATORS_SRCS} ${INTEGRATORS_HEADERS})
 
 target_include_directories(AjisaiIntegrators PUBLIC ${PROJECT_SOURCE_DIR}/src
                                                     ${PROJECT_BINARY_DIR}/src)
-target_link_libraries(AjisaiIntegrators PRIVATE Ajisai::Util)
+target_link_libraries(AjisaiIntegrators PUBLIC Ajisai::Util Ajisai::PluginManager)
 # target_link_libraries(AjisaiIntegrators PRIVATE dl)
 
 add_library(Ajisai::Integrators ALIAS AjisaiIntegrators)
 
 add_plugin(PathIntegrator Path.cpp)
 
-target_link_libraries(PathIntegrator PRIVATE Ajisai::PluginManager)
+target_link_libraries(PathIntegrator PRIVATE AjisaiIntegrators)
 
 add_plugin(BDPTIntegrator BidirectionalPath.cpp)
 
-target_link_libraries(BDPTIntegrator PRIVATE Ajisai::PluginManager)
+target_link_libraries(BDPTIntegrator PRIVATE AjisaiIntegrators)
 
 add_plugin(MMLTIntegrator MultiplexedMLT.cpp)
 
-target_link_libraries(MMLTIntegrator PRIVATE Ajisai::PluginManager)
+target_link_libraries(MMLTIntegrator PRIVATE AjisaiIntegrators)

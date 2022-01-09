@@ -19,6 +19,12 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/configure.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/configure.h)
+
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/configure.h
+    DESTINATION ${AJISAI_INCLUDE_INSTALL_DIR})
+
 add_subdirectory(Util)
 add_subdirectory(PluginManager)
 add_subdirectory(Integrators)

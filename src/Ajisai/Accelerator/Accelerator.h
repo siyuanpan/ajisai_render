@@ -32,7 +32,7 @@ class Scene;
 
 namespace Ajisai::Accelerator {
 
-class Accel : public PluginManager::AbstractPlugin {
+class AJISAI_API Accel : public PluginManager::AbstractPlugin {
  public:
   Accel(PluginManager::AbstractManager& manager, const std::string& plugin)
       : PluginManager::AbstractPlugin{manager, plugin} {}

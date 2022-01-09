@@ -29,17 +29,17 @@ set(ACCELERATOR_HEADERS Accelerator.h)
 add_library(AjisaiAccelerator SHARED ${ACCELERATOR_SRCS} ${ACCELERATOR_HEADERS})
 
 target_include_directories(AjisaiAccelerator PUBLIC ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
-target_link_libraries(AjisaiAccelerator PRIVATE Ajisai::Util)
+target_link_libraries(AjisaiAccelerator PUBLIC Ajisai::Util Ajisai::PluginManager)
 
 add_library(Ajisai::Accelerator ALIAS AjisaiAccelerator)
 
 add_plugin(BVHAccel BVHAccel.cpp)
 
-target_link_libraries(BVHAccel PRIVATE Ajisai::PluginManager)
+target_link_libraries(BVHAccel PRIVATE Ajisai::PluginManager AjisaiAccelerator)
 
 if(AJISAI_USE_EMBREE)
     add_plugin(EmbreeAccel EmbreeAccel.cpp)
     find_package(TBB CONFIG REQUIRED)
     find_package(embree 3 CONFIG REQUIRED)
-    target_link_libraries(EmbreeAccel PRIVATE TBB::tbb embree)
+    target_link_libraries(EmbreeAccel PRIVATE TBB::tbb embree AjisaiAccelerator)
 endif()

@@ -20,9 +20,27 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef AJISAI_UTIL_MACROS_H_
-#define AJISAI_UTIL_MACROS_H_
+#ifndef AJISAI_UTIL_UNICODE_H_
+#define AJISAI_UTIL_UNICODE_H_
 
-// #define AJISAI_API_EXPORT __attribute__((visibility("default")))
+#include <Ajisai/Ajisai.h>
+
+#include <string>
+
+namespace Ajisai::Util {
+
+#if defined(AJISAI_TARGET_WINDOWS)
+
+AJISAI_API std::wstring widen(const std::string& text);
+
+AJISAI_API std::wstring widen(const char* text);
+
+AJISAI_API std::string narrow(const std::wstring& text);
+
+AJISAI_API std::string narrow(const wchar_t* text);
+
+#endif
+
+}  // namespace Ajisai::Util
 
 #endif

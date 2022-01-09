@@ -31,7 +31,10 @@ add_library(AjisaiPluginManager SHARED ${PLUGINMANAGER_SRCS} ${PLUGINMANAGER_HEA
 
 target_include_directories(AjisaiPluginManager PUBLIC ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
 #target_link_libraries(AjisaiPluginManager AjisaiCore)
-target_link_libraries(AjisaiPluginManager PRIVATE dl)
+if(AJISAI_TARGET_UNIX)
+    target_link_libraries(AjisaiPluginManager PRIVATE ${CMAKE_DL_LIBS})
+endif()
+target_compile_definitions(AjisaiPluginManager PRIVATE "AJISAI_EXPORTS")
 
 add_library(Ajisai::PluginManager ALIAS AjisaiPluginManager)
 

@@ -22,7 +22,14 @@ DEALINGS IN THE SOFTWARE.
 
 #include <Ajisai/PluginManager/AbstractManager.h>
 #include <Ajisai/PluginManager/configure.h>
-#include <dlfcn.h>
+#ifndef AJISAI_TARGET_WINDOWS
+#  include <dlfcn.h>
+#else
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <windows.h>
+#endif
 
 #include <filesystem>
 #include <iostream>
@@ -43,17 +50,30 @@ void AbstractManager::loadImpl(const std::string& plugin) {
     auto path = prefix / plugin;
     path = path.concat(PLUGIN_FILENAME_SUFFIX);
     std::cout << "Loading " << path.string() << std::endl;
+#ifndef AJISAI_TARGET_WINDOWS
     void* lib = dlopen(path.string().data(), RTLD_NOW | RTLD_GLOBAL);
+#else
+    HMODULE lib = LoadLibrary(path.string().data());
+#endif
     if (!lib) {
       continue;
     } else {
-      auto constructor =
-          reinterpret_cast<Constructor>(dlsym(lib, "pluginConstructor"));
+      auto constructor = reinterpret_cast<Constructor>(
+#ifndef AJISAI_TARGET_WINDOWS
+          dlsym
+#else
+          GetProcAddress
+#endif
+          (lib, "pluginConstructor"));
       if (constructor == nullptr) {
         std::cerr
             << "PluginManager::Manager::load(): cannot get constructor of "
                "plugin\n";
+#ifndef AJISAI_TARGET_WINDOWS
         dlclose(lib);
+#else
+        FreeLibrary(lib);
+#endif
         return;  // nullptr;
       }
 
@@ -77,17 +97,30 @@ void* AbstractManager::loadAndInstantiateImpl(const std::string& plugin) {
     auto path = prefix / plugin;
     path = path.concat(PLUGIN_FILENAME_SUFFIX);
     std::cout << "Loading " << path.string() << std::endl;
+#ifndef AJISAI_TARGET_WINDOWS
     void* lib = dlopen(path.string().data(), RTLD_NOW | RTLD_GLOBAL);
+#else
+    HMODULE lib = LoadLibrary(path.string().data());
+#endif
     if (!lib) {
       continue;
     } else {
-      auto constructor =
-          reinterpret_cast<Constructor>(dlsym(lib, "pluginConstructor"));
+      auto constructor = reinterpret_cast<Constructor>(
+#ifndef AJISAI_TARGET_WINDOWS
+          dlsym
+#else
+          GetProcAddress
+#endif
+          (lib, "pluginConstructor"));
       if (constructor == nullptr) {
         std::cerr
             << "PluginManager::Manager::load(): cannot get constructor of "
                "plugin\n";
+#ifndef AJISAI_TARGET_WINDOWS
         dlclose(lib);
+#else
+        FreeLibrary(lib);
+#endif
         return nullptr;
       }
 

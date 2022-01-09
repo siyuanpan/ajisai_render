@@ -23,7 +23,7 @@ DEALINGS IN THE SOFTWARE.
 #ifndef AJISAI_PLUGINMANAGER_ABSTRACTPLUGIN_H_
 #define AJISAI_PLUGINMANAGER_ABSTRACTPLUGIN_H_
 
-// #include <Ajisai/PluginManager/Common.h>
+#include <Ajisai/Ajisai.h>
 #include <Ajisai/PluginManager/AbstractManager.h>
 
 #include <string>
@@ -34,7 +34,7 @@ DEALINGS IN THE SOFTWARE.
 
 namespace Ajisai::PluginManager {
 
-class AbstractPlugin {
+class AJISAI_API AbstractPlugin {
  public:
   //   AbstractPlugin() {}
   AbstractPlugin(AbstractManager& manager, const std::string& plugin);

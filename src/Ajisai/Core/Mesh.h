@@ -29,6 +29,7 @@ DEALINGS IN THE SOFTWARE.
 #include <array>
 #include <filesystem>
 #include <iostream>
+#include <sstream>
 #include <vector>
 
 #include "Ajisai/Core/BSDF.h"

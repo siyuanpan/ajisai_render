@@ -24,6 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 #include <filesystem>
 #include <vector>
+#include <array>
 
 #include "Ajisai/Core/Image.h"
 #include "Ajisai/Core/Parallel.h"

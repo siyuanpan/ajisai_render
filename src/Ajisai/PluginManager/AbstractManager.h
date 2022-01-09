@@ -23,6 +23,8 @@ DEALINGS IN THE SOFTWARE.
 #ifndef AJISAI_PLUGINMANAGER_ABSTRACTMANAGER_H_
 #define AJISAI_PLUGINMANAGER_ABSTRACTMANAGER_H_
 
+#include <Ajisai/Ajisai.h>
+#include <Ajisai/configure.h>
 // #include <Ajisai/PluginManager/Common.h>
 // #include <Ajisai/PluginManager/AbstractPlugin.h>
 #include <Ajisai/Util/Macros.h>
@@ -35,7 +37,7 @@ DEALINGS IN THE SOFTWARE.
 
 namespace Ajisai::PluginManager {
 
-class AbstractManager {
+class AJISAI_API AbstractManager {
  public:
   typedef void* (*Constructor)(AbstractManager&, const std::string&);
 
@@ -55,19 +57,17 @@ class AbstractManager {
   std::map<std::string, Constructor> plugins;
 };
 
-#define AJISAI_PLUGIN_REGISTER(name, className, interface)     \
-  extern "C" AJISAI_API_EXPORT void* pluginConstructor(        \
-      Ajisai::PluginManager::AbstractManager& manager,         \
-      const std::string& plugin);                              \
-  extern "C" AJISAI_API_EXPORT void* pluginConstructor(        \
-      Ajisai::PluginManager::AbstractManager& manager,         \
-      const std::string& plugin) {                             \
-    return new className{manager, plugin};                     \
-  }                                                            \
-  extern "C" AJISAI_API_EXPORT const char* pluginInterface();  \
-  extern "C" AJISAI_API_EXPORT const char* pluginInterface() { \
-    return interface;                                          \
-  }
+#define AJISAI_PLUGIN_REGISTER(name, className, interface) \
+  extern "C" AJISAI_API void* pluginConstructor(           \
+      Ajisai::PluginManager::AbstractManager& manager,     \
+      const std::string& plugin);                          \
+  extern "C" AJISAI_API void* pluginConstructor(           \
+      Ajisai::PluginManager::AbstractManager& manager,     \
+      const std::string& plugin) {                         \
+    return new className{manager, plugin};                 \
+  }                                                        \
+  extern "C" AJISAI_API const char* pluginInterface();     \
+  extern "C" AJISAI_API const char* pluginInterface() { return interface; }
 
 }  // namespace Ajisai::PluginManager
 
