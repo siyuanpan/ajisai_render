@@ -44,3 +44,6 @@ target_link_libraries(BDPTIntegrator PRIVATE AjisaiIntegrators)
 add_plugin(MMLTIntegrator MultiplexedMLT.cpp)
 
 target_link_libraries(MMLTIntegrator PRIVATE AjisaiIntegrators)
+if(AJISAI_TARGET_WINDOWS)
+    target_link_libraries(MMLTIntegrator PUBLIC BDPTIntegrator)
+endif()

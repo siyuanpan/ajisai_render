@@ -29,7 +29,7 @@ DEALINGS IN THE SOFTWARE.
 
 namespace Ajisai::Materials {
 
-class MatteMaterial : public Material {
+class AJISAI_API MatteMaterial : public Material {
  public:
   MatteMaterial(const Math::Color3<float> c);
 

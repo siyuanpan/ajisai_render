@@ -28,7 +28,7 @@ DEALINGS IN THE SOFTWARE.
 #include <Ajisai/Math/Math.h>
 
 namespace Ajisai::Materials {
-class GlassMaterial : public Material {
+class AJISAI_API GlassMaterial : public Material {
  public:
   GlassMaterial(const Math::Color3<float> R = Math::Color3<float>(1.f),
                 const Math::Color3<float> T = Math::Color3<float>(1.f),

@@ -26,6 +26,7 @@ set(MATERIAL_HEADERS Material.h Matte.h Mirror.h Glass.h)
 add_library(AjisaiMaterials SHARED ${MATERIAL_SRCS} ${MATERIAL_HEADERS})
 
 target_include_directories(AjisaiMaterials PUBLIC ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
-# target_link_libraries(AjisaiMaterials PRIVATE dl)
+target_link_libraries(AjisaiMaterials PUBLIC AjisaiCore)
+target_compile_definitions(AjisaiMaterials PRIVATE "AJISAI_EXPORTS")
 
 add_library(Ajisai::Materials ALIAS AjisaiMaterials)

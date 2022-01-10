@@ -23,6 +23,8 @@ DEALINGS IN THE SOFTWARE.
 #ifndef AJISAI_MATERIALS_MATERIAL_H_
 #define AJISAI_MATERIALS_MATERIAL_H_
 
+#include <Ajisai/Ajisai.h>
+
 namespace Ajisai::Core {
 
 struct SurfaceInteraction;
@@ -34,7 +36,7 @@ enum class TransportMode;
 }  // namespace Ajisai::Core
 
 namespace Ajisai::Materials {
-class Material {
+class AJISAI_API Material {
  public:
   Material() {}
 

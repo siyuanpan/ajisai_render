@@ -28,7 +28,7 @@ DEALINGS IN THE SOFTWARE.
 #include <Ajisai/Math/Math.h>
 
 namespace Ajisai::Materials {
-class MirrorMaterial : public Material {
+class AJISAI_API MirrorMaterial : public Material {
  public:
   MirrorMaterial(const Math::Color3<float> c);
 
