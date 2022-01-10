@@ -88,6 +88,31 @@ struct convert<Ajisai::Math::Vector2f> {
   }
 };
 
+template <>
+struct convert<Ajisai::Math::Matrix4f> {
+  static Node encode(const Ajisai::Math::Matrix4f& rhs) {
+    Node node;
+    for (size_t i = 0; i != 15; ++i) {
+      size_t col = i % 4;
+      size_t row = i / 4;
+      node.push_back(rhs[col][row]);
+    }
+    return node;
+  }
+
+  static bool decode(const Node& node, Ajisai::Math::Matrix4f& rhs) {
+    if (!node.IsSequence() || node.size() != 16) return false;
+
+    for (size_t i = 0; i != 15; ++i) {
+      size_t col = i % 4;
+      size_t row = i / 4;
+      rhs[col][row] = node[i].as<float>();
+    }
+
+    return true;
+  }
+};
+
 }  // namespace YAML
 
 void parse(int argc, char** argv) {
@@ -133,34 +158,76 @@ void load_scene_file(  // Ajisai::Integrators::RenderContext& ctx,
   using namespace Ajisai::Core;
   using namespace Ajisai::Math;
   using namespace Ajisai::Materials;
-
   YAML::Node config = YAML::LoadFile(path.string());
 
-  Vector3f origin =
-      config["camera"]["Perspective"]["transform"]["origin"].as<Vector3f>();
-  Vector3f target =
-      config["camera"]["Perspective"]["transform"]["target"].as<Vector3f>();
-
-  float focus_distance =
-      config["camera"]["Perspective"]["focus_distance"].as<float>();
-  Vector3f up =
-      config["camera"]["Perspective"]["transform"]["up"].as<Vector3f>();
   float fov = config["camera"]["Perspective"]["fov"].as<float>();
   Vector2f res = config["camera"]["Perspective"]["res"].as<Vector2f>();
 
-  job.ctx.camera = std::make_shared<Ajisai::Core::Camera>(
-      origin, target, focus_distance, up, fov * 3.14159265359f / 180.f, res);
+  if (config["camera"]["Perspective"]["transform"]["toWorld"].IsDefined()) {
+    auto toWorld =
+        config["camera"]["Perspective"]["transform"]["toWorld"].as<Matrix4f>();
+    job.ctx.camera = std::make_shared<Ajisai::Core::Camera>(
+        toWorld, fov * 3.14159265359f / 180.f, res);
+
+  } else {
+    Vector3f origin =
+        config["camera"]["Perspective"]["transform"]["origin"].as<Vector3f>();
+    Vector3f target =
+        config["camera"]["Perspective"]["transform"]["target"].as<Vector3f>();
+
+    float focus_distance =
+        config["camera"]["Perspective"]["focus_distance"].as<float>();
+    Vector3f up =
+        config["camera"]["Perspective"]["transform"]["up"].as<Vector3f>();
+
+    // float fov = config["camera"]["Perspective"]["fov"].as<float>();
+    // Vector2f res = config["camera"]["Perspective"]["res"].as<Vector2f>();
+
+    job.ctx.camera = std::make_shared<Ajisai::Core::Camera>(
+        origin, target, focus_distance, up, fov * 3.14159265359f / 180.f, res);
+  }
+
+  // Vector3f origin =
+  //     config["camera"]["Perspective"]["transform"]["origin"].as<Vector3f>();
+  // Vector3f target =
+  //     config["camera"]["Perspective"]["transform"]["target"].as<Vector3f>();
+
+  // float focus_distance =
+  //     config["camera"]["Perspective"]["focus_distance"].as<float>();
+  // Vector3f up =
+  //     config["camera"]["Perspective"]["transform"]["up"].as<Vector3f>();
+
+  // float fov = config["camera"]["Perspective"]["fov"].as<float>();
+  // Vector2f res = config["camera"]["Perspective"]["res"].as<Vector2f>();
+
+  // job.ctx.camera = std::make_shared<Ajisai::Core::Camera>(
+  //     origin, target, focus_distance, up, fov * 3.14159265359f / 180.f, res);
 
   for (int i = 0; i < config["shape"].size(); ++i) {
     std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>();
-    mesh->Load(config["shape"][i]["filename"].as<std::string>());
+    if (config["shape"][i]["type"].as<std::string>() == "obj")
+      mesh->Load(config["shape"][i]["filename"].as<std::string>());
+    else if (config["shape"][i]["type"].as<std::string>() == "rectangle") {
+      mesh->CreateRectangleMesh();
+    }
     if (config["shape"][i]["transform"].IsDefined()) {
-      mesh->Translate(
-          config["shape"][i]["transform"]["translate"].as<Vector3f>());
+      if (config["shape"][i]["transform"]["toWorld"].IsDefined()) {
+        mesh->Transform(
+            config["shape"][i]["transform"]["toWorld"].as<Matrix4f>());
+      }
+      if (config["shape"][i]["transform"]["translate"].IsDefined()) {
+        mesh->Translate(
+            config["shape"][i]["transform"]["translate"].as<Vector3f>());
+      }
     }
     if (config["shape"][i]["bsdf"]["type"].as<std::string>() == "diffuse") {
-      mesh->SetMaterial(std::make_shared<MatteMaterial>(Color3<float>::fromSrgb(
-          config["shape"][i]["bsdf"]["srgb"].as<Vector3f>())));
+      if (config["shape"][i]["bsdf"]["srgb"].IsDefined())
+        mesh->SetMaterial(
+            std::make_shared<MatteMaterial>(Color3<float>::fromSrgb(
+                config["shape"][i]["bsdf"]["srgb"].as<Vector3f>())));
+      else if (config["shape"][i]["bsdf"]["rgb"].IsDefined())
+        mesh->SetMaterial(std::make_shared<MatteMaterial>(
+            Color3<float>(config["shape"][i]["bsdf"]["rgb"].as<Vector3f>())));
     } else if (config["shape"][i]["bsdf"]["type"].as<std::string>() ==
                "mirror") {
       mesh->SetMaterial(std::make_shared<MirrorMaterial>(

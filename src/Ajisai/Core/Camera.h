@@ -62,6 +62,18 @@ class Camera {
     imagePlaneDist = resolution.y() / (2.f * std::tan(fov * 0.5f));
   }
 
+  explicit Camera(const Math::Matrix4f& toWorld, float fov,
+                  const Math::Vector2f& res, float lensRadius = 0.f,
+                  float near = 1.0f, float far = 1000.f)
+      : camera2world(toWorld), resolution(res), lensRadius{lensRadius} {
+    world2camera = camera2world.invertedRigid();
+
+    init(fov, near, far);
+
+    film = std::make_shared<Film>(Math::Vector2i{int(res.x()), int(res.y())});
+    imagePlaneDist = resolution.y() / (2.f * std::tan(fov * 0.5f));
+  }
+
   void init(float fov, float near, float far);
 
   [[deprecated]] Ray GenerateRay(float s, float t) const {

@@ -93,6 +93,17 @@ bool Mesh::Load(const std::filesystem::path& path) {
   return true;
 }
 
+bool Mesh::CreateRectangleMesh() {
+  vertices.emplace_back(Vertex{{-1.f, -1.f, 0.f}, {0.f, 0.f, 1.f}, {}});
+  vertices.emplace_back(Vertex{{1.f, -1.f, 0.f}, {0.f, 0.f, 1.f}, {}});
+  vertices.emplace_back(Vertex{{1.f, 1.f, 0.f}, {0.f, 0.f, 1.f}, {}});
+  vertices.emplace_back(Vertex{{-1.f, 1.f, 0.f}, {0.f, 0.f, 1.f}, {}});
+
+  indices = {0, 1, 2, 2, 3, 0};
+
+  return true;
+}
+
 std::vector<std::shared_ptr<AreaLight>> Mesh::GetLights() {
   if (!lights.empty()) return lights;
   for (int i = 0; i < indices.size() / 3; ++i) {

@@ -228,6 +228,15 @@ class Mesh {
 
   bool Load(const std::filesystem::path& path);
 
+  bool CreateRectangleMesh();
+
+  void Transform(const Math::Matrix4f& m) {
+    for (auto& v : vertices) {
+      v.pos = m.transformPoint(v.pos);
+      v.Ns = m.transformVector(v.Ns);
+    }
+  }
+
   void Translate(const Math::Vector3f& t) {
     for (auto& v : vertices) {
       v.pos += t;
