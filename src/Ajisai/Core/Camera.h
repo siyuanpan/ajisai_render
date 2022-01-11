@@ -66,7 +66,7 @@ class Camera {
                   const Math::Vector2f& res, float lensRadius = 0.f,
                   float near = 1.0f, float far = 1000.f)
       : camera2world(toWorld), resolution(res), lensRadius{lensRadius} {
-    world2camera = camera2world.invertedRigid();
+    world2camera = camera2world.inverted();
 
     init(fov, near, far);
 

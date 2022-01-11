@@ -19,9 +19,9 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-set(UTIL_SRCS Directory.cpp Unicode.cpp)
+set(UTIL_SRCS Directory.cpp Unicode.cpp Stream.cpp Allocator.cpp ZStream.cpp)
 
-set(UTIL_HEADERS Directory.h Unicode.h)
+set(UTIL_HEADERS Directory.h Unicode.h Stream.h Allocator.h ZStream.h)
 
 add_library(AjisaiUtil SHARED ${UTIL_SRCS} ${UTIL_HEADERS})
 
@@ -29,6 +29,7 @@ target_include_directories(AjisaiUtil PUBLIC ${PROJECT_SOURCE_DIR}/src ${PROJECT
 if(AJISAI_TARGET_UNIX)
     target_link_libraries(AjisaiUtil PRIVATE ${CMAKE_DL_LIBS})
 endif()
+target_link_libraries(AjisaiUtil PRIVATE ZLIB::ZLIB)
 target_compile_definitions(AjisaiUtil PRIVATE "AJISAI_EXPORTS")
 
 add_library(Ajisai::Util ALIAS AjisaiUtil)

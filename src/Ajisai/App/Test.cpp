@@ -3,6 +3,7 @@
 #include <Ajisai/Math/Math.h>
 #include <Ajisai/PluginManager/Manager.h>
 #include <Ajisai/Util/Ptr.h>
+#include <Ajisai/Util/ZStream.h>
 
 #include <fstream>
 #include <iostream>
@@ -226,5 +227,55 @@ int main(int argc, char** argv) {
                      std::numeric_limits<float>::infinity())
               << std::endl;
     // Rad<float> rad;
+  }
+
+  {
+    using namespace Ajisai::Util;
+    auto file = FileStream("bidir.serialized");
+
+    // auto file = std::make_shared<std::fstream>();
+    // file->open("bidir.serialized", std::ios::binary | std::ios::in);
+    // if (!file->good()) {
+    //   printf("I/O error while attempting to open file bidir.serialized");
+    // }
+    // file->seekg(0, std::ios::end);
+    // auto filesize = file->tellg();
+    // file->seekg(0, std::ios::beg);
+    std::cout << "filesize : " << file.Size() << std::endl;
+    int16_t format = 0, version = 0;
+    file.Read(&format, sizeof(int16_t));
+    file.Read(&version, sizeof(int16_t));
+    std::cout << "MTS_FILEFORMAT_HEADER : " << 0x041C << " format : " << format
+              << " version : " << version << std::endl;
+    file.Seek(file.Size() - sizeof(uint32_t));
+    // file->seekg(filesize - sizeof(uint32_t));
+    // file->seekg(-sizeof(uint32_t), std::ios::end);
+
+    uint32_t count = 0;
+    file.Read(&count, sizeof(uint32_t));
+
+    file.Seek(file.Size() - sizeof(uint32_t) * (count - 6 + 1));
+    uint32_t offset = 0;
+    file.Read(&offset, sizeof(uint32_t));
+    // file->read((char*)&offset, sizeof(uint32_t));
+    // file->seekg(offset, std::ios::beg);
+    file.Seek(offset);
+    std::cout << "count : " << count << " offset : " << offset << std::endl;
+    // file->seekg(sizeof(int16_t) * 2, std::ios::cur);
+    file.Seek(file.Tell() + 2 * sizeof(int16_t));
+
+    auto stream = new ZStream(&file);
+
+    uint32_t flags = 0;
+    stream->Read(&flags, sizeof(uint32_t));
+
+    size_t vertex_count, face_count;
+    stream->Read(&vertex_count, sizeof(size_t));
+    stream->Read(&face_count, sizeof(size_t));
+
+    std::cout << "flags : " << flags << " vertex_count : " << vertex_count
+              << " face_count : " << face_count << std::endl;
+
+    delete stream;
   }
 }
