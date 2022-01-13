@@ -209,6 +209,9 @@ void load_scene_file(  // Ajisai::Integrators::RenderContext& ctx,
       mesh->Load(config["shape"][i]["filename"].as<std::string>());
     else if (config["shape"][i]["type"].as<std::string>() == "rectangle") {
       mesh->CreateRectangleMesh();
+    } else if (config["shape"][i]["type"].as<std::string>() == "serialized") {
+      mesh->LoadSerialized(config["shape"][i]["filename"].as<std::string>(),
+                           config["shape"][i]["shapeIndex"].as<int>());
     }
     if (config["shape"][i]["transform"].IsDefined()) {
       if (config["shape"][i]["transform"]["toWorld"].IsDefined()) {
@@ -266,6 +269,7 @@ int main(int argc, char** argv) {
 
 #if AJISAI_USE_EMBREE
   auto accel = accel_manager.loadAndInstantiate("EmbreeAccel");
+  // auto accel = accel_manager.loadAndInstantiate("BVHAccel");
 #else
   auto accel = accel_manager.loadAndInstantiate("BVHAccel");
 #endif
@@ -282,7 +286,7 @@ int main(int argc, char** argv) {
   job.ctx.scene = scene;
   job.ctx.sampler = std::make_shared<Sampler>();
   job.ctx.integrator = std::move(integrator);
-  job.spp = 100;
+  job.spp = 1;
 
   load_scene_file(job, inputFile);
 

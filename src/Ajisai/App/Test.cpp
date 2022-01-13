@@ -253,6 +253,7 @@ int main(int argc, char** argv) {
 
     uint32_t count = 0;
     file.Read(&count, sizeof(uint32_t));
+    // file.Read<uint32_t>(count);
 
     file.Seek(file.Size() - sizeof(uint32_t) * (count - 6 + 1));
     uint32_t offset = 0;

@@ -158,7 +158,18 @@ struct BSDFSamplingRecord {
 
 class Mesh {
  public:
+  enum class TriMeshFlags {
+    HasNormals = 0x0001,
+    HasTexcoords = 0x0002,
+    HasTangents = 0x0004,  // unused
+    HasColors = 0x0008,
+    FaceNormals = 0x0010,
+    SinglePrecision = 0x1000,
+    DoublePrecision = 0x2000
+  };
+
   std::size_t GetTriSize() const { return indices.size() / 3; }
+  std::size_t GetVertexSize() const { return vertices.size(); }
 
   void GetTriangle(uint32_t triId, Triangle* triangle) const {
     auto v0 = vertices[indices[triId * 3 + 0]].pos;
@@ -227,6 +238,10 @@ class Mesh {
   }
 
   bool Load(const std::filesystem::path& path);
+
+  bool LoadSerialized(const std::filesystem::path& path, int shapeIndex);
+
+  void ComputeNormal();
 
   bool CreateRectangleMesh();
 

@@ -47,6 +47,11 @@ class Stream {
 
   virtual size_t Size() const = 0;
 
+  template <class T>
+  void ReadArray(T* value, size_t count) {
+    Read(value, count * sizeof(T));
+  }
+
   Stream(const Stream&) = delete;
   Stream& operator=(const Stream&) = delete;
 

@@ -22,6 +22,7 @@ DEALINGS IN THE SOFTWARE.
 
 #include <Ajisai/Core/Light.h>
 #include <Ajisai/Core/Mesh.h>
+#include <Ajisai/Util/ZStream.h>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #define TINYOBJLOADER_USE_MAPBOX_EARCUT
@@ -91,6 +92,134 @@ bool Mesh::Load(const std::filesystem::path& path) {
   }
 
   return true;
+}
+
+bool Mesh::LoadSerialized(const std::filesystem::path& path, int shapeIndex) {
+  using namespace Util;
+  std::shared_ptr<Stream> stream = std::make_shared<FileStream>(path);
+
+  int16_t format = 0, version = 0;
+  stream->Read(&format, sizeof(int16_t));
+  stream->Read(&version, sizeof(int16_t));
+  std::cout << "MTS_FILEFORMAT_HEADER : " << 0x041C << " format : " << format
+            << " version : " << version << std::endl;
+  stream->Seek(stream->Size() - sizeof(uint32_t));
+
+  uint32_t count = 0;
+  stream->Read(&count, sizeof(uint32_t));
+
+  stream->Seek(stream->Size() - sizeof(uint32_t) * (count - shapeIndex + 1));
+  uint32_t offset = 0;
+  stream->Read(&offset, sizeof(uint32_t));
+  stream->Seek(offset);
+  std::cout << "count : " << count << " offset : " << offset << std::endl;
+  stream->Seek(stream->Tell() + 2 * sizeof(int16_t));
+
+  std::shared_ptr<Stream> zstream = std::make_shared<ZStream>(stream.get());
+
+  uint32_t flags = 0;
+  zstream->Read(&flags, sizeof(uint32_t));
+
+  size_t vertex_count, face_count;
+  zstream->Read(&vertex_count, sizeof(size_t));
+  zstream->Read(&face_count, sizeof(size_t));
+
+  std::cout << "flags : " << flags << " vertex_count : " << vertex_count
+            << " face_count : " << face_count << std::endl;
+
+  auto has_flag = [](uint32_t flags, TriMeshFlags f) -> bool {
+    return (flags & static_cast<uint32_t>(f)) != 0;
+  };
+
+  bool double_precision = has_flag(flags, TriMeshFlags::DoublePrecision);
+
+  std::cout << "has double precision flag : " << double_precision << std::endl;
+
+  auto read_helper = [&](Stream* stream, bool dp, std::vector<float>& dst,
+                         uint32_t dim) {
+    dst.resize((uint32_t)vertex_count * dim);
+    if (dp) {
+      std::unique_ptr<double[]> values(
+          new double[(uint32_t)vertex_count * dim]);
+      stream->ReadArray(values.get(), vertex_count * dim);
+      for (size_t i = 0; i < vertex_count * dim; ++i) dst[i] = (float)values[i];
+    } else {
+      std::unique_ptr<float[]> values(new float[4 * 3]);
+      // stream->ReadArray(values.get(), vertex_count * dim);
+      // memcpy(dst.data(), values.get(), vertex_count * dim * sizeof(float));
+    }
+  };
+
+  std::vector<float> vertices;
+  vertices.resize(vertex_count * 3);
+  std::unique_ptr<float[]> values(new float[vertex_count * 3]);
+  zstream->ReadArray(values.get(), vertex_count * 3);
+  memcpy(vertices.data(), values.get(), vertex_count * 3 * sizeof(float));
+
+  std::vector<float> normals;
+  if (has_flag(flags, TriMeshFlags::HasNormals)) {
+    normals.resize(vertex_count * 3);
+    std::unique_ptr<float[]> values1(new float[vertex_count * 3]);
+    zstream->ReadArray(values1.get(), vertex_count * 3);
+    memcpy(normals.data(), values1.get(), vertex_count * 3 * sizeof(float));
+  }
+
+  std::vector<float> coordinate;
+  if (has_flag(flags, TriMeshFlags::HasTexcoords)) {
+    coordinate.resize(vertex_count * 2);
+    std::unique_ptr<float[]> values2(new float[vertex_count * 2]);
+    zstream->ReadArray(values2.get(), vertex_count * 2);
+    memcpy(coordinate.data(), values2.get(), vertex_count * 2 * sizeof(float));
+  }
+
+  std::vector<float> colors;
+  if (has_flag(flags, TriMeshFlags::HasColors)) {
+    colors.resize(vertex_count * 3);
+    std::unique_ptr<float[]> values3(new float[vertex_count * 3]);
+    zstream->ReadArray(values3.get(), vertex_count * 3);
+    memcpy(colors.data(), values3.get(), vertex_count * 3 * sizeof(float));
+  }
+
+  std::vector<uint32_t> faces;
+  faces.resize(face_count * 3);
+  zstream->Read(faces.data(), face_count * sizeof(uint32_t) * 3);
+
+  for (size_t i = 0; i != vertex_count; ++i) {
+    Vertex vertex{};
+    vertex.pos = {vertices[i * 3 + 0], vertices[i * 3 + 1],
+                  vertices[i * 3 + 2]};
+    if (has_flag(flags, TriMeshFlags::HasNormals)) {
+      vertex.Ns = {normals[i * 3 + 0], normals[i * 3 + 1], normals[i * 3 + 2]};
+    }
+
+    if (has_flag(flags, TriMeshFlags::HasTexcoords)) {
+      vertex.texCoord = {coordinate[i * 2 + 0], coordinate[i * 2 + 1]};
+    }
+    this->vertices.emplace_back(std::move(vertex));
+  }
+
+  if (!has_flag(flags, TriMeshFlags::HasNormals)) {
+    ComputeNormal();
+  }
+
+  for (auto f : faces) {
+    indices.push_back(f);
+  }
+
+  return true;
+}
+
+void Mesh::ComputeNormal() {
+  for (size_t i = 0; i < vertices.size(); i += 3) {
+    auto& v0 = vertices[i + 0];
+    auto& v1 = vertices[i + 1];
+    auto& v2 = vertices[i + 2];
+
+    auto n = Math::cross(v1.pos - v0.pos, v2.pos - v0.pos).normalized();
+    v0.Ns = n;
+    v1.Ns = n;
+    v2.Ns = n;
+  }
 }
 
 bool Mesh::CreateRectangleMesh() {

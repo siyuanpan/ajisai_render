@@ -52,7 +52,7 @@ class EmbreeAccel final : public Accel {
       auto rtcGeo = rtcNewGeometry(rtcDevice, RTC_GEOMETRY_TYPE_TRIANGLE);
       rtcSetSharedGeometryBuffer(rtcGeo, RTC_BUFFER_TYPE_VERTEX, 0,
                                  RTC_FORMAT_FLOAT3, mesh->GetVertexBuffer(), 0,
-                                 sizeof(Core::Vertex), mesh->GetTriSize() * 3);
+                                 sizeof(Core::Vertex), mesh->GetVertexSize());
       rtcSetSharedGeometryBuffer(rtcGeo, RTC_BUFFER_TYPE_INDEX, 0,
                                  RTC_FORMAT_UINT3, mesh->GetIndexBuffer(), 0,
                                  3 * sizeof(uint32_t), mesh->GetTriSize());
