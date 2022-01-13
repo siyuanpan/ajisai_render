@@ -219,6 +219,30 @@ class FresnelSpecular : public BxDF {
   const TransportMode mode;
 };
 
+class Ward : public BxDF {
+ public:
+  Ward(const Math::Spectrum diffuseReflectance,
+       const Math::Spectrum specularReflectance, float alpha, float alphaU,
+       float alphaV)
+      : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)),
+        diffuseReflectance(diffuseReflectance),
+        specularReflectance(specularReflectance),
+        alpha(alpha),
+        alphaU(alphaU),
+        alphaV(alphaV) {}
+
+  virtual BxDFType GetType() const { return BxDFType::BSDF_DIFFUSE; }
+  virtual void Sample(BSDFSamplingRecord& rec) const;
+  virtual Math::Spectrum Evaluate(const Math::Vector3f&,
+                                  const Math::Vector3f&) const;
+  virtual float EvaluatePdf(const Math::Vector3f&, const Math::Vector3f&) const;
+
+ private:
+  const Math::Spectrum diffuseReflectance;
+  const Math::Spectrum specularReflectance;
+  float alpha, alphaU, alphaV;
+};
+
 }  // namespace Ajisai::Core
 
 #endif

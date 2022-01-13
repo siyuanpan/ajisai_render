@@ -19,9 +19,9 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-set(MATERIAL_SRCS Matte.cpp Mirror.cpp Glass.cpp)
+set(MATERIAL_SRCS Matte.cpp Mirror.cpp Glass.cpp Ward.cpp)
 
-set(MATERIAL_HEADERS Material.h Matte.h Mirror.h Glass.h)
+set(MATERIAL_HEADERS Material.h Matte.h Mirror.h Glass.h Ward.h)
 
 add_library(AjisaiMaterials SHARED ${MATERIAL_SRCS} ${MATERIAL_HEADERS})
 

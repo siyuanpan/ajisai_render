@@ -39,6 +39,7 @@ DEALINGS IN THE SOFTWARE.
 #include "Ajisai/Materials/Glass.h"
 #include "Ajisai/Materials/Matte.h"
 #include "Ajisai/Materials/Mirror.h"
+#include "Ajisai/Materials/Ward.h"
 #include "Ajisai/Math/Math.h"
 #include "Ajisai/PluginManager/Manager.h"
 
@@ -124,8 +125,8 @@ void parse(int argc, char** argv) {
     options.allow_unrecognised_options().add_options()(
         "i,input", "Input Scene File", cxxopts::value<std::string>())(
         "o,output", "Output Image File",
-        cxxopts::value<std::string>()->default_value(
-            "render.png"))("h,help", "show this help");
+        cxxopts::value<std::string>()->default_value("render.png"))(
+        "h,help", "show this help");
 
     options.parse_positional({"input", "output"});
 
@@ -238,6 +239,11 @@ void load_scene_file(  // Ajisai::Integrators::RenderContext& ctx,
     } else if (config["shape"][i]["bsdf"]["type"].as<std::string>() ==
                "glass") {
       mesh->SetMaterial(std::make_shared<GlassMaterial>());
+    } else if (config["shape"][i]["bsdf"]["type"].as<std::string>() == "ward") {
+      mesh->SetMaterial(std::make_shared<WardMaterial>(
+          config["shape"][i]["bsdf"]["diffuseReflectance"].as<Vector3f>(),
+          config["shape"][i]["bsdf"]["specularReflectance"].as<Vector3f>(),
+          config["shape"][i]["bsdf"]["alpha"].as<float>()));
     }
     if (config["shape"][i]["emitter"].IsDefined()) {
       mesh->SetEmitter(std::make_shared<Emitter>(
@@ -260,8 +266,8 @@ int main(int argc, char** argv) {
 
   PluginManager::Manager<Integrator> manager;
 
-  auto integrator = manager.loadAndInstantiate("PathIntegrator");
-  // auto integrator = manager.loadAndInstantiate("BDPTIntegrator");
+  // auto integrator = manager.loadAndInstantiate("PathIntegrator");
+  auto integrator = manager.loadAndInstantiate("BDPTIntegrator");
   // manager.load("BDPTIntegrator");
   // auto integrator = manager.loadAndInstantiate("MMLTIntegrator");
 
@@ -269,7 +275,6 @@ int main(int argc, char** argv) {
 
 #if AJISAI_USE_EMBREE
   auto accel = accel_manager.loadAndInstantiate("EmbreeAccel");
-  // auto accel = accel_manager.loadAndInstantiate("BVHAccel");
 #else
   auto accel = accel_manager.loadAndInstantiate("BVHAccel");
 #endif

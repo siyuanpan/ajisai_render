@@ -234,4 +234,103 @@ float FresnelSpecular::EvaluatePdf(const Math::Vector3f& wo,
   return 0.f;
 }
 
+void Ward::Sample(BSDFSamplingRecord& rec) const {
+  float d_avg = diffuseReflectance.luminance(),
+        s_avg = specularReflectance.luminance();
+  float specular_sampling_weight = (s_avg) / (d_avg + s_avg);
+
+  bool chose_specular = true;
+
+  if (rec.u.x() <= specular_sampling_weight) {
+    rec.u.x() /= specular_sampling_weight;
+  } else {
+    rec.u.x() = (rec.u.x() - specular_sampling_weight) /
+                (1.f - specular_sampling_weight);
+    chose_specular = false;
+  }
+
+  if (chose_specular) {
+    float phi_h =
+        std::atan(alphaV / alphaU *
+                  std::tan(2.f * Math::Constants<float>::pi() * rec.u.y()));
+    if (rec.u.y() > 0.5f) phi_h += Math::Constants<float>::pi();
+    float cos_phi_h = std::cos(phi_h);
+    float sin_phi_h = std::sqrt(std::max(0.f, 1 - cos_phi_h * cos_phi_h));
+
+    float theta_h = std::atan(std::sqrt(std::max(
+        0.f,
+        -std::log(rec.u.x()) / ((cos_phi_h * cos_phi_h) / (alphaU * alphaU) +
+                                (sin_phi_h * sin_phi_h) / (alphaV * alphaV)))));
+
+    auto h = Math::Vector3f{std::sin(theta_h) * cos_phi_h,
+                            std::sin(theta_h) * sin_phi_h, std::cos(theta_h)};
+    rec.wi = h * (2.f * Math::dot(rec.wo, h)) - rec.wo;
+
+    rec.type = BxDFType::BSDF_REFLECTION;
+
+    if (rec.wi.z() <= 0) {
+      rec.f = {};
+      rec.pdf = 0.f;
+      return;
+    }
+  } else {
+    rec.wi = squareToCosineHemisphere(rec.u);
+    if (rec.wo.z() * rec.wi.z() < 0) {
+      rec.wi.z() *= -1;
+    }
+  }
+
+  rec.pdf = EvaluatePdf(rec.wo, rec.wi);
+
+  if (rec.pdf == 0)
+    rec.f = {};
+  else
+    rec.f = Evaluate(rec.wo, rec.wi) / rec.pdf;
+}
+
+Math::Spectrum Ward::Evaluate(const Math::Vector3f& wo,
+                              const Math::Vector3f& wi) const {
+  if (cosTheta(wo) <= 0 || cosTheta(wi) <= 0) return {};
+
+  Math::Spectrum result{};
+  auto h = (wi + wo).normalized();
+
+  float factor1 = 1.f / (4.0f * Math::Constants<float>::pi() * alphaU * alphaV *
+                         std::sqrt(cosTheta(wo) * cosTheta(wi)));
+  float factor2 = h.x() / alphaU, factor3 = h.y() / alphaV;
+
+  float exp = -(factor2 * factor2 + factor3 * factor3) / (h.z() * h.z());
+  float spec_ref = factor1 * std::exp(exp);
+
+  if (spec_ref > 1e-10f) result += specularReflectance * spec_ref;
+
+  result += diffuseReflectance / Math::Constants<float>::pi();
+
+  return result * cosTheta(wi);
+}
+
+float Ward::EvaluatePdf(const Math::Vector3f& wo,
+                        const Math::Vector3f& wi) const {
+  if (cosTheta(wo) <= 0 || cosTheta(wi) <= 0) return 0.f;
+
+  float d_avg = diffuseReflectance.luminance(),
+        s_avg = specularReflectance.luminance();
+  float specular_sampling_weight = (s_avg) / (d_avg + s_avg);
+
+  float diffuse_prob = 0.0f, spec_prob = 0.0f;
+
+  auto h = (wi + wo).normalized();
+  auto factor1 = 1.0f / (4.0f * Math::Constants<float>::pi() * alphaU * alphaV *
+                         Math::dot(h, wo) * std::pow(cosTheta(h), 3));
+  float factor2 = h.x() / alphaU, factor3 = h.y() / alphaV;
+
+  float exp = -(factor2 * factor2 + factor3 * factor3) / (h.z() * h.z());
+  spec_prob = factor1 * std::exp(exp);
+
+  diffuse_prob = cosTheta(wi) / Math::Constants<float>::pi();
+
+  return specular_sampling_weight * spec_prob +
+         (1.f - specular_sampling_weight) * diffuse_prob;
+}
+
 }  // namespace Ajisai::Core
