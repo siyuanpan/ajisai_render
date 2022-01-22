@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.15)
 
 project(Ajisai)
 
@@ -20,40 +20,6 @@ foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
       ${CMAKE_CURRENT_SOURCE_DIR}/output)
 endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
 
-find_package(cxxopts CONFIG REQUIRED)
-find_package(ryml CONFIG REQUIRED)
-find_package(yaml-cpp CONFIG REQUIRED)
-find_package(tinyobjloader CONFIG REQUIRED)
-find_package(ZLIB REQUIRED)
-find_package(Threads REQUIRED)
-
-file(GLOB AJISAI_CORE_SRC src/Ajisai/Core/*.cpp)
-# file(GLOB AJISAI_INTEGRATORS_SRC src/Ajisai/Integrators/*.cpp)
-add_library(AjisaiCore SHARED ${AJISAI_CORE_SRC})
-
-# function(add_plugin plugin_name) add_library(${plugin_name} MODULE ${ARGN})
-# set_target_properties(${plugin_name} PROPERTIES PREFIX "")
-# target_link_libraries(${plugin_name} PRIVATE AjisaiCore)
-# target_compile_definitions(${plugin_name} PRIVATE "AJISAI_EXPORTS")
-# endfunction()
-
-# add_executable(Ajisai src/Ajisai/App/Ajisai.cpp ${AJISAI_CORE_SRC}
-# ${AJISAI_INTEGRATORS_SRC})
-
-find_path(STB_INCLUDE_DIRS "stb.h")
-target_include_directories(AjisaiCore PRIVATE ${STB_INCLUDE_DIRS})
-
-target_include_directories(AjisaiCore PUBLIC ${PROJECT_SOURCE_DIR}/src
-                                             ${PROJECT_BINARY_DIR}/src)
-target_link_libraries(AjisaiCore PUBLIC Threads::Threads)
-target_link_libraries(AjisaiCore PRIVATE cxxopts::cxxopts)
-# target_link_libraries(AjisaiCore PRIVATE ryml::ryml)
-target_link_libraries(AjisaiCore PRIVATE yaml-cpp)
-target_link_libraries(AjisaiCore PRIVATE tinyobjloader::tinyobjloader)
-
-# add_subdirectory(src/Ajisai/PluginManager)
-
-option(AJISAI_USE_EMBREE "Use Embree as ray intersection backend" ON)
 option(BUILD_STATIC "Build static libraries (default are shared)" OFF)
 
 if(CMAKE_SYSTEM_NAME STREQUAL Emscripten)
@@ -89,6 +55,9 @@ endif()
 
 if(BUILD_STATIC)
   set(AJISAI_BUILD_STATIC 1)
+  set(SHARED_OR_STATIC STATIC)
+else()
+  set(SHARED_OR_STATIC SHARED)
 endif()
 
 function(add_plugin plugin_name)
@@ -102,31 +71,8 @@ function(add_plugin plugin_name)
   target_compile_definitions(${plugin_name} PRIVATE "AJISAI_EXPORTS")
 endfunction()
 
-set(AJISAI_INCLUDE_INSTALL_DIR src/Ajisai)
+set(AJISAI_INCLUDE_INSTALL_DIR ajisai)
 
-add_subdirectory(src)
+add_subdirectory(ajisai)
 
-add_executable(test src/Ajisai/App/Test.cpp)
-target_include_directories(test PUBLIC ${PROJECT_SOURCE_DIR}/src
-                                       ${PROJECT_BINARY_DIR}/src)
-target_link_libraries(test PRIVATE ryml::ryml)
-target_link_libraries(test PRIVATE Ajisai::PluginManager Ajisai::Util)
-
-add_executable(Ajisai src/Ajisai/App/Ajisai.cpp)
-target_link_libraries(Ajisai PUBLIC AjisaiCore Ajisai::PluginManager)
-# target_include_directories(Ajisai PUBLIC ${PROJECT_SOURCE_DIR}/src
-# ${PROJECT_BINARY_DIR}/src)
-target_link_libraries(Ajisai PRIVATE yaml-cpp)
-target_link_libraries(Ajisai PRIVATE Ajisai::Util)
-target_link_libraries(Ajisai PRIVATE Ajisai::Integrators)
-target_link_libraries(Ajisai PRIVATE Ajisai::Accelerator)
-target_link_libraries(Ajisai PRIVATE Ajisai::Materials)
-if(AJISAI_USE_EMBREE)
-  target_compile_definitions(Ajisai PRIVATE "AJISAI_USE_EMBREE")
-endif()
-
-# function(add_plugin plugin_name) add_library(${plugin_name} MODULE ${ARGN})
-# set_target_properties(${plugin_name} PROPERTIES PREFIX "")
-# target_link_libraries(${plugin_name} PRIVATE AjisaiCore) endfunction()
-
-# add_subdirectory(src/Ajisai/Integrators)
+set(CMAKE_VERBOSE_MAKEFILE ON)
