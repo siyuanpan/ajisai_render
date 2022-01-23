@@ -19,37 +19,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#include <ajisai/utility/log.h>
-#include <vector>
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/sinks/basic_file_sink.h>
+#pragma once
+#include <ajisai/ajisai.h>
+#include <ajisai/factory/factory.h>
+
+#include <string>
+#include <concepts>
+#include <yaml-cpp/yaml.h>
 
 AJ_BEGIN
 
-Log& Log::Inst() {
-  static Log log;
-  return log;
-}
-
-Log::Log() {
-  std::vector<spdlog::sink_ptr> log_sinks;
-
-  auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-  console_sink->set_level(spdlog::level::info);
-  console_sink->set_pattern("%^[%T] %n: %v%$");
-
-  log_sinks.emplace_back(console_sink);
-
-  auto file_sink =
-      std::make_shared<spdlog::sinks::basic_file_sink_mt>("Ajisai.log", true);
-  file_sink->set_pattern("[%T] [%l] %n: %v");
-
-  log_sinks.emplace_back(file_sink);
-
-  core_logger_ =
-      Ptr<spdlog::logger>("AJISAI", log_sinks.begin(), log_sinks.end());
-  core_logger_->set_level(spdlog::level::trace);
-}
+void AddSceneFactory(Factory<Scene>& factory);
 
 AJ_END

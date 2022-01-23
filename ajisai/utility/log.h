@@ -40,6 +40,7 @@ class AJISAI_API Log {
 AJ_END
 
 #define AJ_TRACE(...) ::aj::Log::Inst().GetLogger().trace(__VA_ARGS__)
+#define AJ_DEBUG(...) ::aj::Log::Inst().GetLogger().debug(__VA_ARGS__)
 #define AJ_INFO(...) ::aj::Log::Inst().GetLogger().info(__VA_ARGS__)
 #define AJ_WARN(...) ::aj::Log::Inst().GetLogger().warn(__VA_ARGS__)
 #define AJ_ERROR(...) ::aj::Log::Inst().GetLogger().error(__VA_ARGS__)

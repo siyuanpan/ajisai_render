@@ -49,3 +49,26 @@ DEALINGS IN THE SOFTWARE.
 
 #define AJ_BEGIN namespace aj {
 #define AJ_END }
+
+// smart pointers
+#include <memory>
+
+AJ_BEGIN
+
+template <class T>
+using Rc = std::shared_ptr<T>;
+
+template <class T, class... Args>
+Rc<T> RcNew(Args&&... args) {
+  return std::make_shared<T>(std::forward<Args>(args)...);
+}
+
+template <class T>
+using Box = std::unique_ptr<T>;
+
+template <class T, class... Args>
+Box<T> BoxNew(Args&&... args) {
+  return std::make_unique<T>(std::forward<Args>(args)...);
+}
+
+AJ_END

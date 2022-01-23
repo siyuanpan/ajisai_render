@@ -21,17 +21,70 @@ DEALINGS IN THE SOFTWARE.
 */
 #include <ajisai/ajisai.h>
 #include <ajisai/utility/log.h>
+#include <ajisai/factory/factory.h>
 
-#include <vector>
+#include <cxxopts.hpp>
+#include <yaml-cpp/yaml.h>
+
+#include <filesystem>
+
+struct Param {
+  std::filesystem::path scene_name;
+};
+
+Param parse_opts(int argc, char* argv[]) {
+  try {
+    cxxopts::Options options(argv[0],
+                             " - Ajisai render command line interface");
+
+    options.allow_unrecognised_options().add_options()(
+        "s,scene", "Input Scene File", cxxopts::value<std::string>())(
+        "h,help", "Help Information");
+
+    auto result = options.parse(argc, argv);
+
+    if (result.count("help")) {
+      AJ_INFO(options.help());
+      exit(0);
+    }
+
+    Param ret;
+
+    if (result.count("scene") != 0) {
+      ret.scene_name = result["scene"].as<std::string>();
+    } else {
+      AJ_ERROR("scene file is unspecified");
+      exit(0);
+    }
+
+    return ret;
+
+  } catch (const cxxopts::OptionException& e) {
+    AJ_ERROR("error parsing options: {}", e.what());
+    exit(1);
+  }
+}
+
+void run(int argc, char* argv[]) {
+  using namespace aj;
+  auto params = parse_opts(argc, argv);
+
+  AJ_INFO(">>> Loading file : {} <<<", params.scene_name.string());
+  auto config = YAML::LoadFile(params.scene_name.string());
+
+  const auto& scene_config = config["scene"];
+
+  AJ_INFO(">>> Ceate Scene <<<");
+  CreateFactory factory;
+  auto scene = factory.Create<Scene>(scene_config);
+}
 
 int main(int argc, char* argv[]) {
-  AJ_TRACE("Welcome to spdlog!");
-  AJ_ERROR("Some error message with arg: {}", 1);
+  AJ_INFO(">>> Ajisai Renderer <<<");
 
-  AJ_WARN("Easy padding in numbers like {:08d}", 12);
-  AJ_CRITICAL("Support for int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}",
-              42);
-  AJ_INFO("Support for floats {:03.2f}", 1.23456);
-  AJ_INFO("Positional args are {1} {0}..", "too", "supported");
-  AJ_INFO("{:<30}", "left aligned");
+  run(argc, argv);
+
+  AJ_INFO(">>> End <<<");
+
+  return 0;
 }

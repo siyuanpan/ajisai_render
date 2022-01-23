@@ -19,37 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#include <ajisai/utility/log.h>
-#include <vector>
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/sinks/basic_file_sink.h>
+#include <ajisai/factory/creator/primitive_creators.h>
 
 AJ_BEGIN
 
-Log& Log::Inst() {
-  static Log log;
-  return log;
-}
+class GeometricPrimitiveCreatorImpl {
+ public:
+  static std::string Name() { return "geometric"; }
 
-Log::Log() {
-  std::vector<spdlog::sink_ptr> log_sinks;
+  static Rc<Primitive> Create(const YAML::Node& node,
+                              const CreateFactory& factory) {
+    auto geometric = factory.Create<Geometric>(node["geometric"]);
 
-  auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-  console_sink->set_level(spdlog::level::info);
-  console_sink->set_pattern("%^[%T] %n: %v%$");
+    return RcNew<Primitive>();
+  }
+};
 
-  log_sinks.emplace_back(console_sink);
+template <class TPrimitiveCreatorImpl>
+concept PrimitiveCreatorImpl = requires(TPrimitiveCreatorImpl) {
+  { TPrimitiveCreatorImpl::Name() } -> std::convertible_to<std::string>;
+  {
+    TPrimitiveCreatorImpl::Create(YAML::Node{}, CreateFactory{})
+    } -> std::convertible_to<Rc<Primitive>>;
+};
 
-  auto file_sink =
-      std::make_shared<spdlog::sinks::basic_file_sink_mt>("Ajisai.log", true);
-  file_sink->set_pattern("[%T] [%l] %n: %v");
+template <PrimitiveCreatorImpl TPrimitiveCreatorImpl>
+class PrimitiveCreator : public TPrimitiveCreatorImpl {};
 
-  log_sinks.emplace_back(file_sink);
+using GeometricPrimitiveCreator =
+    PrimitiveCreator<GeometricPrimitiveCreatorImpl>;
 
-  core_logger_ =
-      Ptr<spdlog::logger>("AJISAI", log_sinks.begin(), log_sinks.end());
-  core_logger_->set_level(spdlog::level::trace);
+void AddPrimitiveFactory(Factory<Primitive>& factory) {
+  factory.Add(GeometricPrimitiveCreator::Name(),
+              &GeometricPrimitiveCreator::Create);
 }
 
 AJ_END

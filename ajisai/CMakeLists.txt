@@ -25,6 +25,9 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/configure.h
         DESTINATION ${AJISAI_INCLUDE_INSTALL_DIR})
 
 find_package(spdlog CONFIG REQUIRED)
+find_package(cxxopts CONFIG REQUIRED)
+find_package(yaml-cpp CONFIG REQUIRED)
 
 add_subdirectory(utility)
+add_subdirectory(factory)
 add_subdirectory(app)
