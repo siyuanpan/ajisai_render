@@ -20,6 +20,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 #include <ajisai/factory/creator/geometry_creators.h>
+#include <ajisai/factory/creator/helper.h>
 
 AJ_BEGIN
 
@@ -30,6 +31,8 @@ class QuadCreatorImpl {
   static Rc<Geometric> Create(const YAML::Node& node,
                               const CreateFactory& factory) {
     // auto geometric = factory.Create<Geometric>(node["geometric"]);
+    if (node["transform"].IsDefined()) {
+    }
 
     return RcNew<Geometric>();
   }
@@ -42,6 +45,18 @@ class CubeCreatorImpl {
   static Rc<Geometric> Create(const YAML::Node& node,
                               const CreateFactory& factory) {
     // auto geometric = factory.Create<Geometric>(node["geometric"]);
+
+    return RcNew<Geometric>();
+  }
+};
+
+class TwosidedCreatorImpl {
+ public:
+  static std::string Name() { return "twosided"; }
+
+  static Rc<Geometric> Create(const YAML::Node& node,
+                              const CreateFactory& factory) {
+    const auto internal = factory.Create<Geometric>(node["internal"]);
 
     return RcNew<Geometric>();
   }
@@ -60,10 +75,12 @@ class GeometryCreator : public TGeometryCreatorImpl {};
 
 using QuadCreator = GeometryCreator<QuadCreatorImpl>;
 using CubeCreator = GeometryCreator<CubeCreatorImpl>;
+using TwosidedCreator = GeometryCreator<TwosidedCreatorImpl>;
 
 void AddGeometricFactory(Factory<Geometric>& factory) {
   factory.Add(QuadCreator::Name(), &QuadCreator::Create);
   factory.Add(CubeCreator::Name(), &CubeCreator::Create);
+  factory.Add(TwosidedCreator::Name(), &TwosidedCreator::Create);
 }
 
 AJ_END

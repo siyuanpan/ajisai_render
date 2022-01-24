@@ -22,7 +22,6 @@ DEALINGS IN THE SOFTWARE.
 #pragma once
 #include <ajisai/ajisai.h>
 #include <ajisai/utility/log.h>
-// #include <ajisai/factory/creator/scene_creators.h>
 
 #include <yaml-cpp/yaml.h>
 
