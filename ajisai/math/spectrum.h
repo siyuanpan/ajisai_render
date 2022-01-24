@@ -62,11 +62,11 @@ class CoefficientSpectrum : public Vector<float, size> {
     return Vector<float, size>::operator*(scalar);
   }
 
-  bool isBlack() const { return this->max() <= 0; }
-  [[nodiscard]] float luminance() const {
+  bool IsBlack() const { return this->max() <= 0; }
+  [[nodiscard]] float Luminance() const {
     return 0.2126 * (*this)[0] + 0.7152 * (*this)[1] + 0.0722 * (*this)[2];
   }
-  [[nodiscard]] CoefficientSpectrum<size> removeNaN() const {
+  [[nodiscard]] CoefficientSpectrum<size> RemoveNaN() const {
     CoefficientSpectrum<size> tmp;
     for (size_t i = 0; i < size; i++) {
       auto x = (*this)[i];

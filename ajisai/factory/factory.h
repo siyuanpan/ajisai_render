@@ -23,14 +23,15 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/ajisai.h>
 #include <ajisai/utility/log.h>
 #include <ajisai/core/geometry/geometry.h>
+#include <ajisai/core/material/material.h>
+#include <ajisai/core/texture2d/texture2d.h>
+#include <ajisai/core/primitive/primitive.h>
 
 #include <yaml-cpp/yaml.h>
 
 AJ_BEGIN
 
 struct Scene {};
-
-struct Primitive {};
 
 class CreateFactory;
 
@@ -78,7 +79,7 @@ class AJISAI_API CreateFactory {
   template <class... Types>
   using FactoryTuple = std::tuple<Factory<Types>...>;
 
-  FactoryTuple<Scene, Primitive, Geometry> factory_tuple_;
+  FactoryTuple<Scene, Primitive, Geometry, Material, Texture2D> factory_tuple_;
 };
 
 template <class T>

@@ -19,16 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/math/matrix4.h>
+#include <ajisai/core/primitive/primitive.h>
+#include <ajisai/core/light/area_light.h>
 
 AJ_BEGIN
 
-RC<Geometry> create_quad(const Vector3f &a, Vector3f FVec3 &b,
-                         Vector3f FVec3 &c, const Vector3f &d,
-                         const Vector2f &ta, const Vector2f &tb,
-                         const Vector2f &tc, const Vector2f &td,
-                         const matrix4 &local2world);
+class GeometricPrimitive : public Primitive {
+ public:
+  explicit GeometricPrimitive(Rc<const Geometry> geometry,
+                              Rc<const Material> material,
+                              const Spectrum& emission, bool denoise,
+                              int32_t power) {
+    geometry_ = std::move(geometry);
+    material_ = std::move(material);
+    SetDenoise(denoise);
+
+    if (!emission.IsBlack()) {
+      area_light_ = BoxNew<AreaLight>(geometry_.get(), emission, power);
+    }
+  }
+
+ private:
+  Rc<const Geometry> geometry_;
+  Rc<const Material> material_;
+  Box<AreaLight> area_light_;
+};
+
+Rc<Primitive> CreateGeometric(Rc<const Geometry> geometry,
+                              Rc<const Material> material,
+                              const Spectrum& emission, bool denoise,
+                              int32_t power) {
+  return RcNew<GeometricPrimitive>(std::move(geometry), std::move(material),
+                                   emission, denoise, power);
+}
 
 AJ_END

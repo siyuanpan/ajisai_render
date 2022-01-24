@@ -19,25 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#include <ajisai/factory/factory.h>
-#include <ajisai/factory/creator/scene_creators.h>
-#include <ajisai/factory/creator/primitive_creators.h>
-#include <ajisai/factory/creator/geometry_creators.h>
-#include <ajisai/factory/creator/material_creators.h>
 #include <ajisai/factory/creator/texture2d_creators.h>
+#include <ajisai/factory/creator/helper.h>
+#include <ajisai/math/color.h>
 
 AJ_BEGIN
 
-CreateFactory::CreateFactory()
-    : factory_tuple_{Factory<Scene>("scene"), Factory<Primitive>("primitive"),
-                     Factory<Geometry>("geometry"),
-                     Factory<Material>("material"),
-                     Factory<Texture2D>("texture2D")} {
-  AddSceneFactory(GetFactory<Scene>());
-  AddPrimitiveFactory(GetFactory<Primitive>());
-  AddGeometricFactory(GetFactory<Geometry>());
-  AddMaterialFactory(GetFactory<Material>());
-  AddTexture2DFactory(GetFactory<Texture2D>());
+class ConstantCreatorImpl {
+ public:
+  static std::string Name() { return "constant"; }
+
+  static Rc<Texture2D> Create(const YAML::Node& node,
+                              const CreateFactory& factory) {
+    const auto texel = node["texel"].as<Vector3f>();
+
+    return CreateConstant2DTexture(Spectrum{texel});
+  }
+};
+
+template <class TTexture2DCreatorImpl>
+concept Texture2DCreatorImpl = requires(TTexture2DCreatorImpl) {
+  { TTexture2DCreatorImpl::Name() } -> std::convertible_to<std::string>;
+  {
+    TTexture2DCreatorImpl::Create(YAML::Node{}, CreateFactory{})
+    } -> std::convertible_to<Rc<Texture2D>>;
+};
+
+template <Texture2DCreatorImpl TTexture2DCreatorImpl>
+class Texture2DCreator : public TTexture2DCreatorImpl {};
+
+using ConstantCreator = Texture2DCreator<ConstantCreatorImpl>;
+
+void AddTexture2DFactory(Factory<Texture2D>& factory) {
+  factory.Add(ConstantCreator::Name(), &ConstantCreator::Create);
 }
 
 AJ_END

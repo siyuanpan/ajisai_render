@@ -19,25 +19,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
+#pragma once
+#include <ajisai/ajisai.h>
 #include <ajisai/factory/factory.h>
-#include <ajisai/factory/creator/scene_creators.h>
-#include <ajisai/factory/creator/primitive_creators.h>
-#include <ajisai/factory/creator/geometry_creators.h>
-#include <ajisai/factory/creator/material_creators.h>
-#include <ajisai/factory/creator/texture2d_creators.h>
 
 AJ_BEGIN
 
-CreateFactory::CreateFactory()
-    : factory_tuple_{Factory<Scene>("scene"), Factory<Primitive>("primitive"),
-                     Factory<Geometry>("geometry"),
-                     Factory<Material>("material"),
-                     Factory<Texture2D>("texture2D")} {
-  AddSceneFactory(GetFactory<Scene>());
-  AddPrimitiveFactory(GetFactory<Primitive>());
-  AddGeometricFactory(GetFactory<Geometry>());
-  AddMaterialFactory(GetFactory<Material>());
-  AddTexture2DFactory(GetFactory<Texture2D>());
-}
+void AddTexture2DFactory(Factory<Texture2D>& factory);
 
 AJ_END

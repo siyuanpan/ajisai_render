@@ -20,6 +20,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 #include <ajisai/factory/creator/primitive_creators.h>
+#include <ajisai/factory/creator/helper.h>
 
 AJ_BEGIN
 
@@ -29,9 +30,20 @@ class GeometricPrimitiveCreatorImpl {
 
   static Rc<Primitive> Create(const YAML::Node& node,
                               const CreateFactory& factory) {
-    auto geometric = factory.Create<Geometry>(node["geometry"]);
+    auto geometry = factory.Create<Geometry>(node["geometry"]);
 
-    return RcNew<Primitive>();
+    auto material = factory.Create<Material>(node["material"]);
+
+    // TODO: medium
+
+    const auto emission = node["emission"].as<Vector3f>(Vector3f{});
+
+    const auto denoise = node["denoise"].as<bool>(false);
+
+    const int32_t power = node["power"].as<int32_t>(-1);
+
+    return CreateGeometric(std::move(geometry), std::move(material), emission,
+                           denoise, power);
   }
 };
 

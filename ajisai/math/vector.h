@@ -394,7 +394,7 @@ inline T Vector<T, size>::max() const {
   T out(_data[0]);
 
   for (std::size_t i = 1; i != size; ++i) {
-    out = Math::max(out, _data[i]);
+    out = aj::max(out, _data[i]);
   }
 
   return out;

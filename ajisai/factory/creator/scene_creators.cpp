@@ -24,6 +24,11 @@ DEALINGS IN THE SOFTWARE.
 AJ_BEGIN
 
 class DefaultSceneCreatorImpl {
+ private:
+  struct Args {
+    std::vector<Rc<Primitive>> primitives;
+  };
+
  public:
   static std::string Name() { return "default"; }
 
@@ -31,11 +36,11 @@ class DefaultSceneCreatorImpl {
                           const CreateFactory& factory) {
     if (auto primitives = node["primitives"]) {
       AJ_INFO("create {} primitives", primitives.size());
+      Args args{};
 
       for (size_t i = 0; i < primitives.size(); ++i) {
-        const auto& primitive = primitives[i];
-
-        auto pri = factory.Create<Primitive>(primitive);
+        auto primitive = factory.Create<Primitive>(primitives[i]);
+        args.primitives.push_back(primitive);
       }
     }
     return RcNew<Scene>();

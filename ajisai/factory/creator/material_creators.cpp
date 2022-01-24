@@ -19,25 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#include <ajisai/factory/factory.h>
-#include <ajisai/factory/creator/scene_creators.h>
-#include <ajisai/factory/creator/primitive_creators.h>
-#include <ajisai/factory/creator/geometry_creators.h>
 #include <ajisai/factory/creator/material_creators.h>
-#include <ajisai/factory/creator/texture2d_creators.h>
+#include <ajisai/factory/creator/helper.h>
 
 AJ_BEGIN
 
-CreateFactory::CreateFactory()
-    : factory_tuple_{Factory<Scene>("scene"), Factory<Primitive>("primitive"),
-                     Factory<Geometry>("geometry"),
-                     Factory<Material>("material"),
-                     Factory<Texture2D>("texture2D")} {
-  AddSceneFactory(GetFactory<Scene>());
-  AddPrimitiveFactory(GetFactory<Primitive>());
-  AddGeometricFactory(GetFactory<Geometry>());
-  AddMaterialFactory(GetFactory<Material>());
-  AddTexture2DFactory(GetFactory<Texture2D>());
+class DiffuseCreatorImpl {
+ public:
+  static std::string Name() { return "diffuse"; }
+
+  static Rc<Material> Create(const YAML::Node& node,
+                             const CreateFactory& factory) {
+    // AJ_DEBUG("type : {} , albedo.type : {}", node["type"].as<std::string>(),
+    //          node["albedo"]["type"].as<std::string>());
+    const auto albedo = factory.Create<Texture2D>(node["albedo"]);
+
+    return CreateDiffuse(std::move(albedo));
+  }
+};
+
+template <class TMaterialCreatorImpl>
+concept MaterialCreatorImpl = requires(TMaterialCreatorImpl) {
+  { TMaterialCreatorImpl::Name() } -> std::convertible_to<std::string>;
+  {
+    TMaterialCreatorImpl::Create(YAML::Node{}, CreateFactory{})
+    } -> std::convertible_to<Rc<Material>>;
+};
+
+template <MaterialCreatorImpl TMaterialCreatorImpl>
+class MaterialCreator : public TMaterialCreatorImpl {};
+
+using DiffuseCreator = MaterialCreator<DiffuseCreatorImpl>;
+
+void AddMaterialFactory(Factory<Material>& factory) {
+  factory.Add(DiffuseCreator::Name(), &DiffuseCreator::Create);
 }
 
 AJ_END
