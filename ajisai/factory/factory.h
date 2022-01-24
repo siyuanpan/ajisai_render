@@ -22,6 +22,7 @@ DEALINGS IN THE SOFTWARE.
 #pragma once
 #include <ajisai/ajisai.h>
 #include <ajisai/utility/log.h>
+#include <ajisai/core/geometry/geometry.h>
 
 #include <yaml-cpp/yaml.h>
 
@@ -30,8 +31,6 @@ AJ_BEGIN
 struct Scene {};
 
 struct Primitive {};
-
-struct Geometric {};
 
 class CreateFactory;
 
@@ -79,7 +78,7 @@ class AJISAI_API CreateFactory {
   template <class... Types>
   using FactoryTuple = std::tuple<Factory<Types>...>;
 
-  FactoryTuple<Scene, Primitive, Geometric> factory_tuple_;
+  FactoryTuple<Scene, Primitive, Geometry> factory_tuple_;
 };
 
 template <class T>

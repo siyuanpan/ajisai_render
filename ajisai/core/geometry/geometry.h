@@ -19,19 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#include <ajisai/factory/factory.h>
-#include <ajisai/factory/creator/scene_creators.h>
-#include <ajisai/factory/creator/primitive_creators.h>
-#include <ajisai/factory/creator/geometry_creators.h>
+#pragma once
+#include <ajisai/ajisai.h>
+#include <ajisai/math/matrix4.h>
 
 AJ_BEGIN
 
-CreateFactory::CreateFactory()
-    : factory_tuple_{Factory<Scene>("scene"), Factory<Primitive>("primitive"),
-                     Factory<Geometry>("geometry")} {
-  AddSceneFactory(GetFactory<Scene>());
-  AddPrimitiveFactory(GetFactory<Primitive>());
-  AddGeometricFactory(GetFactory<Geometry>());
-}
+class Geometry {
+ public:
+  virtual ~Geometry() = default;
+};
+
+AJISAI_API Rc<Geometry> CreateQuad(const Vector3f &a, const Vector3f &b,
+                                   const Vector3f &c, const Vector3f &d,
+                                   const Vector2f &ta, const Vector2f &tb,
+                                   const Vector2f &tc, const Vector2f &td,
+                                   const Matrix4f &local2world);
+
+AJISAI_API Rc<Geometry> CreateCube(const Matrix4f &local2world);
+
+AJISAI_API Rc<Geometry> CreateTwoSided(Rc<const Geometry> internal);
 
 AJ_END

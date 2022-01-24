@@ -28,13 +28,28 @@ class QuadCreatorImpl {
  public:
   static std::string Name() { return "quad"; }
 
-  static Rc<Geometric> Create(const YAML::Node& node,
-                              const CreateFactory& factory) {
-    // auto geometric = factory.Create<Geometric>(node["geometric"]);
-    if (node["transform"].IsDefined()) {
-    }
+  static Rc<Geometry> Create(const YAML::Node& node,
+                             const CreateFactory& factory) {
+    const auto transform = GetTransform(node["transform"]);
 
-    return RcNew<Geometric>();
+    const Vector3f a = node["a"].as<Vector3f>(Vector3f{-1.f, -1.f, 0.f});
+    const Vector3f b = node["b"].as<Vector3f>(Vector3f{1.f, -1.f, 0.f});
+    const Vector3f c = node["c"].as<Vector3f>(Vector3f{1.f, 1.f, 0.f});
+    const Vector3f d = node["d"].as<Vector3f>(Vector3f{-1.f, 1.f, 0.f});
+
+    const Vector2f ta = node["ta"].as<Vector2f>(Vector2f{});
+    const Vector2f tb = node["tb"].as<Vector2f>(Vector2f{});
+    const Vector2f tc = node["tc"].as<Vector2f>(Vector2f{});
+    const Vector2f td = node["td"].as<Vector2f>(Vector2f{});
+
+    // std::stringstream ss;
+    // ss << "---\n"
+    //    << "a : " << a << "\nb : " << b << "\nc : " << c << "\nd : " << d
+    //    << "\nta : " << ta << "\ntb : " << tb << "\ntc : " << tc
+    //    << "\ntd : " << td << "\ntransform : " << transform;
+
+    // AJ_DEBUG("create quad with param : {}", ss.str());
+    return CreateQuad(a, b, c, d, ta, tb, tc, td, transform);
   }
 };
 
@@ -42,11 +57,11 @@ class CubeCreatorImpl {
  public:
   static std::string Name() { return "cube"; }
 
-  static Rc<Geometric> Create(const YAML::Node& node,
-                              const CreateFactory& factory) {
-    // auto geometric = factory.Create<Geometric>(node["geometric"]);
+  static Rc<Geometry> Create(const YAML::Node& node,
+                             const CreateFactory& factory) {
+    const auto transform = GetTransform(node["transform"]);
 
-    return RcNew<Geometric>();
+    return CreateCube(transform);
   }
 };
 
@@ -54,11 +69,11 @@ class TwosidedCreatorImpl {
  public:
   static std::string Name() { return "twosided"; }
 
-  static Rc<Geometric> Create(const YAML::Node& node,
-                              const CreateFactory& factory) {
-    const auto internal = factory.Create<Geometric>(node["internal"]);
+  static Rc<Geometry> Create(const YAML::Node& node,
+                             const CreateFactory& factory) {
+    const auto internal = factory.Create<Geometry>(node["internal"]);
 
-    return RcNew<Geometric>();
+    return CreateTwoSided(std::move(internal));
   }
 };
 
@@ -67,7 +82,7 @@ concept GeometryCreatorImpl = requires(TGeometryCreatorImpl) {
   { TGeometryCreatorImpl::Name() } -> std::convertible_to<std::string>;
   {
     TGeometryCreatorImpl::Create(YAML::Node{}, CreateFactory{})
-    } -> std::convertible_to<Rc<Geometric>>;
+    } -> std::convertible_to<Rc<Geometry>>;
 };
 
 template <GeometryCreatorImpl TGeometryCreatorImpl>
@@ -77,7 +92,7 @@ using QuadCreator = GeometryCreator<QuadCreatorImpl>;
 using CubeCreator = GeometryCreator<CubeCreatorImpl>;
 using TwosidedCreator = GeometryCreator<TwosidedCreatorImpl>;
 
-void AddGeometricFactory(Factory<Geometric>& factory) {
+void AddGeometricFactory(Factory<Geometry>& factory) {
   factory.Add(QuadCreator::Name(), &QuadCreator::Create);
   factory.Add(CubeCreator::Name(), &CubeCreator::Create);
   factory.Add(TwosidedCreator::Name(), &TwosidedCreator::Create);

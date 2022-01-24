@@ -25,6 +25,6 @@ DEALINGS IN THE SOFTWARE.
 
 AJ_BEGIN
 
-void AddGeometricFactory(Factory<Geometric>& factory);
+void AddGeometricFactory(Factory<Geometry>& factory);
 
 AJ_END

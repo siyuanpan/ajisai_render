@@ -25,11 +25,11 @@ AJ_BEGIN
 
 class GeometricPrimitiveCreatorImpl {
  public:
-  static std::string Name() { return "geometric"; }
+  static std::string Name() { return "geometry"; }
 
   static Rc<Primitive> Create(const YAML::Node& node,
                               const CreateFactory& factory) {
-    auto geometric = factory.Create<Geometric>(node["geometric"]);
+    auto geometric = factory.Create<Geometry>(node["geometry"]);
 
     return RcNew<Primitive>();
   }

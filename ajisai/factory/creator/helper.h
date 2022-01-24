@@ -25,15 +25,103 @@ DEALINGS IN THE SOFTWARE.
 
 #include <yaml-cpp/yaml.h>
 
+namespace YAML {
+template <>
+struct convert<aj::Vector3f> {
+  static Node encode(const aj::Vector3f& rhs) {
+    Node node;
+    node.push_back(rhs.x());
+    node.push_back(rhs.y());
+    node.push_back(rhs.z());
+    return node;
+  }
+
+  static bool decode(const Node& node, aj::Vector3f& rhs) {
+    if (!node.IsSequence() || node.size() != 3) {
+      return false;
+    }
+
+    rhs.x() = node[0].as<float>();
+    rhs.y() = node[1].as<float>();
+    rhs.z() = node[2].as<float>();
+    return true;
+  }
+};
+
+template <>
+struct convert<aj::Vector2f> {
+  static Node encode(const aj::Vector2f& rhs) {
+    Node node;
+    node.push_back(rhs.x());
+    node.push_back(rhs.y());
+    return node;
+  }
+
+  static bool decode(const Node& node, aj::Vector2f& rhs) {
+    if (!node.IsSequence() || node.size() != 2) {
+      return false;
+    }
+
+    rhs.x() = node[0].as<float>();
+    rhs.y() = node[1].as<float>();
+    return true;
+  }
+};
+
+template <>
+struct convert<aj::Matrix4f> {
+  static Node encode(const aj::Matrix4f& rhs) {
+    Node node;
+    for (size_t i = 0; i != 15; ++i) {
+      size_t col = i % 4;
+      size_t row = i / 4;
+      node.push_back(rhs[col][row]);
+    }
+    return node;
+  }
+
+  static bool decode(const Node& node, aj::Matrix4f& rhs) {
+    if (!node.IsSequence() || node.size() != 16) return false;
+
+    for (size_t i = 0; i != 15; ++i) {
+      size_t col = i % 4;
+      size_t row = i / 4;
+      rhs[col][row] = node[i].as<float>();
+    }
+
+    return true;
+  }
+};
+
+}  // namespace YAML
+
 AJ_BEGIN
 
-static Matrix4f GetTransformImpl(const YAML::Node& node) { return {}; }
+static Matrix4f GetTransformImpl(const YAML::Node& node) {
+  //   if (!node["type"].IsDefined()) {
+  //     AJ_ERROR("expert type node");
+  //     return {};
+  //   }
+  const auto& type = node["type"].as<std::string>("");
+  if (type == "matrix") {
+    if (auto mat = node["matrix"]) {
+      return mat.as<Matrix4f>();
+    }
+
+    AJ_ERROR("matrix expected");
+  }
+
+  AJ_ERROR("no valid type: {}", type);
+
+  return {};
+}
 
 inline Matrix4f GetTransform(const YAML::Node& node) {
+  if (!node.IsDefined()) return {};
   if (node.IsSequence()) {
     Matrix4f ret{};
     for (size_t i = 0; i < node.size(); ++i) {
-      ret *= GetTransform(node[i]);
+      ret = ret * GetTransform(node[i]);
     }
     return ret;
   } else {

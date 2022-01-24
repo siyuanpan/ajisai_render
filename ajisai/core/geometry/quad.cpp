@@ -19,19 +19,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#include <ajisai/factory/factory.h>
-#include <ajisai/factory/creator/scene_creators.h>
-#include <ajisai/factory/creator/primitive_creators.h>
-#include <ajisai/factory/creator/geometry_creators.h>
+#include <ajisai/ajisai.h>
+#include <ajisai/core/geometry/geometry.h>
 
 AJ_BEGIN
 
-CreateFactory::CreateFactory()
-    : factory_tuple_{Factory<Scene>("scene"), Factory<Primitive>("primitive"),
-                     Factory<Geometry>("geometry")} {
-  AddSceneFactory(GetFactory<Scene>());
-  AddPrimitiveFactory(GetFactory<Primitive>());
-  AddGeometricFactory(GetFactory<Geometry>());
+class Quad : public Geometry {
+ public:
+  struct Args {
+    Vector3f a, b, c, d;
+    Vector2f ta, tb, tc, td;
+    Matrix4f local2world;
+  };
+
+  explicit Quad(const Args &args)
+      : ta_(args.ta), tb_(args.tb), tc_(args.tc), td_(args.td) {
+    a_ = args.local2world.transformPoint(args.a);
+    b_ = args.local2world.transformPoint(args.b);
+    c_ = args.local2world.transformPoint(args.c);
+    d_ = args.local2world.transformPoint(args.d);
+  }
+
+ private:
+  Vector3f a_, b_, c_, d_;
+  Vector2f ta_, tb_, tc_, td_;
+};
+
+Rc<Geometry> CreateQuad(const Vector3f &a, const Vector3f &b, const Vector3f &c,
+                        const Vector3f &d, const Vector2f &ta,
+                        const Vector2f &tb, const Vector2f &tc,
+                        const Vector2f &td, const Matrix4f &local2world) {
+  return RcNew<Quad>(Quad::Args{a, b, c, d, ta, tb, tc, td, local2world});
 }
 
 AJ_END

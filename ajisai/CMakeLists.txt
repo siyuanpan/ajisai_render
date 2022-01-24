@@ -29,5 +29,6 @@ find_package(cxxopts CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
 
 add_subdirectory(utility)
+add_subdirectory(core)
 add_subdirectory(factory)
 add_subdirectory(app)
