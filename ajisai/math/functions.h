@@ -28,7 +28,7 @@ DEALINGS IN THE SOFTWARE.
 
 #include <ajisai/math/vector.h>
 
-AJ_EBGIN
+AJ_BEGIN
 
 template <class T, std::size_t size>
 inline Vector<T, size> sqrt(const Vector<T, size>& a) {
@@ -47,7 +47,7 @@ template <class T, std::size_t size>
 inline Vector<T, size> pow(const Vector<T, size>& base, T exponent) {
   Vector<T, size> out;
   for (std::size_t i = 0; i != size; ++i) {
-    out[i] = Math::pow(base[i], exponent);
+    out[i] = pow(base[i], exponent);
   }
   return out;
 }

@@ -31,6 +31,7 @@ class PathTracingCreatorImpl {
   static Rc<Renderer> Create(const YAML::Node& node,
                              const CreateFactory& factory) {
     const int spp = node["spp"].as<int>();
+    const int tile_size = node["tile_size"].as<int>(16);
     const int min_bounces = node["min_bounces"].as<int>(5);
     const int max_bounces = node["max_bounces"].as<int>(10);
     const float cont_prob = node["cont_prob"].as<float>(0.9);
@@ -38,14 +39,15 @@ class PathTracingCreatorImpl {
     const int specular_depth = node["specular_depth"].as<int>(20);
 
     AJ_INFO("spp : {}", spp);
+    AJ_INFO("tile_size : {}", tile_size);
     AJ_INFO("min_bounces : {}", min_bounces);
     AJ_INFO("max_bounces : {}", max_bounces);
     AJ_INFO("cont_prob : {}", cont_prob);
     AJ_INFO("use_mis : {}", use_mis);
     AJ_INFO("specular_depth : {}", specular_depth);
 
-    PTRendererArgs args{spp,       min_bounces, max_bounces,
-                        cont_prob, use_mis,     specular_depth};
+    PTRendererArgs args{spp,       tile_size, min_bounces,   max_bounces,
+                        cont_prob, use_mis,   specular_depth};
 
     return CreatePTRenderer(args);
   }

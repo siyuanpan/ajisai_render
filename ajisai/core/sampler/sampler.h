@@ -21,48 +21,22 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
+#include <ajisai/math/vector2.h>
+
+#include <cstdint>
+#include <memory>
 
 AJ_BEGIN
 
-class Scene;
-class Camera;
-class Film;
-class Sampler;
-
-struct PTRendererArgs {
-  int spp;
-  int tile_size;
-  int min_bounces;
-  int max_bounces;
-  float cont_prob;
-  bool use_mis;
-  int specular_depth;
-};
-
-class Renderer {
+class Sampler {
  public:
-  virtual ~Renderer() = default;
-
-  virtual void Render(Scene* scene, Camera* camera, Film* film,
-                      Sampler* sampler) = 0;
+  virtual ~Sampler() = default;
+  virtual void SetSeed(std::size_t seed) = 0;
+  virtual Rc<Sampler> Copy() const = 0;
+  virtual float Next1D() = 0;
+  virtual Vector2f Next2D() = 0;
 };
 
-class Integrator : public Renderer {
- public:
-};
-
-class TiledIntegrator : public Integrator {
- public:
-  TiledIntegrator(int spp, int tile_size) : spp_(spp), tile_size_(tile_size) {}
-
-  virtual void Render(Scene* scene, Camera* camera, Film* film,
-                      Sampler* sampler) override;
-
- private:
-  int spp_;
-  int tile_size_;
-};
-
-AJISAI_API Rc<Renderer> CreatePTRenderer(const PTRendererArgs&);
+AJISAI_API Rc<Sampler> CreateRandomSampler();
 
 AJ_END

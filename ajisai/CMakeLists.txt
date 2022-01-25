@@ -27,6 +27,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/configure.h
 find_package(spdlog CONFIG REQUIRED)
 find_package(cxxopts CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
+find_path(STB_INCLUDE_DIRS "stb.h")
 
 add_subdirectory(utility)
 add_subdirectory(core)

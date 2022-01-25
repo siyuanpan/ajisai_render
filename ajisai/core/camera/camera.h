@@ -21,6 +21,7 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
+#include <ajisai/core/film.h>
 #include <ajisai/math/vector3.h>
 
 AJ_BEGIN
@@ -28,12 +29,12 @@ AJ_BEGIN
 class Camera {
  public:
   virtual ~Camera() = default;
+
+  virtual Rc<Film> CreateFilm() = 0;
 };
 
-AJISAI_API Rc<Camera> CreateThinLensCamera(float aspect, const Vector3f& pos,
-                                           const Vector3f& look_at,
-                                           const Vector3f& up, float fov,
-                                           float lens_radius,
-                                           float focal_distance);
+AJISAI_API Rc<Camera> CreateThinLensCamera(
+    const Vector2f& resolution, const Vector3f& pos, const Vector3f& look_at,
+    const Vector3f& up, float fov, float lens_radius, float focal_distance);
 
 AJ_END

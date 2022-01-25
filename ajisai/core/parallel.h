@@ -21,48 +21,34 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
+#include <ajisai/math/vector2.h>
+
+#include <atomic>
+#include <condition_variable>
+#include <deque>
+#include <functional>
+#include <mutex>
+#include <thread>
 
 AJ_BEGIN
 
-class Scene;
-class Camera;
-class Film;
-class Sampler;
+void parallel_for(uint32_t count,
+                  const std::function<void(uint32_t, uint32_t)>& func,
+                  uint32_t chunkSize = 1);
 
-struct PTRendererArgs {
-  int spp;
-  int tile_size;
-  int min_bounces;
-  int max_bounces;
-  float cont_prob;
-  bool use_mis;
-  int specular_depth;
-};
+inline void parallel_for_2d(const Vector2i& dim,
+                            const std::function<void(Vector2i, uint32_t)>& func,
+                            uint32_t chunkSize = 1) {
+  parallel_for(
+      dim.x() * dim.y(),
+      [&](uint32_t idx, uint32_t tid) {
+        auto x = idx % dim.x();
+        auto y = idx / dim.x();
+        func(Vector2i(x, y), tid);
+      },
+      chunkSize);
+}
 
-class Renderer {
- public:
-  virtual ~Renderer() = default;
-
-  virtual void Render(Scene* scene, Camera* camera, Film* film,
-                      Sampler* sampler) = 0;
-};
-
-class Integrator : public Renderer {
- public:
-};
-
-class TiledIntegrator : public Integrator {
- public:
-  TiledIntegrator(int spp, int tile_size) : spp_(spp), tile_size_(tile_size) {}
-
-  virtual void Render(Scene* scene, Camera* camera, Film* film,
-                      Sampler* sampler) override;
-
- private:
-  int spp_;
-  int tile_size_;
-};
-
-AJISAI_API Rc<Renderer> CreatePTRenderer(const PTRendererArgs&);
+void thread_pool_finalize();
 
 AJ_END

@@ -19,50 +19,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#pragma once
 #include <ajisai/ajisai.h>
+#include <ajisai/core/sampler/sampler.h>
+#include <ajisai/core/random.h>
 
 AJ_BEGIN
 
-class Scene;
-class Camera;
-class Film;
-class Sampler;
-
-struct PTRendererArgs {
-  int spp;
-  int tile_size;
-  int min_bounces;
-  int max_bounces;
-  float cont_prob;
-  bool use_mis;
-  int specular_depth;
-};
-
-class Renderer {
+class RandomSampler : public Sampler {
  public:
-  virtual ~Renderer() = default;
-
-  virtual void Render(Scene* scene, Camera* camera, Film* film,
-                      Sampler* sampler) = 0;
-};
-
-class Integrator : public Renderer {
- public:
-};
-
-class TiledIntegrator : public Integrator {
- public:
-  TiledIntegrator(int spp, int tile_size) : spp_(spp), tile_size_(tile_size) {}
-
-  virtual void Render(Scene* scene, Camera* camera, Film* film,
-                      Sampler* sampler) override;
+  virtual void SetSeed(std::size_t seed) override { rng = PCG32(seed); }
+  virtual Rc<Sampler> Copy() const override {
+    return RcNew<RandomSampler>(*this);
+  }
+  virtual float Next1D() override { return rng.NextFloat(); }
+  virtual Vector2f Next2D() override {
+    return {rng.NextFloat(), rng.NextFloat()};
+  }
 
  private:
-  int spp_;
-  int tile_size_;
+  PCG32 rng;
 };
 
-AJISAI_API Rc<Renderer> CreatePTRenderer(const PTRendererArgs&);
+Rc<Sampler> CreateRandomSampler() { return RcNew<RandomSampler>(); }
 
 AJ_END

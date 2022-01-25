@@ -26,18 +26,24 @@ AJ_BEGIN
 
 class ThinLensCamera : public Camera {
  public:
-  explicit ThinLensCamera(float aspect, const Vector3f& pos,
+  explicit ThinLensCamera(const Vector2f& resolution, const Vector3f& pos,
                           const Vector3f& look_at, const Vector3f& up,
-                          float fov, float lens_radius, float focal_distance) {}
+                          float fov, float lens_radius, float focal_distance)
+      : resolution_{resolution} {}
+
+  virtual Rc<Film> CreateFilm() {
+    return RcNew<Film>(Vector2i{(int)resolution_[0], (int)resolution_[1]});
+  }
 
  private:
+  Vector2f resolution_;
 };
 
-Rc<Camera> CreateThinLensCamera(float aspect, const Vector3f& pos,
+Rc<Camera> CreateThinLensCamera(const Vector2f& resolution, const Vector3f& pos,
                                 const Vector3f& look_at, const Vector3f& up,
                                 float fov, float lens_radius,
                                 float focal_distance) {
-  return RcNew<ThinLensCamera>(aspect, pos, look_at, up, fov, lens_radius,
+  return RcNew<ThinLensCamera>(resolution, pos, look_at, up, fov, lens_radius,
                                focal_distance);
 }
 

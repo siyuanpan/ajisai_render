@@ -121,6 +121,6 @@ AJ_END
 
 template <class T, std::size_t dim>
 std::ostream& operator<<(std::ostream& ostream,
-                         const Ajisai::Math::Bounds<T, dim>& value) {
+                         const aj::Bounds<T, dim>& value) {
   return ostream << "Bounds(" << value.min() << "," << value.max() << ")";
 }

@@ -53,7 +53,7 @@ class ThinLensCreatorImpl {
     AJ_INFO("lens_radius : {}", (float)lens_radius);
     AJ_INFO("focal_distance : {}", (float)focal_distance);
 
-    return CreateThinLensCamera(resolution.AspectRatio(), position, look_at, up,
+    return CreateThinLensCamera(resolution, position, look_at, up,
                                 (float)Rad<float>(fov), lens_radius,
                                 focal_distance);
   }

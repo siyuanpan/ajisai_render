@@ -22,6 +22,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/ajisai.h>
 #include <ajisai/utility/log.h>
 #include <ajisai/factory/factory.h>
+#include <ajisai/core/sampler/sampler.h>
 
 #include <cxxopts.hpp>
 #include <yaml-cpp/yaml.h>
@@ -102,6 +103,11 @@ void run(int argc, char* argv[]) {
   } else {
     AJ_INFO("No post processor");
   }
+
+  AJ_INFO(">>> Start Rendering <<<");
+  auto film = camera->CreateFilm();
+  auto sampler = CreateRandomSampler();
+  renderer->Render(scene.get(), camera.get(), film.get(), sampler.get());
 }
 
 int main(int argc, char* argv[]) {
