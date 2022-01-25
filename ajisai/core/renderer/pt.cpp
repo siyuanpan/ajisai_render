@@ -19,33 +19,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/geometry/geometry.h>
-#include <ajisai/core/material/material.h>
-#include <ajisai/math/spectrum.h>
+#include <ajisai/core/renderer/renderer.h>
 
 AJ_BEGIN
 
-class AreaLight;
-
-class Primitive {
+class PathTracing : public TiledRenderer {
  public:
-  virtual ~Primitive() = default;
-
-  virtual const AreaLight* AsLight() const noexcept = 0;
-
-  virtual AreaLight* AsLight() noexcept = 0;
-
-  void SetDenoise(bool denoise) noexcept { denoise_ = denoise; }
+  explicit PathTracing(const PTRendererArgs& args) : TiledRenderer(args.spp) {}
 
  private:
-  bool denoise_ = false;
 };
 
-AJISAI_API Rc<Primitive> CreateGeometric(Rc<const Geometry> geometry,
-                                         Rc<const Material> material,
-                                         const Spectrum& emission, bool denoise,
-                                         int32_t power);
+Rc<Renderer> CreatePTRenderer(const PTRendererArgs& args) {
+  return RcNew<PathTracing>(args);
+}
 
 AJ_END

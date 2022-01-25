@@ -73,10 +73,35 @@ void run(int argc, char* argv[]) {
   auto config = YAML::LoadFile(params.scene_name.string());
 
   const auto& scene_config = config["scene"];
+  const auto& camera_config = config["camera"];
+  const auto& renderer_config = config["renderer"];
+  const auto& post_processor_config = config["post_processors"];
 
   AJ_INFO(">>> Ceate Scene <<<");
   CreateFactory factory;
   auto scene = factory.Create<Scene>(scene_config);
+
+  AJ_INFO(">>> Create Camera <<<");
+  auto camera = factory.Create<Camera>(camera_config);
+
+  AJ_INFO(">>> Create Renderer <<<");
+  auto renderer = factory.Create<Renderer>(renderer_config);
+
+  AJ_INFO(">>> Create PostProcessors <<<");
+  std::vector<Rc<PostProcessor>> post_processors;
+  if (post_processor_config) {
+    if (post_processor_config.IsSequence()) {
+      for (int i = 0; i < post_processor_config.size(); ++i) {
+        post_processors.push_back(
+            factory.Create<PostProcessor>(post_processor_config[i]));
+      }
+    } else {
+      post_processors.push_back(
+          factory.Create<PostProcessor>(post_processor_config));
+    }
+  } else {
+    AJ_INFO("No post processor");
+  }
 }
 
 int main(int argc, char* argv[]) {

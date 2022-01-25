@@ -25,15 +25,28 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/factory/creator/geometry_creators.h>
 #include <ajisai/factory/creator/material_creators.h>
 #include <ajisai/factory/creator/texture2d_creators.h>
+#include <ajisai/factory/creator/aggregate_creators.h>
+#include <ajisai/factory/creator/camera_creators.h>
+#include <ajisai/factory/creator/renderer_creators.h>
+#include <ajisai/factory/creator/post_processor_creators.h>
 
 AJ_BEGIN
 
 CreateFactory::CreateFactory()
-    : factory_tuple_{Factory<Scene>("scene"), Factory<Primitive>("primitive"),
+    : factory_tuple_{Factory<Scene>("scene"),
+                     Factory<Camera>("camera"),
+                     Factory<Renderer>("renderer"),
+                     Factory<PostProcessor>("post_processor"),
+                     Factory<Aggregate>("aggregate"),
+                     Factory<Primitive>("primitive"),
                      Factory<Geometry>("geometry"),
                      Factory<Material>("material"),
                      Factory<Texture2D>("texture2D")} {
   AddSceneFactory(GetFactory<Scene>());
+  AddCameraFactory(GetFactory<Camera>());
+  AddRendererFactory(GetFactory<Renderer>());
+  AddPostProcessorFactory(GetFactory<PostProcessor>());
+  AddAggregateFactory(GetFactory<Aggregate>());
   AddPrimitiveFactory(GetFactory<Primitive>());
   AddGeometricFactory(GetFactory<Geometry>());
   AddMaterialFactory(GetFactory<Material>());

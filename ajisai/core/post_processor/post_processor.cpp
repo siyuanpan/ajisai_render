@@ -19,33 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/geometry/geometry.h>
-#include <ajisai/core/material/material.h>
-#include <ajisai/math/spectrum.h>
+#include <ajisai/core/post_processor/post_processor.h>
 
 AJ_BEGIN
 
-class AreaLight;
-
-class Primitive {
+class SaveToImage : public PostProcessor {
  public:
-  virtual ~Primitive() = default;
-
-  virtual const AreaLight* AsLight() const noexcept = 0;
-
-  virtual AreaLight* AsLight() noexcept = 0;
-
-  void SetDenoise(bool denoise) noexcept { denoise_ = denoise; }
+  explicit SaveToImage(std::string filename, std::string ext) {
+    filename_ = std::move(filename);
+    ext_ = std::move(ext);
+  }
 
  private:
-  bool denoise_ = false;
+  std::string filename_;
+  std::string ext_;
 };
 
-AJISAI_API Rc<Primitive> CreateGeometric(Rc<const Geometry> geometry,
-                                         Rc<const Material> material,
-                                         const Spectrum& emission, bool denoise,
-                                         int32_t power);
+Rc<PostProcessor> CreateSaving2Img(std::string filename, std::string ext) {
+  return RcNew<SaveToImage>(filename, ext);
+}
 
 AJ_END

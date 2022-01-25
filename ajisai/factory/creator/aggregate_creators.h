@@ -21,31 +21,10 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/geometry/geometry.h>
-#include <ajisai/core/material/material.h>
-#include <ajisai/math/spectrum.h>
+#include <ajisai/factory/factory.h>
 
 AJ_BEGIN
 
-class AreaLight;
-
-class Primitive {
- public:
-  virtual ~Primitive() = default;
-
-  virtual const AreaLight* AsLight() const noexcept = 0;
-
-  virtual AreaLight* AsLight() noexcept = 0;
-
-  void SetDenoise(bool denoise) noexcept { denoise_ = denoise; }
-
- private:
-  bool denoise_ = false;
-};
-
-AJISAI_API Rc<Primitive> CreateGeometric(Rc<const Geometry> geometry,
-                                         Rc<const Material> material,
-                                         const Spectrum& emission, bool denoise,
-                                         int32_t power);
+void AddAggregateFactory(Factory<Aggregate>& factory);
 
 AJ_END

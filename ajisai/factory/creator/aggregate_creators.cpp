@@ -19,33 +19,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#pragma once
-#include <ajisai/ajisai.h>
-#include <ajisai/core/geometry/geometry.h>
-#include <ajisai/core/material/material.h>
-#include <ajisai/math/spectrum.h>
+#include <ajisai/factory/creator/aggregate_creators.h>
+#include <ajisai/factory/creator/helper.h>
 
 AJ_BEGIN
 
-class AreaLight;
-
-class Primitive {
+class NativeAggregateCreatorImpl {
  public:
-  virtual ~Primitive() = default;
+  static std::string Name() { return "native"; }
 
-  virtual const AreaLight* AsLight() const noexcept = 0;
-
-  virtual AreaLight* AsLight() noexcept = 0;
-
-  void SetDenoise(bool denoise) noexcept { denoise_ = denoise; }
-
- private:
-  bool denoise_ = false;
+  static Rc<Aggregate> Create(const YAML::Node& node,
+                              const CreateFactory& factory) {
+    return CreateNativeAggregate();
+  }
 };
 
-AJISAI_API Rc<Primitive> CreateGeometric(Rc<const Geometry> geometry,
-                                         Rc<const Material> material,
-                                         const Spectrum& emission, bool denoise,
-                                         int32_t power);
+template <class TAggregateCreatorImpl>
+concept AggregateCreatorImpl = requires(TAggregateCreatorImpl) {
+  { TAggregateCreatorImpl::Name() } -> std::convertible_to<std::string>;
+  {
+    TAggregateCreatorImpl::Create(YAML::Node{}, CreateFactory{})
+    } -> std::convertible_to<Rc<Aggregate>>;
+};
+
+template <AggregateCreatorImpl TAggregateCreatorImpl>
+class AggregateCreator : public TAggregateCreatorImpl {};
+
+using NativeAggregateCreator = AggregateCreator<NativeAggregateCreatorImpl>;
+
+void AddAggregateFactory(Factory<Aggregate>& factory) {
+  factory.Add(NativeAggregateCreator::Name(), &NativeAggregateCreator::Create);
+}
 
 AJ_END

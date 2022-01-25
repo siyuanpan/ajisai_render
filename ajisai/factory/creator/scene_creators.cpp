@@ -20,30 +20,43 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 #include <ajisai/factory/creator/scene_creators.h>
+#include <ajisai/core/scene/scene.h>
 
 AJ_BEGIN
 
 class DefaultSceneCreatorImpl {
  private:
-  struct Args {
-    std::vector<Rc<Primitive>> primitives;
-  };
-
  public:
   static std::string Name() { return "default"; }
 
   static Rc<Scene> Create(const YAML::Node& node,
                           const CreateFactory& factory) {
+    SceneArgs args{};
+
     if (auto primitives = node["primitives"]) {
       AJ_INFO("create {} primitives", primitives.size());
-      Args args{};
 
       for (size_t i = 0; i < primitives.size(); ++i) {
         auto primitive = factory.Create<Primitive>(primitives[i]);
         args.primitives.push_back(primitive);
       }
     }
-    return RcNew<Scene>();
+
+    // TODO: env
+    //
+
+    if (auto aggregate = node["aggregate"]) {
+      AJ_INFO("use aggregate type: {} ", aggregate["type"].as<std::string>());
+    } else {
+      AJ_INFO("use native aggregate");
+      args.aggregate = CreateNativeAggregate();
+    }
+    AJ_INFO(">>> Native Aggregate Build Start <<<");
+
+    args.aggregate->Build(args.primitives);
+
+    AJ_INFO(">>> Native Aggregate Build End <<<");
+    return CreateDefaultScene(args);
   }
 };
 

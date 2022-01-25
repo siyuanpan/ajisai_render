@@ -40,6 +40,12 @@ class GeometricPrimitive : public Primitive {
     }
   }
 
+  virtual const AreaLight* AsLight() const noexcept override {
+    return area_light_.get();
+  }
+
+  virtual AreaLight* AsLight() noexcept override { return area_light_.get(); }
+
  private:
   Rc<const Geometry> geometry_;
   Rc<const Material> material_;

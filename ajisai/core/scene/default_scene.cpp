@@ -19,33 +19,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/geometry/geometry.h>
-#include <ajisai/core/material/material.h>
-#include <ajisai/math/spectrum.h>
+#include <ajisai/core/scene/scene.h>
+#include <ajisai/core/light/area_light.h>
 
 AJ_BEGIN
 
-class AreaLight;
-
-class Primitive {
+class DefaultScene : public Scene {
  public:
-  virtual ~Primitive() = default;
-
-  virtual const AreaLight* AsLight() const noexcept = 0;
-
-  virtual AreaLight* AsLight() noexcept = 0;
-
-  void SetDenoise(bool denoise) noexcept { denoise_ = denoise; }
+  explicit DefaultScene(const SceneArgs& args) {
+    for (auto& primitive : args.primitives) {
+      if (auto light = primitive->AsLight()) {
+        lights_.push_back(light);
+      }
+    }
+    primitives_ = args.primitives;
+    aggregate_ = args.aggregate;
+  }
 
  private:
-  bool denoise_ = false;
+  std::vector<Rc<Primitive>> primitives_;
+  Rc<Aggregate> aggregate_;
+  std::vector<Light*> lights_;
 };
 
-AJISAI_API Rc<Primitive> CreateGeometric(Rc<const Geometry> geometry,
-                                         Rc<const Material> material,
-                                         const Spectrum& emission, bool denoise,
-                                         int32_t power);
+Rc<Scene> CreateDefaultScene(const SceneArgs& args) {
+  return RcNew<DefaultScene>(args);
+}
 
 AJ_END

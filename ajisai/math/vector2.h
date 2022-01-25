@@ -48,7 +48,7 @@ class Vector2 : public Vector<T, 2> {
 
   template <class U = T>
   typename std::enable_if<std::is_floating_point<U>::value, T>::type
-  aspectRatio() const {
+  AspectRatio() const {
     return x() / y();
   }
 

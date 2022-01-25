@@ -19,33 +19,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/geometry/geometry.h>
-#include <ajisai/core/material/material.h>
-#include <ajisai/math/spectrum.h>
+#include <ajisai/core/aggregate/aggregate.h>
 
 AJ_BEGIN
 
-class AreaLight;
-
-class Primitive {
+class NativeAggregate : public Aggregate {
  public:
-  virtual ~Primitive() = default;
-
-  virtual const AreaLight* AsLight() const noexcept = 0;
-
-  virtual AreaLight* AsLight() noexcept = 0;
-
-  void SetDenoise(bool denoise) noexcept { denoise_ = denoise; }
+  virtual void Build(const std::vector<Rc<Primitive>>& primitives) override {
+    primitives_.assign(primitives.begin(), primitives.end());
+  }
 
  private:
-  bool denoise_ = false;
+  std::vector<Rc<const Primitive>> primitives_;
 };
 
-AJISAI_API Rc<Primitive> CreateGeometric(Rc<const Geometry> geometry,
-                                         Rc<const Material> material,
-                                         const Spectrum& emission, bool denoise,
-                                         int32_t power);
+Rc<Aggregate> CreateNativeAggregate() { return RcNew<NativeAggregate>(); }
 
 AJ_END

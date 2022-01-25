@@ -21,31 +21,16 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/geometry/geometry.h>
-#include <ajisai/core/material/material.h>
-#include <ajisai/math/spectrum.h>
+#include <string>
 
 AJ_BEGIN
 
-class AreaLight;
-
-class Primitive {
+class PostProcessor {
  public:
-  virtual ~Primitive() = default;
-
-  virtual const AreaLight* AsLight() const noexcept = 0;
-
-  virtual AreaLight* AsLight() noexcept = 0;
-
-  void SetDenoise(bool denoise) noexcept { denoise_ = denoise; }
-
- private:
-  bool denoise_ = false;
+  virtual ~PostProcessor() = default;
 };
 
-AJISAI_API Rc<Primitive> CreateGeometric(Rc<const Geometry> geometry,
-                                         Rc<const Material> material,
-                                         const Spectrum& emission, bool denoise,
-                                         int32_t power);
+AJISAI_API Rc<PostProcessor> CreateSaving2Img(std::string filename,
+                                              std::string ext);
 
 AJ_END
