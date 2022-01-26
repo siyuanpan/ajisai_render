@@ -21,6 +21,7 @@ DEALINGS IN THE SOFTWARE.
 */
 #include <ajisai/ajisai.h>
 #include <ajisai/core/geometry/geometry.h>
+#include <ajisai/core/geometry/helper.h>
 #include <vector>
 
 AJ_BEGIN
@@ -72,6 +73,23 @@ class Cube : public Geometry {
         uv_.emplace_back(uvs[j]);
       }
     }
+  }
+
+  virtual bool Intersect(const Ray &ray,
+                         GeometryIntersection *inct) const noexcept override {
+    bool hit = false;
+    for (auto [i, j, k] : tris_) {
+      if (IntersectWithTriangle(ray, positions_[i], positions_[j],
+                                positions_[k], inct)) {
+        inct->pos = ray.CalcPoint(inct->t);
+        inct->uv = (1 - inct->uv.x() - inct->uv.y()) * uv_[i] +
+                   inct->uv.x() * uv_[j] + inct->uv.y() * uv_[k];
+        inct->wr = -ray.d;
+        hit = true;
+      }
+    }
+
+    return hit;
   }
 
  private:

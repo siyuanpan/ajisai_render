@@ -22,9 +22,13 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/ajisai.h>
 #include <ajisai/core/renderer/renderer.h>
 #include <ajisai/core/sampler/sampler.h>
+#include <ajisai/core/camera/camera.h>
+#include <ajisai/core/scene/scene.h>
 #include <ajisai/core/film.h>
 #include <ajisai/core/parallel.h>
+#include <ajisai/core/intersection.h>
 #include <ajisai/math/vector2.h>
+#include <ajisai/math/spectrum.h>
 
 AJ_BEGIN
 
@@ -43,15 +47,17 @@ void TiledIntegrator::Render(Scene* scene, Camera* camera, Film* film,
       for (int x = tile.bounds.min().x(); x < tile.bounds.max().x(); ++x) {
         tile_sampler->SetSeed(x + y * film->Dimension().x());
         for (int s = 0; s < spp_; ++s) {
-          const float u = (x + sampler->Next1D()) / film->Dimension().x();
-          const float v = (y + sampler->Next1D()) / film->Dimension().y();
-          //     // auto ray = camera->GenerateRay(u, v);
-          //     auto Li = integrator->Li(scene.get(), camera.get(),
-          //                              Math::Vector2i{x, y}, sampler.get());
-          //     tile.AddSample(Math::Vector2i{x, y}, Li, 1.0f);
+          const float u = x + tile_sampler->Next1D();
+          const float v = y + tile_sampler->Next1D();
+          auto ray =
+              camera->GenerateRay(Vector2f{u, v}, tile_sampler->Next2D());
+          auto li = Li(ray, scene, tile_sampler.get());
+          tile.AddSample(Vector2i{x, y}, li.radiance, 1.f);
         }
       }
     }
+    std::lock_guard<std::mutex> lk(mutex);
+    film->MergeTile(tile);
   });
   auto endTime = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = (endTime - beginTime);
@@ -61,9 +67,37 @@ void TiledIntegrator::Render(Scene* scene, Camera* camera, Film* film,
 class PathTracing : public TiledIntegrator {
  public:
   explicit PathTracing(const PTRendererArgs& args)
-      : TiledIntegrator(args.spp, args.tile_size) {}
+      : TiledIntegrator(args.spp, args.tile_size),
+        min_bounces_{args.min_bounces},
+        max_bounces_{args.max_bounces},
+        cont_prob_{args.cont_prob} {}
+
+  virtual Pixel Li(const Ray& ray, const Scene* scene,
+                   Sampler* sampler) const override {
+    Pixel pixel{};
+    Spectrum throughput{1.f};
+    Ray path_ray = ray;
+
+    bool specular_bounce = true;
+    for (auto bounce = 0; bounce < max_bounces_; bounce++) {
+      if (bounce > min_bounces_) {
+        if (sampler->Next1D() > cont_prob_) return pixel;
+        throughput /= cont_prob_;
+      }
+
+      PrimitiveIntersection inct;
+      bool intersected = scene->Intersect(path_ray, &inct);
+      if (!intersected) {
+        return pixel;
+      }
+    }
+    return pixel;
+  }
 
  private:
+  int min_bounces_;
+  int max_bounces_;
+  float cont_prob_;
 };
 
 Rc<Renderer> CreatePTRenderer(const PTRendererArgs& args) {

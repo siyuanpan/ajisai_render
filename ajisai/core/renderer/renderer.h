@@ -21,6 +21,7 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
+#include <mutex>
 
 AJ_BEGIN
 
@@ -28,6 +29,8 @@ class Scene;
 class Camera;
 class Film;
 class Sampler;
+struct Pixel;
+class Ray;
 
 struct PTRendererArgs {
   int spp;
@@ -49,6 +52,8 @@ class Renderer {
 
 class Integrator : public Renderer {
  public:
+  virtual Pixel Li(const Ray& ray, const Scene* scene,
+                   Sampler* sampler) const = 0;
 };
 
 class TiledIntegrator : public Integrator {
@@ -61,6 +66,7 @@ class TiledIntegrator : public Integrator {
  private:
   int spp_;
   int tile_size_;
+  std::mutex mutex;
 };
 
 AJISAI_API Rc<Renderer> CreatePTRenderer(const PTRendererArgs&);

@@ -28,6 +28,8 @@ DEALINGS IN THE SOFTWARE.
 AJ_BEGIN
 
 class AreaLight;
+struct Ray;
+struct PrimitiveIntersection;
 
 class Primitive {
  public:
@@ -36,6 +38,9 @@ class Primitive {
   virtual const AreaLight* AsLight() const noexcept = 0;
 
   virtual AreaLight* AsLight() noexcept = 0;
+
+  virtual bool Intersect(const Ray& ray,
+                         PrimitiveIntersection* inct) const noexcept = 0;
 
   void SetDenoise(bool denoise) noexcept { denoise_ = denoise; }
 

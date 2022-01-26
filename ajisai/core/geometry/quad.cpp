@@ -21,6 +21,7 @@ DEALINGS IN THE SOFTWARE.
 */
 #include <ajisai/ajisai.h>
 #include <ajisai/core/geometry/geometry.h>
+#include <ajisai/core/geometry/helper.h>
 
 AJ_BEGIN
 
@@ -38,6 +39,25 @@ class Quad : public Geometry {
     b_ = args.local2world.transformPoint(args.b);
     c_ = args.local2world.transformPoint(args.c);
     d_ = args.local2world.transformPoint(args.d);
+  }
+
+  virtual bool Intersect(const Ray &ray,
+                         GeometryIntersection *inct) const noexcept override {
+    if (IntersectWithTriangle(ray, a_, b_, c_, inct)) {
+      inct->pos = ray.CalcPoint(inct->t);
+      inct->uv = (1 - inct->uv.x() - inct->uv.y()) * ta_ + inct->uv.x() * tb_ +
+                 inct->uv.y() * tc_;
+      inct->wr = -ray.d;
+      return true;
+    }
+    if (IntersectWithTriangle(ray, a_, c_, d_, inct)) {
+      inct->pos = ray.CalcPoint(inct->t);
+      inct->uv = (1 - inct->uv.x() - inct->uv.y()) * ta_ + inct->uv.x() * tc_ +
+                 inct->uv.y() * td_;
+      inct->wr = -ray.d;
+      return true;
+    }
+    return false;
   }
 
  private:

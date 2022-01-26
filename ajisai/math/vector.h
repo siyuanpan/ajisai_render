@@ -196,7 +196,7 @@ class Vector {
     return Vector<T, size>(*this) /= scalar;
   }
 
-  T dot() const { return Math::dot(*this, *this); }
+  T dot() const { return aj::dot(*this, *this); }
 
   T length() const { return T(std::sqrt(dot())); }
 
@@ -307,16 +307,16 @@ inline Vector<T, size> operator/(typename std::common_type<T>::type scalar,
     return Vector<T, size>::normalized();                                      \
   }
 
-#define VECTOR_FUNCTION_IMPL(Type, size)                               \
-  template <class T>                                                   \
-  inline Type<T> operator*(typename std::common_type<T>::type number,  \
-                           const Type<T>& vector) {                    \
-    return number * static_cast<const Vector<T, size>&>(vector);       \
-  }                                                                    \
-  template <class T>                                                   \
-  inline Type<T> operator/(typename std::common_type<T>::type number,  \
-                           const Type<T>& vector) {                    \
-    return number / static_cast<const Math::Vector<T, size>&>(vector); \
+#define VECTOR_FUNCTION_IMPL(Type, size)                              \
+  template <class T>                                                  \
+  inline Type<T> operator*(typename std::common_type<T>::type number, \
+                           const Type<T>& vector) {                   \
+    return number * static_cast<const Vector<T, size>&>(vector);      \
+  }                                                                   \
+  template <class T>                                                  \
+  inline Type<T> operator/(typename std::common_type<T>::type number, \
+                           const Type<T>& vector) {                   \
+    return number / static_cast<const Vector<T, size>&>(vector);      \
   }
 
 template <class T, std::size_t size>

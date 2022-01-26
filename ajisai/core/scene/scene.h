@@ -25,6 +25,9 @@ DEALINGS IN THE SOFTWARE.
 
 AJ_BEGIN
 
+struct Ray;
+struct PrimitiveIntersection;
+
 struct SceneArgs {
   std::vector<Rc<Primitive>> primitives;
   Rc<Aggregate> aggregate;
@@ -33,6 +36,9 @@ struct SceneArgs {
 class Scene {
  public:
   virtual ~Scene() = default;
+
+  virtual bool Intersect(const Ray& ray,
+                         PrimitiveIntersection* inct) const noexcept = 0;
 };
 
 AJISAI_API Rc<Scene> CreateDefaultScene(const SceneArgs&);

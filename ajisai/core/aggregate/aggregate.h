@@ -26,11 +26,17 @@ DEALINGS IN THE SOFTWARE.
 
 AJ_BEGIN
 
+struct Ray;
+struct PrimitiveIntersection;
+
 class Aggregate {
  public:
   virtual ~Aggregate() = default;
 
   virtual void Build(const std::vector<Rc<Primitive>>& primitives) = 0;
+
+  virtual bool Intersect(const Ray& ray,
+                         PrimitiveIntersection* inct) const noexcept = 0;
 };
 
 AJISAI_API Rc<Aggregate> CreateNativeAggregate();

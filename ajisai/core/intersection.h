@@ -19,37 +19,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
+#pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/aggregate/aggregate.h>
-#include <ajisai/core/ray.h>
-#include <ajisai/core/intersection.h>
+#include <ajisai/math/vector3.h>
 
 AJ_BEGIN
 
-class NativeAggregate : public Aggregate {
- public:
-  virtual void Build(const std::vector<Rc<Primitive>>& primitives) override {
-    primitives_.assign(primitives.begin(), primitives.end());
-  }
+class Primitive;
+class Material;
 
-  virtual bool Intersect(const Ray& ray,
-                         PrimitiveIntersection* inct) const noexcept override {
-    Ray r = ray;
-    bool ret = false;
-    for (auto& primitive : primitives_) {
-      if (primitive->Intersect(r, inct)) {
-        r.t_max = inct->t;
-        ret = true;
-      }
-    }
-
-    return ret;
-  }
-
- private:
-  std::vector<Rc<const Primitive>> primitives_;
+struct Intersection {
+  Vector3f pos;
+  Vector3f geometry_normal;
+  Vector2f uv;
 };
 
-Rc<Aggregate> CreateNativeAggregate() { return RcNew<NativeAggregate>(); }
+struct GeometryIntersection : Intersection {
+  float t = -1;
+  Vector3f wr;
+};
+
+struct PrimitiveIntersection : GeometryIntersection {
+  const Primitive* primitive = nullptr;
+  const Material* material = nullptr;
+};
+
+struct DifferentialGeom {};
 
 AJ_END

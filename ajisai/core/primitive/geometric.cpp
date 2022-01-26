@@ -22,6 +22,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/ajisai.h>
 #include <ajisai/core/primitive/primitive.h>
 #include <ajisai/core/light/area_light.h>
+#include <ajisai/core/intersection.h>
 
 AJ_BEGIN
 
@@ -45,6 +46,15 @@ class GeometricPrimitive : public Primitive {
   }
 
   virtual AreaLight* AsLight() noexcept override { return area_light_.get(); }
+
+  virtual bool Intersect(const Ray& ray,
+                         PrimitiveIntersection* inct) const noexcept override {
+    if (!geometry_->Intersect(ray, inct)) return false;
+    inct->primitive = this;
+    inct->material = material_.get();
+
+    return true;
+  }
 
  private:
   Rc<const Geometry> geometry_;

@@ -19,37 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
+#pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/aggregate/aggregate.h>
-#include <ajisai/core/ray.h>
-#include <ajisai/core/intersection.h>
+#include <ajisai/math/vector3.h>
+#include <ajisai/math/constants.h>
 
 AJ_BEGIN
 
-class NativeAggregate : public Aggregate {
- public:
-  virtual void Build(const std::vector<Rc<Primitive>>& primitives) override {
-    primitives_.assign(primitives.begin(), primitives.end());
+inline Vector2f squareToUniformDiskConcentric(const Vector2f& sample) {
+  auto offset = 2.f * sample - Vector2f(1.f);
+
+  float r, phi;
+  if (offset.x() == 0 && offset.y() == 0) {
+    return {0, 0};
+  } else if (std::abs(offset.x()) > std::abs(offset.y())) {
+    r = offset.x();
+    phi = Constants<float>::pi4() * (offset.y() / offset.x());
+  } else {
+    r = offset.y();
+    phi = Constants<float>::pi2() -
+          Constants<float>::pi4() * (offset.x() / offset.y());
   }
 
-  virtual bool Intersect(const Ray& ray,
-                         PrimitiveIntersection* inct) const noexcept override {
-    Ray r = ray;
-    bool ret = false;
-    for (auto& primitive : primitives_) {
-      if (primitive->Intersect(r, inct)) {
-        r.t_max = inct->t;
-        ret = true;
-      }
-    }
+  return {r * std::cos(phi), r * std::sin(phi)};
+}
 
-    return ret;
+inline Vector3f squareToCosineHemisphere(const Vector2f& sample) {
+  auto p = squareToUniformDiskConcentric(sample);
+  auto r = dot(p, p);
+  auto z = std::sqrt(std::max(0.0f, 1 - r));
+
+  if (z == 0) {
+    z = 1e-10f;
   }
 
- private:
-  std::vector<Rc<const Primitive>> primitives_;
-};
-
-Rc<Aggregate> CreateNativeAggregate() { return RcNew<NativeAggregate>(); }
+  return {p.x(), p.y(), z};
+}
 
 AJ_END

@@ -19,37 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
+#pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/aggregate/aggregate.h>
-#include <ajisai/core/ray.h>
-#include <ajisai/core/intersection.h>
+#include <ajisai/math/vector3.h>
 
 AJ_BEGIN
 
-class NativeAggregate : public Aggregate {
- public:
-  virtual void Build(const std::vector<Rc<Primitive>>& primitives) override {
-    primitives_.assign(primitives.begin(), primitives.end());
-  }
+struct Ray {
+  Vector3f o, d;
+  float t_min, t_max;
 
-  virtual bool Intersect(const Ray& ray,
-                         PrimitiveIntersection* inct) const noexcept override {
-    Ray r = ray;
-    bool ret = false;
-    for (auto& primitive : primitives_) {
-      if (primitive->Intersect(r, inct)) {
-        r.t_max = inct->t;
-        ret = true;
-      }
-    }
+  Ray() = default;
+  Ray(const Vector3f& o, const Vector3f& d,
+      float t_min = Ray::Eps(),  // 0.001 /*ray bias*/,
+      float t_max = std::numeric_limits<float>::infinity())
+      : o(o), d(d.normalized()), t_min(t_min), t_max(t_max) {}
 
-    return ret;
-  }
+  auto CalcPoint(float t) const { return o + t * d; }
 
- private:
-  std::vector<Rc<const Primitive>> primitives_;
+  static inline float Eps() { return 1e-4f; }
+  static inline float ShadowEps() { return 1e-4f; }
 };
-
-Rc<Aggregate> CreateNativeAggregate() { return RcNew<NativeAggregate>(); }
 
 AJ_END

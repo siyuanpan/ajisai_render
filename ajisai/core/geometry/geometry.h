@@ -25,9 +25,15 @@ DEALINGS IN THE SOFTWARE.
 
 AJ_BEGIN
 
+struct Ray;
+struct GeometryIntersection;
+
 class Geometry {
  public:
   virtual ~Geometry() = default;
+
+  virtual bool Intersect(const Ray &ray,
+                         GeometryIntersection *inct) const noexcept = 0;
 };
 
 AJISAI_API Rc<Geometry> CreateQuad(const Vector3f &a, const Vector3f &b,

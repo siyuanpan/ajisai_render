@@ -19,37 +19,46 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
+#pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/aggregate/aggregate.h>
-#include <ajisai/core/ray.h>
 #include <ajisai/core/intersection.h>
+#include <ajisai/core/ray.h>
+#include <ajisai/math/vector3.h>
 
 AJ_BEGIN
 
-class NativeAggregate : public Aggregate {
- public:
-  virtual void Build(const std::vector<Rc<Primitive>>& primitives) override {
-    primitives_.assign(primitives.begin(), primitives.end());
-  }
-
-  virtual bool Intersect(const Ray& ray,
-                         PrimitiveIntersection* inct) const noexcept override {
-    Ray r = ray;
-    bool ret = false;
-    for (auto& primitive : primitives_) {
-      if (primitive->Intersect(r, inct)) {
-        r.t_max = inct->t;
-        ret = true;
-      }
+inline bool IntersectWithTriangle(const Ray& ray, const Vector3f& v0,
+                                  const Vector3f& v1, const Vector3f& v2,
+                                  GeometryIntersection* inct) {
+  bool hit = false;
+  //   auto v0 = A;
+  //   auto v1 = B;
+  //   auto v2 = C;
+  auto e0 = v1 - v0;
+  auto e1 = v2 - v0;
+  auto n = cross(e0, e1).normalized();
+  float a, f, u, v;
+  auto h = cross(ray.d, e1);
+  a = dot(e0, h);
+  if (a > -1e-6f && a < 1e-6f) return false;
+  f = 1.f / a;
+  auto s = ray.o - v0;
+  u = f * dot(s, h);
+  if (u < 0.f || u > 1.f) return false;
+  auto q = cross(s, e0);
+  v = f * dot(ray.d, q);
+  if (v < 0.f || u + v > 1.f) return false;
+  float t = f * dot(e1, q);
+  if (t > ray.t_min && t < ray.t_max) {
+    if (t < inct->t) {
+      inct->t = t;
+      inct->geometry_normal = n;
+      inct->uv = Vector2f{u, v};
+      hit = true;
     }
-
-    return ret;
   }
 
- private:
-  std::vector<Rc<const Primitive>> primitives_;
-};
-
-Rc<Aggregate> CreateNativeAggregate() { return RcNew<NativeAggregate>(); }
+  return hit;
+}
 
 AJ_END

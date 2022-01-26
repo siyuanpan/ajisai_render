@@ -21,12 +21,24 @@ DEALINGS IN THE SOFTWARE.
 */
 #include <ajisai/ajisai.h>
 #include <ajisai/core/geometry/geometry.h>
+#include <ajisai/core/intersection.h>
 
 AJ_BEGIN
 
 class TwoSided : public Geometry {
  public:
   explicit TwoSided(Rc<const Geometry> internal) : internal_(internal) {}
+
+  virtual bool Intersect(const Ray &ray,
+                         GeometryIntersection *inct) const noexcept {
+    if (!internal_->Intersect(ray, inct)) return false;
+
+    const bool backface = dot(inct->geometry_normal, inct->wr) < 0;
+    if (backface) {
+      inct->geometry_normal *= -1;
+    }
+    return true;
+  }
 
  private:
   Rc<const Geometry> internal_;

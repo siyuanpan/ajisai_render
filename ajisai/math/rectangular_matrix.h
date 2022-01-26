@@ -228,29 +228,29 @@ inline void RectangularMatrix<T, cols, rows>::setRow(
   for (std::size_t i = 0; i != cols; ++i) _data[i][row] = data[i];
 }
 
-#define AJISA_RECTANGULARMATRIX_SUBCLASS_IMPL(cols, rows, ...)        \
-  __VA_ARGS__& operator/=(T number) {                                 \
-    Math::RectangularMatrix<T, cols, rows>::operator/=(number);       \
-    return *this;                                                     \
-  }                                                                   \
-  __VA_ARGS__ operator/(T number) const {                             \
-    return Math::RectangularMatrix<T, cols, rows>::operator/(number); \
+#define AJISA_RECTANGULARMATRIX_SUBCLASS_IMPL(cols, rows, ...)      \
+  __VA_ARGS__& operator/=(T number) {                               \
+    aj::RectangularMatrix<T, cols, rows>::operator/=(number);       \
+    return *this;                                                   \
+  }                                                                 \
+  __VA_ARGS__ operator/(T number) const {                           \
+    return aj::RectangularMatrix<T, cols, rows>::operator/(number); \
   }
 
-#define AJISAI_MATRIX_OPERATOR_IMPL(...)                                       \
-  template <class T, std::size_t size>                                         \
-  inline __VA_ARGS__ operator/(typename std::common_type<T>::type number,      \
-                               const __VA_ARGS__& matrix) {                    \
-    return number /                                                            \
-           static_cast<const Math::RectangularMatrix<T, size, size>&>(matrix); \
+#define AJISAI_MATRIX_OPERATOR_IMPL(...)                                     \
+  template <class T, std::size_t size>                                       \
+  inline __VA_ARGS__ operator/(typename std::common_type<T>::type number,    \
+                               const __VA_ARGS__& matrix) {                  \
+    return number /                                                          \
+           static_cast<const aj::RectangularMatrix<T, size, size>&>(matrix); \
   }
 
-#define AJISAI_MATRIXn_OPERATOR_IMPLEMENTATION(size, Type)                     \
-  template <class T>                                                           \
-  inline Type<T> operator/(typename std::common_type<T>::type number,          \
-                           const Type<T>& matrix) {                            \
-    return number /                                                            \
-           static_cast<const Math::RectangularMatrix<T, size, size>&>(matrix); \
+#define AJISAI_MATRIXn_OPERATOR_IMPLEMENTATION(size, Type)                   \
+  template <class T>                                                         \
+  inline Type<T> operator/(typename std::common_type<T>::type number,        \
+                           const Type<T>& matrix) {                          \
+    return number /                                                          \
+           static_cast<const aj::RectangularMatrix<T, size, size>&>(matrix); \
   }
 
 namespace {

@@ -37,6 +37,11 @@ class DefaultScene : public Scene {
     aggregate_ = args.aggregate;
   }
 
+  virtual bool Intersect(const Ray& ray,
+                         PrimitiveIntersection* inct) const noexcept override {
+    return aggregate_->Intersect(ray, inct);
+  }
+
  private:
   std::vector<Rc<Primitive>> primitives_;
   Rc<Aggregate> aggregate_;

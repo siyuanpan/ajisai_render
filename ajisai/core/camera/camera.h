@@ -22,6 +22,7 @@ DEALINGS IN THE SOFTWARE.
 #pragma once
 #include <ajisai/ajisai.h>
 #include <ajisai/core/film.h>
+#include <ajisai/core/ray.h>
 #include <ajisai/math/vector3.h>
 
 AJ_BEGIN
@@ -31,6 +32,9 @@ class Camera {
   virtual ~Camera() = default;
 
   virtual Rc<Film> CreateFilm() = 0;
+
+  virtual Ray GenerateRay(const Vector2f& raster,
+                          const Vector2f& sample) const = 0;
 };
 
 AJISAI_API Rc<Camera> CreateThinLensCamera(
