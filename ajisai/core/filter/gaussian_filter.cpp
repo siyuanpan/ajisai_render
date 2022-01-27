@@ -19,29 +19,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/film.h>
-#include <ajisai/core/ray.h>
-#include <ajisai/math/vector3.h>
+#include <ajisai/core/filter/filter.h>
+#include <ajisai/math/vector2.h>
 
 AJ_BEGIN
 
-class Filter;
-
-class Camera {
+class GaussianFilter : public Filter {
  public:
-  virtual ~Camera() = default;
+  explicit GaussianFilter(const Vector2f& radius, float alpha)
+      : radius_(radius),
+        alpha_(alpha),
+        expX_{std::exp(-alpha * radius.x() * radius.x())},
+        expY_{std::exp(-alpha * radius.y() * radius.y())} {}
 
-  virtual Rc<Film> CreateFilm() = 0;
+  virtual Vector2f Radius() const noexcept override { return radius_; }
 
-  virtual Ray GenerateRay(const Vector2f& raster,
-                          const Vector2f& sample) const = 0;
+  virtual float Eval(const Vector2f& p) const noexcept override {
+    return Gaussian(p.x(), expX_) * Gaussian(p.y(), expY_);
+  }
+
+ private:
+  float Gaussian(float d, float expv) const {
+    return std::max(0.f, (float)std::exp(-alpha_ * d * d) - expv);
+  }
+
+  Vector2f radius_;
+  float alpha_;
+  float expX_, expY_;
 };
 
-AJISAI_API Rc<Camera> CreateThinLensCamera(
-    Rc<const Filter> filter, const Vector2f& resolution, const Vector3f& pos,
-    const Vector3f& look_at, const Vector3f& up, float fov, float lens_radius,
-    float focal_distance);
+Rc<Filter> CreateGaussianFilter(float xwidth, float ywidth, float alpha) {
+  return RcNew<GaussianFilter>(Vector2f{xwidth, ywidth}, alpha);
+}
 
 AJ_END

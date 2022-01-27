@@ -25,9 +25,13 @@ DEALINGS IN THE SOFTWARE.
 
 AJ_BEGIN
 
+class Film;
+
 class PostProcessor {
  public:
   virtual ~PostProcessor() = default;
+
+  virtual void Process(Film*) const = 0;
 };
 
 AJISAI_API Rc<PostProcessor> CreateSaving2Img(std::string filename,

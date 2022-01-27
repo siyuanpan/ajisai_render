@@ -19,29 +19,43 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/film.h>
-#include <ajisai/core/ray.h>
-#include <ajisai/math/vector3.h>
+#include <ajisai/core/filter/filter.h>
+#include <ajisai/math/vector2.h>
 
 AJ_BEGIN
 
-class Filter;
-
-class Camera {
+class MitchellFilter : public Filter {
  public:
-  virtual ~Camera() = default;
+  explicit MitchellFilter(const Vector2f& radius, float B, float C)
+      : radius_(radius), inv_radius_(1.f / radius), B(B), C(C) {}
 
-  virtual Rc<Film> CreateFilm() = 0;
+  virtual Vector2f Radius() const noexcept override { return radius_; }
 
-  virtual Ray GenerateRay(const Vector2f& raster,
-                          const Vector2f& sample) const = 0;
+  virtual float Eval(const Vector2f& p) const noexcept override {
+    return Mitchell1D(p.x() * inv_radius_.x()) *
+           Mitchell1D(p.y() * inv_radius_.y());
+  }
+
+ private:
+  float Mitchell1D(float x) const {
+    x = std::abs(2 * x);
+    if (x > 1)
+      return ((-B - 6 * C) * x * x * x + (6 * B + 30 * C) * x * x +
+              (-12 * B - 48 * C) * x + (8 * B + 24 * C)) *
+             (1.f / 6.f);
+    else
+      return ((12 - 9 * B - 6 * C) * x * x * x +
+              (-18 + 12 * B + 6 * C) * x * x + (6 - 2 * B)) *
+             (1.f / 6.f);
+  }
+
+  Vector2f radius_, inv_radius_;
+  float B, C;
 };
 
-AJISAI_API Rc<Camera> CreateThinLensCamera(
-    Rc<const Filter> filter, const Vector2f& resolution, const Vector3f& pos,
-    const Vector3f& look_at, const Vector3f& up, float fov, float lens_radius,
-    float focal_distance);
+Rc<Filter> CreateMitchellFilter(float xwidth, float ywidth, float B, float C) {
+  return RcNew<MitchellFilter>(Vector2f{xwidth, ywidth}, B, C);
+}
 
 AJ_END

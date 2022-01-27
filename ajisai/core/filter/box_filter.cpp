@@ -19,29 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/film.h>
-#include <ajisai/core/ray.h>
-#include <ajisai/math/vector3.h>
+#include <ajisai/core/filter/filter.h>
+#include <ajisai/math/vector2.h>
 
 AJ_BEGIN
 
-class Filter;
-
-class Camera {
+class BoxFilter : public Filter {
  public:
-  virtual ~Camera() = default;
+  explicit BoxFilter(const Vector2f& p) : radius_(p) {}
 
-  virtual Rc<Film> CreateFilm() = 0;
+  virtual Vector2f Radius() const noexcept override { return radius_; }
 
-  virtual Ray GenerateRay(const Vector2f& raster,
-                          const Vector2f& sample) const = 0;
+  virtual float Eval(const Vector2f& p) const noexcept override { return 1.f; }
+
+ private:
+  Vector2f radius_;
 };
 
-AJISAI_API Rc<Camera> CreateThinLensCamera(
-    Rc<const Filter> filter, const Vector2f& resolution, const Vector3f& pos,
-    const Vector3f& look_at, const Vector3f& up, float fov, float lens_radius,
-    float focal_distance);
+Rc<Filter> CreateBoxFilter(float xwidth, float ywidth) {
+  return RcNew<BoxFilter>(Vector2f{xwidth, ywidth});
+}
 
 AJ_END

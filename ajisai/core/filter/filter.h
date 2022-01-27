@@ -21,27 +21,25 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/film.h>
-#include <ajisai/core/ray.h>
-#include <ajisai/math/vector3.h>
+#include <ajisai/math/vector2.h>
 
 AJ_BEGIN
 
-class Filter;
-
-class Camera {
+class Filter {
  public:
-  virtual ~Camera() = default;
+  virtual ~Filter() = default;
 
-  virtual Rc<Film> CreateFilm() = 0;
+  virtual Vector2f Radius() const noexcept = 0;
 
-  virtual Ray GenerateRay(const Vector2f& raster,
-                          const Vector2f& sample) const = 0;
+  virtual float Eval(const Vector2f& p) const noexcept = 0;
 };
 
-AJISAI_API Rc<Camera> CreateThinLensCamera(
-    Rc<const Filter> filter, const Vector2f& resolution, const Vector3f& pos,
-    const Vector3f& look_at, const Vector3f& up, float fov, float lens_radius,
-    float focal_distance);
+AJISAI_API Rc<Filter> CreateBoxFilter(float xwidth, float ywidth);
+
+AJISAI_API Rc<Filter> CreateGaussianFilter(float xwidth, float ywidth,
+                                           float alpha);
+
+AJISAI_API Rc<Filter> CreateMitchellFilter(float xwidth, float ywidth, float B,
+                                           float C);
 
 AJ_END

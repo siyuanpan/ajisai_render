@@ -21,6 +21,7 @@ DEALINGS IN THE SOFTWARE.
 */
 #include <ajisai/ajisai.h>
 #include <ajisai/core/post_processor/post_processor.h>
+#include <ajisai/core/film.h>
 
 AJ_BEGIN
 
@@ -29,6 +30,10 @@ class SaveToImage : public PostProcessor {
   explicit SaveToImage(std::string filename, std::string ext) {
     filename_ = std::move(filename);
     ext_ = std::move(ext);
+  }
+
+  virtual void Process(Film* film) const override {
+    film->WriteImage(filename_ + "." + ext_);
   }
 
  private:

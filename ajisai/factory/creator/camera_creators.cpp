@@ -32,10 +32,12 @@ class ThinLensCreatorImpl {
   static Rc<Camera> Create(const YAML::Node& node,
                            const CreateFactory& factory) {
     const auto resolution = node["resolution"].as<Vector2f>();
+    Rc<Filter> film_filter;
     if (auto filter = node["filter"]) {
-      AJ_ERROR("TODO: NOT IMPLEMENT filter");
+      film_filter = factory.Create<Filter>(filter);
     } else {
       AJ_INFO("Use Box filter");
+      film_filter = CreateBoxFilter(0.5f, 0.5f);
     }
 
     AJ_INFO("resolution ({}, {})", resolution.x(), resolution.y());
@@ -53,7 +55,7 @@ class ThinLensCreatorImpl {
     AJ_INFO("lens_radius : {}", (float)lens_radius);
     AJ_INFO("focal_distance : {}", (float)focal_distance);
 
-    return CreateThinLensCamera(resolution, position, look_at, up,
+    return CreateThinLensCamera(film_filter, resolution, position, look_at, up,
                                 (float)Rad<float>(fov), lens_radius,
                                 focal_distance);
   }

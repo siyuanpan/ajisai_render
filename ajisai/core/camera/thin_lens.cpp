@@ -21,6 +21,7 @@ DEALINGS IN THE SOFTWARE.
 */
 #include <ajisai/ajisai.h>
 #include <ajisai/core/camera/camera.h>
+#include <ajisai/core/filter/filter.h>
 #include <ajisai/core/warp.h>
 #include <ajisai/math/matrix4.h>
 
@@ -28,10 +29,12 @@ AJ_BEGIN
 
 class ThinLensCamera : public Camera {
  public:
-  explicit ThinLensCamera(const Vector2f& resolution, const Vector3f& pos,
-                          const Vector3f& look_at, const Vector3f& up,
-                          float fov, float lens_radius, float focal_distance)
-      : resolution_{resolution},
+  explicit ThinLensCamera(Rc<const Filter> filter, const Vector2f& resolution,
+                          const Vector3f& pos, const Vector3f& look_at,
+                          const Vector3f& up, float fov, float lens_radius,
+                          float focal_distance)
+      : filter_{filter},
+        resolution_{resolution},
         lens_radius_{lens_radius},
         focal_distance_{focal_distance} {
     world2camera_ = Matrix4f::lookAt(pos, look_at, up);
@@ -79,6 +82,7 @@ class ThinLensCamera : public Camera {
   }
 
  private:
+  Rc<const Filter> filter_;
   Vector2f resolution_;
   float lens_radius_, focal_distance_;
   Matrix4f world2camera_, camera2world_;
@@ -87,12 +91,13 @@ class ThinLensCamera : public Camera {
   Matrix4f raster2world_, world2Raster_;
 };
 
-Rc<Camera> CreateThinLensCamera(const Vector2f& resolution, const Vector3f& pos,
+Rc<Camera> CreateThinLensCamera(Rc<const Filter> filter,
+                                const Vector2f& resolution, const Vector3f& pos,
                                 const Vector3f& look_at, const Vector3f& up,
                                 float fov, float lens_radius,
                                 float focal_distance) {
-  return RcNew<ThinLensCamera>(resolution, pos, look_at, up, fov, lens_radius,
-                               focal_distance);
+  return RcNew<ThinLensCamera>(filter, resolution, pos, look_at, up, fov,
+                               lens_radius, focal_distance);
 }
 
 AJ_END

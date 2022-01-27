@@ -30,12 +30,14 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/factory/creator/renderer_creators.h>
 #include <ajisai/factory/creator/post_processor_creators.h>
 #include <ajisai/factory/creator/medium_creators.h>
+#include <ajisai/factory/creator/filter_creators.h>
 
 AJ_BEGIN
 
 CreateFactory::CreateFactory()
     : factory_tuple_{Factory<Scene>("scene"),
                      Factory<Camera>("camera"),
+                     Factory<Filter>("filter"),
                      Factory<Renderer>("renderer"),
                      Factory<PostProcessor>("post_processor"),
                      Factory<Aggregate>("aggregate"),
@@ -46,6 +48,7 @@ CreateFactory::CreateFactory()
                      Factory<Texture2D>("texture2D")} {
   AddSceneFactory(GetFactory<Scene>());
   AddCameraFactory(GetFactory<Camera>());
+  AddFilterFactory(GetFactory<Filter>());
   AddRendererFactory(GetFactory<Renderer>());
   AddPostProcessorFactory(GetFactory<PostProcessor>());
   AddAggregateFactory(GetFactory<Aggregate>());
