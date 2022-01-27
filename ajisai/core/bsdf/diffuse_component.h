@@ -30,6 +30,16 @@ class DiffuseComponent : public BSDFComponent {
  public:
   DiffuseComponent(const Spectrum& albedo) noexcept;
 
+  virtual BSDFComponent::SampleResult Sample(
+      const Vector3f& lwo, TransMode mode,
+      const Vector2f& sam) const noexcept override;
+
+  virtual Spectrum Eval(const Vector3f& lwi, const Vector3f& lwo,
+                        TransMode mode) const noexcept override;
+
+  virtual float Pdf(const Vector3f& lwi,
+                    const Vector3f& lwo) const noexcept override;
+
  private:
   Spectrum coef_;
 };

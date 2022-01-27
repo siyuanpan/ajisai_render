@@ -22,6 +22,7 @@ DEALINGS IN THE SOFTWARE.
 #pragma once
 #include <ajisai/ajisai.h>
 #include <ajisai/core/bsdf/bsdf.h>
+#include <ajisai/core/ray.h>
 #include <ajisai/math/vector3.h>
 
 AJ_BEGIN
@@ -35,6 +36,15 @@ struct Intersection {
   Vector3f geometry_normal;
   Vector3f shading_normal;
   Vector2f uv;
+
+  Intersection() = default;
+
+  Vector3f EpsOffset(const Vector3f& dir) const noexcept {
+    if (dot(dir, geometry_normal) > 0.f) {
+      return pos + geometry_normal * Ray::Eps();
+    }
+    return pos - geometry_normal * Ray::Eps();
+  }
 };
 
 struct GeometryIntersection : Intersection {

@@ -20,12 +20,46 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 #include <ajisai/core/bsdf/diffuse_component.h>
+#include <ajisai/core/warp.h>
 #include <ajisai/math/constants.h>
 
 AJ_BEGIN
 
 DiffuseComponent::DiffuseComponent(const Spectrum& albedo) noexcept {
   coef_ = albedo / Constants<float>::pi();
+}
+
+BSDFComponent::SampleResult DiffuseComponent::Sample(
+    const Vector3f& lwo, TransMode mode, const Vector2f& sam) const noexcept {
+  if (lwo.z() < 0) return {};
+
+  auto [lwi, pdf] = SquareToCosineHemisphereSample(sam);
+
+  if (pdf < 1e-3) {
+    return {};
+  }
+
+  SampleResult ret;
+  ret.f = coef_;
+  ret.lwi = lwi;
+  ret.pdf = pdf;
+
+  return ret;
+}
+
+Spectrum DiffuseComponent::Eval(const Vector3f& lwi, const Vector3f& lwo,
+                                TransMode mode) const noexcept {
+  if (lwi.z() <= 0 || lwo.z() <= 0) return {};
+
+  return coef_;
+}
+
+float DiffuseComponent::Pdf(const Vector3f& lwi,
+                            const Vector3f& lwo) const noexcept {
+  if (lwi.z() <= 0 || lwo.z() <= 0) return 0;
+
+  constexpr float inv_pi = 1.f / Constants<float>::pi();
+  return lwi.z() * inv_pi;
 }
 
 AJ_END

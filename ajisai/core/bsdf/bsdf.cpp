@@ -20,6 +20,8 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 #include <ajisai/core/bsdf/bsdf.h>
+#include <ajisai/utility/distribution.h>
+#include <numeric>
 
 AJ_BEGIN
 
@@ -28,6 +30,53 @@ void BSDF::AddComponent(float weight, Rc<BSDFComponent> component) {
   components_.push_back(component);
 }
 
-Spectrum BSDF::albedo() const { return albedo_; }
+Spectrum BSDF::Albedo() const { return albedo_; }
+
+BSDFSampleResult BSDF::SampleAll(const Vector3f& wo, TransMode mode,
+                                 const Vector3f& sam) const noexcept {
+  // process black fringes
+  //   if (CauseBlackFringes(wo)) {
+  //   return SampleBlack_fringes(wo, mode, sam);
+  //   }
+
+  const Vector3f lwo = shading_coord_.World2Local(wo).normalized();
+  if (!lwo.z()) return kBSDFSampleResultInvalid;
+
+  float weight_sum = std::accumulate(weights_.begin(), weights_.end(), 0);
+
+  if (!weight_sum) return kBSDFSampleResultInvalid;
+
+  Distribution comp_selector{weights_.data(), weights_.size()};
+
+  auto idx = comp_selector.SampleDiscrete(sam.x());
+
+  const BSDFComponent* sam_comp = components_[idx].get();
+  float weight = weights_[idx];
+
+  if (!sam_comp) return kBSDFSampleResultInvalid;
+
+  auto sam_ret = sam_comp->Sample(lwo, mode, Vector2f{sam.y(), sam.z()});
+  if (!sam_ret.Valid()) {
+    return kBSDFSampleResultInvalid;
+  }
+
+  sam_ret.lwi = sam_ret.lwi.normalized();
+  sam_ret.pdf *= weight;
+
+  for (int i = 0; i < weights_.size(); ++i) {
+    if (i != idx) {
+      sam_ret.f += components_[i]->Eval(sam_ret.lwi, lwo, mode);
+      sam_ret.pdf += components_[i]->Pdf(sam_ret.lwi, lwo) * weights_[i];
+    }
+  }
+
+  const Vector3f wi = shading_coord_.Local2World(sam_ret.lwi);
+  const float factor =
+      CorrectShadingNormal(geometry_normal_, shading_normal_, wi);
+  //   printf("(%f %f %f) (%f %f %f)\n", sam_ret.lwi[0], sam_ret.lwi[1],
+  //          sam_ret.lwi[2], wi[0], wi[1], wi[2]);
+
+  return BSDFSampleResult{wi, sam_ret.f * factor, sam_ret.pdf, false};
+}
 
 AJ_END

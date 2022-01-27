@@ -109,7 +109,7 @@ void run(int argc, char* argv[]) {
   auto sampler = CreateRandomSampler();
   renderer->Render(scene.get(), camera.get(), film.get(), sampler.get());
 
-  // film->WriteImage("normal.png");
+  film->WriteImage("normal.png");
 }
 
 int main(int argc, char* argv[]) {

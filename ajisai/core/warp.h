@@ -56,4 +56,19 @@ inline Vector3f squareToCosineHemisphere(const Vector2f& sample) {
   return {p.x(), p.y(), z};
 }
 
+inline std::tuple<Vector3f, float> SquareToCosineHemisphereSample(
+    const Vector2f& sample) {
+  auto p = squareToUniformDiskConcentric(sample);
+  auto r = dot(p, p);
+  auto z = std::sqrt(std::max(0.0f, 1 - r));
+
+  if (z == 0) {
+    z = 1e-10f;
+  }
+
+  constexpr float inv_pi = 1.f / Constants<float>::pi();
+
+  return {{p.x(), p.y(), z}, z * inv_pi};
+}
+
 AJ_END

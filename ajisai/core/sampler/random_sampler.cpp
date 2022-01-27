@@ -36,6 +36,10 @@ class RandomSampler : public Sampler {
     return {rng.NextFloat(), rng.NextFloat()};
   }
 
+  virtual Vector3f Next3D() override {
+    return {rng.NextFloat(), rng.NextFloat(), rng.NextFloat()};
+  }
+
  private:
   PCG32 rng;
 };

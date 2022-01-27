@@ -71,4 +71,9 @@ Box<T> BoxNew(Args&&... args) {
   return std::make_unique<T>(std::forward<Args>(args)...);
 }
 
+enum class TransMode {
+  Radiance = 0,   // camera -> light
+  Importance = 1  // light -> camera
+};
+
 AJ_END

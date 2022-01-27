@@ -21,7 +21,7 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/math/vector2.h>
+#include <ajisai/math/vector3.h>
 
 #include <cstdint>
 #include <memory>
@@ -35,6 +35,7 @@ class Sampler {
   virtual Rc<Sampler> Copy() const = 0;
   virtual float Next1D() = 0;
   virtual Vector2f Next2D() = 0;
+  virtual Vector3f Next3D() = 0;
 };
 
 AJISAI_API Rc<Sampler> CreateRandomSampler();

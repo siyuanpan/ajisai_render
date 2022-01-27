@@ -97,7 +97,7 @@ class PathTracing : public TiledIntegrator {
       const auto sp = inct.material->Shade(inct);
       if (bounce == 0) {
         pixel.normal = sp.shading_normal;
-        pixel.albedo = sp.bsdf->albedo();
+        pixel.albedo = sp.bsdf->Albedo();
       }
 
       const auto medium = inct.WrMedium();
@@ -134,6 +134,15 @@ class PathTracing : public TiledIntegrator {
             throughput *
             light->Radiance(inct.pos, inct.geometry_normal, inct.uv, inct.wr);
       }
+
+      const auto bsdf_sample =
+          sp.bsdf->SampleAll(inct.wr, TransMode::Radiance, sampler->Next3D());
+      if (bsdf_sample.f.IsBlack() || bsdf_sample.pdf < 0.f) return pixel;
+      throughput *= bsdf_sample.f *
+                    std::abs(dot(inct.geometry_normal, bsdf_sample.dir)) /
+                    bsdf_sample.pdf;
+      path_ray = Ray{inct.EpsOffset(bsdf_sample.dir), bsdf_sample.dir};
+      specular_bounce = bsdf_sample.is_delta;
     }
     return pixel;
   }
