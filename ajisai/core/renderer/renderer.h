@@ -21,6 +21,7 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
+#include <ajisai/math/spectrum.h>
 #include <mutex>
 
 AJ_BEGIN
@@ -42,6 +43,12 @@ struct PTRendererArgs {
   int specular_depth;
 };
 
+struct RenderPixel {
+  Spectrum value;
+  Spectrum normal;
+  Spectrum albedo;
+};
+
 class Renderer {
  public:
   virtual ~Renderer() = default;
@@ -52,8 +59,8 @@ class Renderer {
 
 class Integrator : public Renderer {
  public:
-  virtual Pixel Li(const Ray& ray, const Scene* scene,
-                   Sampler* sampler) const = 0;
+  virtual RenderPixel Li(const Ray& ray, const Scene* scene,
+                         Sampler* sampler) const = 0;
 };
 
 class TiledIntegrator : public Integrator {

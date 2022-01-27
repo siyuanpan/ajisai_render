@@ -24,6 +24,25 @@ DEALINGS IN THE SOFTWARE.
 
 AJ_BEGIN
 
+MediumInterface CreateMediumInterface(const YAML::Node& node,
+                                      const CreateFactory& factory) {
+  MediumInterface ret{};
+
+  if (auto in = node["med_in"]) {
+    ret.in = factory.Create<Medium>(in);
+  } else {
+    ret.in = CreateVoidMedium();
+  }
+
+  if (auto out = node["med_out"]) {
+    ret.out = factory.Create<Medium>(out);
+  } else {
+    ret.out = CreateVoidMedium();
+  }
+
+  return ret;
+}
+
 class GeometricPrimitiveCreatorImpl {
  public:
   static std::string Name() { return "geometry"; }
@@ -34,7 +53,7 @@ class GeometricPrimitiveCreatorImpl {
 
     auto material = factory.Create<Material>(node["material"]);
 
-    // TODO: medium
+    const auto medium = CreateMediumInterface(node, factory);
 
     const auto emission = node["emission"].as<Vector3f>(Vector3f{});
 
@@ -42,8 +61,8 @@ class GeometricPrimitiveCreatorImpl {
 
     const int32_t power = node["power"].as<int32_t>(-1);
 
-    return CreateGeometric(std::move(geometry), std::move(material), emission,
-                           denoise, power);
+    return CreateGeometric(std::move(geometry), std::move(material), medium,
+                           emission, denoise, power);
   }
 };
 

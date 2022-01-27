@@ -28,6 +28,10 @@ class Constant2D : public Texture2D {
  public:
   explicit Constant2D(const Spectrum& texel) : texel_(texel) {}
 
+  virtual Spectrum SampleSpectrum(const Vector2f& uv) const noexcept override {
+    return texel_;
+  }
+
  private:
   Spectrum texel_;
 };

@@ -36,6 +36,7 @@ class TwoSided : public Geometry {
     const bool backface = dot(inct->geometry_normal, inct->wr) < 0;
     if (backface) {
       inct->geometry_normal *= -1;
+      inct->shading_normal *= -1;
     }
     return true;
   }

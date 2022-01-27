@@ -49,6 +49,9 @@ inline bool IntersectWithTriangle(const Ray& ray, const Vector3f& v0,
   v = f * dot(ray.d, q);
   if (v < 0.f || u + v > 1.f) return false;
   float t = f * dot(e1, q);
+  //   printf(
+  //       "u : %f, v : %f, t : %f  ray.t_min : %f, ray.t_max : %f, inct->t :
+  //       %f\n", u, v, t, ray.t_min, ray.t_max, inct->t);
   if (t > ray.t_min && t < ray.t_max) {
     if (t < inct->t) {
       inct->t = t;

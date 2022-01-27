@@ -23,6 +23,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/core/primitive/primitive.h>
 #include <ajisai/core/light/area_light.h>
 #include <ajisai/core/intersection.h>
+#include <ajisai/core/medium/medium.h>
 
 AJ_BEGIN
 
@@ -30,10 +31,12 @@ class GeometricPrimitive : public Primitive {
  public:
   explicit GeometricPrimitive(Rc<const Geometry> geometry,
                               Rc<const Material> material,
+                              const MediumInterface& med,
                               const Spectrum& emission, bool denoise,
                               int32_t power) {
     geometry_ = std::move(geometry);
     material_ = std::move(material);
+    medium_interface_ = med;
     SetDenoise(denoise);
 
     if (!emission.IsBlack()) {
@@ -52,6 +55,8 @@ class GeometricPrimitive : public Primitive {
     if (!geometry_->Intersect(ray, inct)) return false;
     inct->primitive = this;
     inct->material = material_.get();
+    inct->medium_in = medium_interface_.in.get();
+    inct->medium_out = medium_interface_.out.get();
 
     return true;
   }
@@ -59,15 +64,17 @@ class GeometricPrimitive : public Primitive {
  private:
   Rc<const Geometry> geometry_;
   Rc<const Material> material_;
+  MediumInterface medium_interface_;
   Box<AreaLight> area_light_;
 };
 
 Rc<Primitive> CreateGeometric(Rc<const Geometry> geometry,
                               Rc<const Material> material,
+                              const MediumInterface& med,
                               const Spectrum& emission, bool denoise,
                               int32_t power) {
   return RcNew<GeometricPrimitive>(std::move(geometry), std::move(material),
-                                   emission, denoise, power);
+                                   med, emission, denoise, power);
 }
 
 AJ_END

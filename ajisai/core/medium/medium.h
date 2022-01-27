@@ -21,24 +21,48 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/light/light.h>
-#include <ajisai/core/geometry/geometry.h>
-#include <ajisai/math/spectrum.h>
+#include <ajisai/core/intersection.h>
+#include <ajisai/core/bsdf/bsdf.h>
 
 AJ_BEGIN
 
-class AreaLight : public Light {
- public:
-  AreaLight(const Geometry *geometry, Spectrum radiance, int32_t power);
+class Sampler;
 
-  virtual Spectrum Radiance(const Vector3f &pos, const Vector3f &nor,
-                            const Vector2f &uv,
-                            const Vector3f &light_to_out) const noexcept;
+struct SampleOutScatteringResult {
+  MediumScattering scattering_point;
+  Spectrum throughput;
 
- private:
-  const Geometry *geometry_;
-  Spectrum radiance_;
-  int32_t power_;
+  const BSDF* phase_function;
+
+  SampleOutScatteringResult(const MediumScattering sp,
+                            const Spectrum& throughput,
+                            const BSDF* phase_function)
+      : scattering_point(sp),
+        throughput(throughput),
+        phase_function(phase_function) {}
+
+  bool ScatteringHappened() const { return phase_function != nullptr; }
 };
+
+class Medium {
+ public:
+  virtual ~Medium() = default;
+
+  virtual int GetMaxScatteringCount() const noexcept = 0;
+
+  virtual SampleOutScatteringResult SampleScattering(
+      const Vector3f& a, const Vector3f& b, Sampler* sampler,
+      bool indirect_scattering) const = 0;
+
+  virtual Spectrum Absorbtion(const Vector3f& a, const Vector3f& b,
+                              Sampler* sampler) const noexcept = 0;
+};
+
+struct MediumInterface {
+  Rc<const Medium> in;
+  Rc<const Medium> out;
+};
+
+AJISAI_API Rc<Medium> CreateVoidMedium();
 
 AJ_END

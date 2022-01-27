@@ -19,26 +19,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#pragma once
-#include <ajisai/ajisai.h>
-#include <ajisai/core/light/light.h>
-#include <ajisai/core/geometry/geometry.h>
-#include <ajisai/math/spectrum.h>
+#include <ajisai/factory/creator/medium_creators.h>
+#include <ajisai/factory/creator/helper.h>
 
 AJ_BEGIN
 
-class AreaLight : public Light {
+class VoidMediumCreatorImpl {
  public:
-  AreaLight(const Geometry *geometry, Spectrum radiance, int32_t power);
+  static std::string Name() { return "void"; }
 
-  virtual Spectrum Radiance(const Vector3f &pos, const Vector3f &nor,
-                            const Vector2f &uv,
-                            const Vector3f &light_to_out) const noexcept;
-
- private:
-  const Geometry *geometry_;
-  Spectrum radiance_;
-  int32_t power_;
+  static Rc<Medium> Create(const YAML::Node& node,
+                           const CreateFactory& factory) {
+    return CreateVoidMedium();
+  }
 };
+
+template <class TMediumCreatorImpl>
+concept MediumCreatorImpl = requires(TMediumCreatorImpl) {
+  { TMediumCreatorImpl::Name() } -> std::convertible_to<std::string>;
+  {
+    TMediumCreatorImpl::Create(YAML::Node{}, CreateFactory{})
+    } -> std::convertible_to<Rc<Medium>>;
+};
+
+template <MediumCreatorImpl TMediumCreatorImpl>
+class MediumCreator : public TMediumCreatorImpl {};
+
+using VoidMediumCreator = MediumCreator<VoidMediumCreatorImpl>;
+
+void AddMediumFactory(Factory<Medium>& factory) {
+  factory.Add(VoidMediumCreator::Name(), &VoidMediumCreator::Create);
+}
 
 AJ_END

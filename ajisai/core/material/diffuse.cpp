@@ -21,12 +21,27 @@ DEALINGS IN THE SOFTWARE.
 */
 #include <ajisai/ajisai.h>
 #include <ajisai/core/material/material.h>
+#include <ajisai/core/bsdf/bsdf.h>
+#include <ajisai/core/intersection.h>
+#include <ajisai/core/bsdf/diffuse_component.h>
 
 AJ_BEGIN
 
 class Diffuse : public Material {
  public:
   explicit Diffuse(Rc<const Texture2D> albedo) : albedo_(albedo) {}
+
+  virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const override {
+    const auto albedo = albedo_->SampleSpectrum(inct.uv);
+    auto bsdf = new BSDF(inct.geometry_normal, inct.shading_normal, albedo);
+    bsdf->AddComponent(1.f, RcNew<DiffuseComponent>(albedo));
+
+    ShadingPoint sp{};
+    sp.bsdf = bsdf;
+    sp.shading_normal = inct.shading_normal;
+
+    return std::move(sp);
+  }
 
  private:
   Rc<const Texture2D> albedo_;

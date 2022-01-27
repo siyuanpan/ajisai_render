@@ -30,6 +30,7 @@ AJ_BEGIN
 class AreaLight;
 struct Ray;
 struct PrimitiveIntersection;
+struct MediumInterface;
 
 class Primitive {
  public:
@@ -50,6 +51,7 @@ class Primitive {
 
 AJISAI_API Rc<Primitive> CreateGeometric(Rc<const Geometry> geometry,
                                          Rc<const Material> material,
+                                         const MediumInterface& med,
                                          const Spectrum& emission, bool denoise,
                                          int32_t power);
 

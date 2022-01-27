@@ -21,24 +21,10 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/light/light.h>
-#include <ajisai/core/geometry/geometry.h>
-#include <ajisai/math/spectrum.h>
+#include <ajisai/factory/factory.h>
 
 AJ_BEGIN
 
-class AreaLight : public Light {
- public:
-  AreaLight(const Geometry *geometry, Spectrum radiance, int32_t power);
-
-  virtual Spectrum Radiance(const Vector3f &pos, const Vector3f &nor,
-                            const Vector2f &uv,
-                            const Vector3f &light_to_out) const noexcept;
-
- private:
-  const Geometry *geometry_;
-  Spectrum radiance_;
-  int32_t power_;
-};
+void AddMediumFactory(Factory<Medium>& factory);
 
 AJ_END

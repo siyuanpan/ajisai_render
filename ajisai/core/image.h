@@ -66,7 +66,7 @@ typedef Image<Vector4f> SRGBAImage;
 typedef Image<Color3f> RGBImage;
 typedef Image<Color4f> RGBAImage;
 
-class ImageWriter {
+class AJISAI_API ImageWriter {
  public:
   static bool Write(const RGBAImage& image, const std::filesystem::path& path);
 

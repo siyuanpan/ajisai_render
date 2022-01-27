@@ -82,6 +82,7 @@ class Cube : public Geometry {
       if (IntersectWithTriangle(ray, positions_[i], positions_[j],
                                 positions_[k], inct)) {
         inct->pos = ray.CalcPoint(inct->t);
+        inct->shading_normal = inct->geometry_normal;
         inct->uv = (1 - inct->uv.x() - inct->uv.y()) * uv_[i] +
                    inct->uv.x() * uv_[j] + inct->uv.y() * uv_[k];
         inct->wr = -ray.d;

@@ -19,26 +19,33 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/light/light.h>
-#include <ajisai/core/geometry/geometry.h>
-#include <ajisai/math/spectrum.h>
+#include <ajisai/core/medium/medium.h>
+#include <ajisai/core/sampler/sampler.h>
 
 AJ_BEGIN
 
-class AreaLight : public Light {
+class VoidMedium : public Medium {
  public:
-  AreaLight(const Geometry *geometry, Spectrum radiance, int32_t power);
+  virtual int GetMaxScatteringCount() const noexcept override {
+    return std::numeric_limits<int>::max();
+  }
 
-  virtual Spectrum Radiance(const Vector3f &pos, const Vector3f &nor,
-                            const Vector2f &uv,
-                            const Vector3f &light_to_out) const noexcept;
+  virtual SampleOutScatteringResult SampleScattering(const Vector3f&,
+                                                     const Vector3f&, Sampler*,
+                                                     bool) const override {
+    return {{}, Spectrum{1.f}, nullptr};
+  }
 
- private:
-  const Geometry *geometry_;
-  Spectrum radiance_;
-  int32_t power_;
+  virtual Spectrum Absorbtion(const Vector3f& a, const Vector3f& b,
+                              Sampler* sampler) const noexcept override {
+    return Spectrum{1.f};
+  }
 };
+
+Rc<Medium> CreateVoidMedium() {
+  static Rc<VoidMedium> ret = RcNew<VoidMedium>();
+  return ret;
+}
 
 AJ_END

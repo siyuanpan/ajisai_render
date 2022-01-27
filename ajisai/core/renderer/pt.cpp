@@ -24,6 +24,8 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/core/sampler/sampler.h>
 #include <ajisai/core/camera/camera.h>
 #include <ajisai/core/scene/scene.h>
+#include <ajisai/core/medium/medium.h>
+#include <ajisai/core/light/area_light.h>
 #include <ajisai/core/film.h>
 #include <ajisai/core/parallel.h>
 #include <ajisai/core/intersection.h>
@@ -52,7 +54,7 @@ void TiledIntegrator::Render(Scene* scene, Camera* camera, Film* film,
           auto ray =
               camera->GenerateRay(Vector2f{u, v}, tile_sampler->Next2D());
           auto li = Li(ray, scene, tile_sampler.get());
-          tile.AddSample(Vector2i{x, y}, li.radiance, 1.f);
+          tile.AddSample(Vector2i{x, y}, li.value, 1.f);
         }
       }
     }
@@ -72,13 +74,14 @@ class PathTracing : public TiledIntegrator {
         max_bounces_{args.max_bounces},
         cont_prob_{args.cont_prob} {}
 
-  virtual Pixel Li(const Ray& ray, const Scene* scene,
-                   Sampler* sampler) const override {
-    Pixel pixel{};
+  virtual RenderPixel Li(const Ray& ray, const Scene* scene,
+                         Sampler* sampler) const override {
+    RenderPixel pixel{};
     Spectrum throughput{1.f};
     Ray path_ray = ray;
 
     bool specular_bounce = true;
+    int scattering_count = 0;
     for (auto bounce = 0; bounce < max_bounces_; bounce++) {
       if (bounce > min_bounces_) {
         if (sampler->Next1D() > cont_prob_) return pixel;
@@ -89,6 +92,47 @@ class PathTracing : public TiledIntegrator {
       bool intersected = scene->Intersect(path_ray, &inct);
       if (!intersected) {
         return pixel;
+      }
+
+      const auto sp = inct.material->Shade(inct);
+      if (bounce == 0) {
+        pixel.normal = sp.shading_normal;
+        pixel.albedo = sp.bsdf->albedo();
+      }
+
+      const auto medium = inct.WrMedium();
+      if (scattering_count < medium->GetMaxScatteringCount()) {
+        const auto medium_sample = medium->SampleScattering(
+            path_ray.o, inct.pos, sampler, scattering_count > 0);
+
+        throughput *= medium_sample.throughput;
+
+        if (medium_sample.ScatteringHappened()) {
+          ++scattering_count;
+
+          const auto& scattering_point = medium_sample.scattering_point;
+          const auto phase_function = medium_sample.phase_function;
+
+          //   const auto phase_sample = phase_function->SampleAll(
+          //       inct.wr, TransMode::Radiance, sampler->Next3D());
+          //   if (!phase_sample.f) return pixel;
+
+          //   coef *= phase_sample.f / phase_sample.pdf;
+          //   r = Ray(scattering_point.pos, phase_sample.dir);
+
+          //   continue;
+        }
+      } else {
+        const Spectrum ab = medium->Absorbtion(path_ray.o, inct.pos, sampler);
+        throughput *= ab;
+      }
+
+      scattering_count = 0;
+
+      if (auto light = inct.primitive->AsLight()) {
+        pixel.value +=
+            throughput *
+            light->Radiance(inct.pos, inct.geometry_normal, inct.uv, inct.wr);
       }
     }
     return pixel;

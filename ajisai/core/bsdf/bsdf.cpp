@@ -19,26 +19,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#pragma once
-#include <ajisai/ajisai.h>
-#include <ajisai/core/light/light.h>
-#include <ajisai/core/geometry/geometry.h>
-#include <ajisai/math/spectrum.h>
+#include <ajisai/core/bsdf/bsdf.h>
 
 AJ_BEGIN
 
-class AreaLight : public Light {
- public:
-  AreaLight(const Geometry *geometry, Spectrum radiance, int32_t power);
+void BSDF::AddComponent(float weight, Rc<BSDFComponent> component) {
+  weights_.push_back(weight);
+  components_.push_back(component);
+}
 
-  virtual Spectrum Radiance(const Vector3f &pos, const Vector3f &nor,
-                            const Vector2f &uv,
-                            const Vector3f &light_to_out) const noexcept;
-
- private:
-  const Geometry *geometry_;
-  Spectrum radiance_;
-  int32_t power_;
-};
+Spectrum BSDF::albedo() const { return albedo_; }
 
 AJ_END

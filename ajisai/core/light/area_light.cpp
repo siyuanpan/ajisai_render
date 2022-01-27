@@ -23,7 +23,13 @@ DEALINGS IN THE SOFTWARE.
 
 AJ_BEGIN
 
-AreaLight::AreaLight(const Geometry* geometry, Spectrum radiance, int32_t power)
+AreaLight::AreaLight(const Geometry *geometry, Spectrum radiance, int32_t power)
     : geometry_(geometry), radiance_(radiance), power_(power) {}
+
+Spectrum AreaLight::Radiance(const Vector3f &pos, const Vector3f &nor,
+                             const Vector2f &uv,
+                             const Vector3f &light_to_out) const noexcept {
+  return dot(nor, light_to_out) > 0 ? radiance_ : Spectrum{0.f};
+}
 
 AJ_END

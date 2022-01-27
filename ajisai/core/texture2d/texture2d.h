@@ -28,6 +28,8 @@ AJ_BEGIN
 class Texture2D {
  public:
   virtual ~Texture2D() = default;
+
+  virtual Spectrum SampleSpectrum(const Vector2f& uv) const noexcept = 0;
 };
 
 AJISAI_API Rc<Texture2D> CreateConstant2DTexture(const Spectrum& texel);

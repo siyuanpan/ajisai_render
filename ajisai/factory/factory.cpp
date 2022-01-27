@@ -29,6 +29,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/factory/creator/camera_creators.h>
 #include <ajisai/factory/creator/renderer_creators.h>
 #include <ajisai/factory/creator/post_processor_creators.h>
+#include <ajisai/factory/creator/medium_creators.h>
 
 AJ_BEGIN
 
@@ -41,6 +42,7 @@ CreateFactory::CreateFactory()
                      Factory<Primitive>("primitive"),
                      Factory<Geometry>("geometry"),
                      Factory<Material>("material"),
+                     Factory<Medium>("medium"),
                      Factory<Texture2D>("texture2D")} {
   AddSceneFactory(GetFactory<Scene>());
   AddCameraFactory(GetFactory<Camera>());
@@ -50,6 +52,7 @@ CreateFactory::CreateFactory()
   AddPrimitiveFactory(GetFactory<Primitive>());
   AddGeometricFactory(GetFactory<Geometry>());
   AddMaterialFactory(GetFactory<Material>());
+  AddMediumFactory(GetFactory<Medium>());
   AddTexture2DFactory(GetFactory<Texture2D>());
 }
 

@@ -21,24 +21,35 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/light/light.h>
-#include <ajisai/core/geometry/geometry.h>
+#include <ajisai/core/coordinate_system.h>
+#include <ajisai/math/vector3.h>
 #include <ajisai/math/spectrum.h>
 
+#include <vector>
+
 AJ_BEGIN
+class BSDFComponent;
 
-class AreaLight : public Light {
+class BSDF {
  public:
-  AreaLight(const Geometry *geometry, Spectrum radiance, int32_t power);
+  BSDF(const Vector3f& ng, const Vector3f& ns, const Spectrum& albedo)
+      : geometry_normal_(ng), frame_{ns}, albedo_{albedo} {}
 
-  virtual Spectrum Radiance(const Vector3f &pos, const Vector3f &nor,
-                            const Vector2f &uv,
-                            const Vector3f &light_to_out) const noexcept;
+  void AddComponent(float weight, Rc<BSDFComponent> component);
+
+  Spectrum albedo() const;
 
  private:
-  const Geometry *geometry_;
-  Spectrum radiance_;
-  int32_t power_;
+  Vector3f geometry_normal_;
+  const CoordinateSystem frame_;
+  Spectrum albedo_;
+  std::vector<Rc<BSDFComponent>> components_;
+  std::vector<float> weights_;
+};
+
+class BSDFComponent {
+ public:
+  virtual ~BSDFComponent() = default;
 };
 
 AJ_END

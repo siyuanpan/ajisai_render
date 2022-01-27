@@ -21,24 +21,40 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/light/light.h>
-#include <ajisai/core/geometry/geometry.h>
-#include <ajisai/math/spectrum.h>
+#include <ajisai/math/vector3.h>
+#include <cmath>
 
 AJ_BEGIN
 
-class AreaLight : public Light {
+class CoordinateSystem {
  public:
-  AreaLight(const Geometry *geometry, Spectrum radiance, int32_t power);
+  CoordinateSystem() = default;
 
-  virtual Spectrum Radiance(const Vector3f &pos, const Vector3f &nor,
-                            const Vector2f &uv,
-                            const Vector3f &light_to_out) const noexcept;
+  /* Based on "Building an Orthonormal Basis, Revisited" by
+     Tom Duff, James Burgess, Per Christensen,
+     Christophe Hery, Andrew Kensler, Max Liani,
+     and Ryusuke Villemin (JCGT Vol 6, No 1, 2017) */
+  CoordinateSystem(const Vector3f& n) : dz(n) {
+    float sign = copysignf(1.f, n.z());
+    const float a = -1.f / (sign + n.z());
+    const float b = n.x() * n.y() * a;
+
+    dx = Vector3f{1.f + sign * n.x() * n.x() * a, sign * b, -sign * n.x()};
+    dy = Vector3f{b, sign + n.y() * n.y() * a, -n.y()};
+  }
+
+  Vector3f World2Local(const Vector3f& v) const {
+    return {dot(v, dx), dot(v, dy), dot(v, dz)};
+  }
+
+  Vector3f Local2World(const Vector3f& v) const {
+    return dx * v.x() + dy * v.y() + dz * v.z();
+  }
 
  private:
-  const Geometry *geometry_;
-  Spectrum radiance_;
-  int32_t power_;
+  Vector3f dx;
+  Vector3f dy;
+  Vector3f dz;
 };
 
 AJ_END

@@ -26,7 +26,7 @@ AJ_BEGIN
 
 class Light {
  public:
-  ~Light() = default;
+  virtual ~Light() = default;
 };
 
 AJ_END

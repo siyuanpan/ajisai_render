@@ -45,6 +45,7 @@ class Quad : public Geometry {
                          GeometryIntersection *inct) const noexcept override {
     if (IntersectWithTriangle(ray, a_, b_, c_, inct)) {
       inct->pos = ray.CalcPoint(inct->t);
+      inct->shading_normal = inct->geometry_normal;
       inct->uv = (1 - inct->uv.x() - inct->uv.y()) * ta_ + inct->uv.x() * tb_ +
                  inct->uv.y() * tc_;
       inct->wr = -ray.d;
@@ -52,6 +53,7 @@ class Quad : public Geometry {
     }
     if (IntersectWithTriangle(ray, a_, c_, d_, inct)) {
       inct->pos = ray.CalcPoint(inct->t);
+      inct->shading_normal = inct->geometry_normal;
       inct->uv = (1 - inct->uv.x() - inct->uv.y()) * ta_ + inct->uv.x() * tc_ +
                  inct->uv.y() * td_;
       inct->wr = -ray.d;

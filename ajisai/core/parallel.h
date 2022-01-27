@@ -32,9 +32,9 @@ DEALINGS IN THE SOFTWARE.
 
 AJ_BEGIN
 
-void parallel_for(uint32_t count,
-                  const std::function<void(uint32_t, uint32_t)>& func,
-                  uint32_t chunkSize = 1);
+AJISAI_API void parallel_for(
+    uint32_t count, const std::function<void(uint32_t, uint32_t)>& func,
+    uint32_t chunkSize = 1);
 
 inline void parallel_for_2d(const Vector2i& dim,
                             const std::function<void(Vector2i, uint32_t)>& func,

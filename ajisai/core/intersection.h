@@ -21,29 +21,75 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
+#include <ajisai/core/bsdf/bsdf.h>
 #include <ajisai/math/vector3.h>
 
 AJ_BEGIN
 
 class Primitive;
 class Material;
+class Medium;
 
 struct Intersection {
   Vector3f pos;
   Vector3f geometry_normal;
+  Vector3f shading_normal;
   Vector2f uv;
 };
 
 struct GeometryIntersection : Intersection {
-  float t = -1;
+  float t = std::numeric_limits<float>::infinity();
   Vector3f wr;
 };
 
 struct PrimitiveIntersection : GeometryIntersection {
   const Primitive* primitive = nullptr;
   const Material* material = nullptr;
+  const Medium* medium_in = nullptr;
+  const Medium* medium_out = nullptr;
+
+  const Medium* WrMedium() const noexcept {
+    return dot(wr, geometry_normal) >= 0 ? medium_out : medium_in;
+  }
 };
 
 struct DifferentialGeom {};
+
+struct ShadingPoint {
+  const BSDF* bsdf = nullptr;
+
+  Vector3f shading_normal;
+
+  // TODO: option bssrdf
+
+  ShadingPoint() = default;
+
+  ShadingPoint(ShadingPoint&& other) {
+    bsdf = other.bsdf;
+    other.bsdf = nullptr;
+    shading_normal = other.shading_normal;
+  }
+
+  ShadingPoint& operator=(ShadingPoint&& other) {
+    bsdf = other.bsdf;
+    other.bsdf = nullptr;
+    shading_normal = other.shading_normal;
+
+    return *this;
+  }
+
+  ~ShadingPoint() {
+    if (bsdf) delete bsdf;
+  }
+};
+
+struct MediumPoint {
+  Vector3f pos;
+};
+
+struct MediumScattering : MediumPoint {
+  const Medium* medium = nullptr;
+  Vector3f wr;
+};
 
 AJ_END
