@@ -7,12 +7,13 @@
 ## Features
 
 ### Integrators
+* [x] Path Tracing with Multiple Importeance Sampling
 * [ ] Bidirectional Path Tracing with Multiple Importance Sampling
 * [ ] Multiplexed Metroplis Light Transport
 * [ ] Vulumetric Path Tracing
 
 ### Materials
-* [ ] Lambertion Diffuse
+* [x] Lambertion Diffuse
 * [ ] Disney principled BSDF
 * [ ] Subsurface Scattering
 * [ ] DreamWorks fabric
@@ -31,7 +32,7 @@
 * [ ] HDR Probe
 
 ### Camera Models
-* [ ] Thin Lens Model
+* [x] Thin Lens Model
 * [ ] Fisheye Camera
 * [ ] Realistic Camera Parameters
 * [ ] Arbitrarily Shaped Bokeh
@@ -43,3 +44,7 @@
 
 ### Editor
 * [ ] Interactive scene editor
+
+## Gallery
+Cornel Box (rendered with pt) (scene ref [here](https://benedikt-bitterli.me/resources/))
+![pic](./gallery/cbox_path_spp_128_gaussian_mis.png)

@@ -55,7 +55,8 @@ class ThinLensCamera : public Camera {
   }
 
   virtual Rc<Film> CreateFilm() {
-    return RcNew<Film>(Vector2i{(int)resolution_[0], (int)resolution_[1]});
+    return RcNew<Film>(Vector2i{(int)resolution_[0], (int)resolution_[1]},
+                       filter_.get());
   }
 
   virtual Ray GenerateRay(const Vector2f& raster,

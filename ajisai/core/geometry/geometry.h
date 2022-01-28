@@ -21,6 +21,7 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
+#include <ajisai/core/intersection.h>
 #include <ajisai/math/matrix4.h>
 
 AJ_BEGIN
@@ -34,6 +35,19 @@ class Geometry {
 
   virtual bool Intersect(const Ray &ray,
                          GeometryIntersection *inct) const noexcept = 0;
+
+  virtual bool Occlude(const Ray &ray) const noexcept = 0;
+
+  virtual Intersection Sample(float *pdf,
+                              const Vector3f &sam) const noexcept = 0;
+
+  virtual Intersection Sample(const Vector3f &ref, float *pdf,
+                              const Vector3f &sam) const noexcept = 0;
+
+  virtual float Pdf(const Vector3f &sample) const noexcept = 0;
+
+  virtual float Pdf(const Vector3f &ref,
+                    const Vector3f &sample) const noexcept = 0;
 };
 
 AJISAI_API Rc<Geometry> CreateQuad(const Vector3f &a, const Vector3f &b,

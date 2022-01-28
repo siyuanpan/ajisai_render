@@ -22,11 +22,13 @@ DEALINGS IN THE SOFTWARE.
 #pragma once
 #include <ajisai/ajisai.h>
 #include <ajisai/core/aggregate/aggregate.h>
+#include <span>
 
 AJ_BEGIN
 
 struct Ray;
 struct PrimitiveIntersection;
+class Light;
 
 struct SceneArgs {
   std::vector<Rc<Primitive>> primitives;
@@ -39,6 +41,10 @@ class Scene {
 
   virtual bool Intersect(const Ray& ray,
                          PrimitiveIntersection* inct) const noexcept = 0;
+
+  virtual bool Occlude(const Ray& ray) const noexcept = 0;
+
+  virtual std::span<const Light* const> Lights() const noexcept = 0;
 };
 
 AJISAI_API Rc<Scene> CreateDefaultScene(const SceneArgs&);

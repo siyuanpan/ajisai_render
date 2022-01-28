@@ -27,6 +27,30 @@ DEALINGS IN THE SOFTWARE.
 
 AJ_BEGIN
 
+inline bool OccludeTriangle(const Ray& ray, const Vector3f& v0,
+                            const Vector3f& v1, const Vector3f& v2) {
+  auto e0 = v1 - v0;
+  auto e1 = v2 - v0;
+  auto n = cross(e0, e1).normalized();
+  float a, f, u, v;
+  auto h = cross(ray.d, e1);
+  a = dot(e0, h);
+  if (a > -1e-6f && a < 1e-6f) return false;
+  f = 1.f / a;
+  auto s = ray.o - v0;
+  u = f * dot(s, h);
+  if (u < 0.f || u > 1.f) return false;
+  auto q = cross(s, e0);
+  v = f * dot(ray.d, q);
+  if (v < 0.f || u + v > 1.f) return false;
+  float t = f * dot(e1, q);
+  if (t > ray.t_min && t < ray.t_max) {
+    return true;
+  }
+
+  return false;
+}
+
 inline bool IntersectWithTriangle(const Ray& ray, const Vector3f& v0,
                                   const Vector3f& v1, const Vector3f& v2,
                                   GeometryIntersection* inct) {

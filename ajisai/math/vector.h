@@ -33,13 +33,13 @@ DEALINGS IN THE SOFTWARE.
 AJ_BEGIN
 
 template <class T>
-constexpr typename std::enable_if<std::is_scalar<T>::value, T>::type min(T a,
+constexpr typename std::enable_if<std::is_scalar<T>::value, T>::type Min(T a,
                                                                          T b) {
   return b < a ? b : a;
 }
 
 template <class T>
-constexpr typename std::enable_if<std::is_scalar<T>::value, T>::type max(T a,
+constexpr typename std::enable_if<std::is_scalar<T>::value, T>::type Max(T a,
                                                                          T b) {
   return a < b ? b : a;
 }
@@ -394,7 +394,7 @@ inline T Vector<T, size>::max() const {
   T out(_data[0]);
 
   for (std::size_t i = 1; i != size; ++i) {
-    out = aj::max(out, _data[i]);
+    out = Max(out, _data[i]);
   }
 
   return out;

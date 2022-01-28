@@ -56,6 +56,9 @@ class Medium {
 
   virtual Spectrum Absorbtion(const Vector3f& a, const Vector3f& b,
                               Sampler* sampler) const noexcept = 0;
+
+  virtual Spectrum Tr(const Vector3f& a, const Vector3f& b,
+                      Sampler* sampler) const noexcept = 0;
 };
 
 struct MediumInterface {

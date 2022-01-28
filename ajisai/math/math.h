@@ -65,6 +65,7 @@ typedef CoefficientSpectrum<3> RGBSpectrum;
 typedef RGBSpectrum Spectrum;
 
 typedef Bounds<int, 2> Bounds2i;
+typedef Bounds<float, 2> Bounds2f;
 typedef Bounds<float, 3> Bounds3f;
 
 typedef RectangularMatrix<float, 2, 2> RectangularMatrix2x2f;

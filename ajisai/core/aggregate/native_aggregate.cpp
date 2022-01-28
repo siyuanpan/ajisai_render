@@ -46,6 +46,15 @@ class NativeAggregate : public Aggregate {
     return ret;
   }
 
+  virtual bool Occlude(const Ray& ray) const noexcept override {
+    for (auto& primitive : primitives_) {
+      if (primitive->Occlude(ray)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
  private:
   std::vector<Rc<const Primitive>> primitives_;
 };

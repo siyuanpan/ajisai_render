@@ -70,6 +70,11 @@ class BSDF {
   BSDFSampleResult SampleAll(const Vector3f& wo, TransMode mode,
                              const Vector3f& sam) const noexcept;
 
+  Spectrum EvalAll(const Vector3f& wi, const Vector3f& wo,
+                   TransMode mode) const noexcept;
+
+  float PdfAll(const Vector3f& wi, const Vector3f& wo) const noexcept;
+
  protected:
   bool CauseBlackFringes(const Vector3f& w) const noexcept {
     return (dot(geometry_normal_, w) > 0) != (dot(shading_normal_, w) > 0);

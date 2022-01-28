@@ -93,6 +93,63 @@ class Cube : public Geometry {
     return hit;
   }
 
+  virtual bool Occlude(const Ray &ray) const noexcept override {
+    for (auto [i, j, k] : tris_) {
+      if (OccludeTriangle(ray, positions_[i], positions_[j], positions_[k])) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  virtual Intersection Sample(float *pdf,
+                              const Vector3f &sam) const noexcept override {
+    Vector3f sam_new = sam;
+    if (sam_new.x() + sam_new.y() > 1.f) {
+      sam_new.x() = 1.f - sam_new.x();
+      sam_new.y() = 1.f - sam_new.y();
+    }
+    Intersection inct;
+    int idx = std::min(int(sam.z() * tris_.size()), (int)tris_.size() - 1);
+    auto [a, b, c] = tris_[idx];
+
+    inct.pos = (1 - sam_new.x() - sam_new.y()) * positions_[a] +
+               sam_new.x() * positions_[b] + sam_new.y() * positions_[c];
+    inct.uv = (1 - sam_new.x() - sam_new.y()) * uv_[a] + sam_new.x() * uv_[b] +
+              sam_new.y() * uv_[c];
+    inct.geometry_normal =
+        cross(positions_[b] - positions_[a], positions_[c] - positions_[a])
+            .normalized();
+    inct.shading_normal = inct.geometry_normal;
+
+    *pdf = 1.f /
+           (12.f *
+            cross(positions_[b] - positions_[a], positions_[c] - positions_[a])
+                .length() *
+            0.5f);
+
+    return inct;
+  }
+
+  virtual Intersection Sample(const Vector3f &ref, float *pdf,
+                              const Vector3f &sam) const noexcept override {
+    return Sample(pdf, sam);
+  }
+
+  virtual float Pdf(const Vector3f &sample) const noexcept override {
+    auto [a, b, c] = tris_[0];
+    return 1.f /
+           (12.f *
+            cross(positions_[b] - positions_[a], positions_[c] - positions_[a])
+                .length() *
+            0.5f);
+  }
+
+  virtual float Pdf(const Vector3f &ref,
+                    const Vector3f &sample) const noexcept override {
+    return Pdf(sample);
+  }
+
  private:
   std::vector<Vector3f> positions_;
   std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> tris_;
