@@ -79,4 +79,36 @@ BSDFSampleResult BSDF::SampleAll(const Vector3f& wo, TransMode mode,
   return BSDFSampleResult{wi, sam_ret.f * factor, sam_ret.pdf, false};
 }
 
+Spectrum BSDF::EvalAll(const Vector3f& wi, const Vector3f& wo,
+                       TransMode mode) const noexcept {
+  const Vector3f& lwi = shading_coord_.World2Local(wi).normalized();
+  const Vector3f& lwo = shading_coord_.World2Local(wo).normalized();
+
+  if (lwi.z() == 0.f || lwo.z() == 0.f) return {};
+
+  Spectrum ret{};
+  for (auto i = 0; i < weights_.size(); ++i) {
+    ret += components_[i]->Eval(lwi, lwo, mode);
+  }
+
+  return ret;
+}
+
+float BSDF::PdfAll(const Vector3f& wi, const Vector3f& wo) const noexcept {
+  const Vector3f& lwi = shading_coord_.World2Local(wi).normalized();
+  const Vector3f& lwo = shading_coord_.World2Local(wo).normalized();
+
+  if (lwi.z() == 0.f || lwo.z() == 0.f) return {};
+
+  float weight_sum = 0;
+  float pdf = 0;
+
+  for (int i = 0; i < weights_.size(); ++i) {
+    weight_sum += weights_[i];
+    pdf += weights_[i] * components_[i]->Pdf(lwi, lwo);
+  }
+
+  return weight_sum > 0 ? pdf / weight_sum : 0;
+}
+
 AJ_END

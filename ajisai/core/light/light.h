@@ -21,12 +21,38 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
+#include <ajisai/math/vector3.h>
+#include <ajisai/math/spectrum.h>
 
 AJ_BEGIN
+
+class AreaLight;
+class Sampler;
+
+struct LightSampleResult {
+  Vector3f ref;
+  Vector3f pos;
+  Vector3f normal;
+  Vector2f uv;
+  Spectrum radiance;
+  float pdf;
+
+  bool Valid() const noexcept { return pdf != 0.f; }
+
+  Vector3f Ref2Light() const noexcept { return (pos - ref).normalized(); }
+};
+
+inline const LightSampleResult kLightSampleResultNull = {
+    Vector3f{}, Vector3f{}, Vector3f{}, Vector2f{}, Spectrum{}, 0};
 
 class Light {
  public:
   virtual ~Light() = default;
+
+  virtual const AreaLight* AsArea() const noexcept { return nullptr; }
+
+  virtual LightSampleResult Sample(const Vector3f& ref,
+                                   Sampler* sampler) const noexcept = 0;
 };
 
 AJ_END

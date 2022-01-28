@@ -30,7 +30,7 @@ class TwoSided : public Geometry {
   explicit TwoSided(Rc<const Geometry> internal) : internal_(internal) {}
 
   virtual bool Intersect(const Ray &ray,
-                         GeometryIntersection *inct) const noexcept {
+                         GeometryIntersection *inct) const noexcept override {
     if (!internal_->Intersect(ray, inct)) return false;
 
     const bool backface = dot(inct->geometry_normal, inct->wr) < 0;
@@ -39,6 +39,61 @@ class TwoSided : public Geometry {
       inct->shading_normal *= -1;
     }
     return true;
+  }
+
+  virtual bool Occlude(const Ray &ray) const noexcept override {
+    return internal_->Occlude(ray);
+  }
+
+  virtual Intersection Sample(float *pdf,
+                              const Vector3f &sam) const noexcept override {
+    Vector3f sam_new = sam;
+    const bool backface = sam_new.x() < 0.5f;
+    if (backface) {
+      sam_new.x() = 2 * sam.x();
+    } else {
+      sam_new.x() = 2 * (sam.x() - 0.5f);
+    }
+
+    Intersection ict = internal_->Sample(pdf, sam_new);
+    *pdf = *pdf * 0.5;
+    if (backface) {
+      ict.geometry_normal *= -1;
+      ict.shading_normal *= -1;
+    }
+
+    return ict;
+  }
+
+  virtual Intersection Sample(const Vector3f &ref, float *pdf,
+                              const Vector3f &sam) const noexcept override {
+    Vector3f sam_new = sam;
+    const bool backface = sam_new.x() < 0.5f;
+    if (backface) {
+      sam_new.x() = 2 * sam.x();
+    } else {
+      sam_new.x() = 2 * (sam.x() - 0.5f);
+    }
+
+    Intersection ict = internal_->Sample(ref, pdf, sam_new);
+    *pdf = *pdf * 0.5;
+    if (backface) {
+      ict.geometry_normal *= -1;
+      ict.shading_normal *= -1;
+    }
+
+    return ict;
+  }
+
+  virtual float Pdf(const Vector3f &sample) const noexcept override {
+    const float internal_pdf = internal_->Pdf(sample);
+    return internal_pdf * 0.5f;
+  }
+
+  virtual float Pdf(const Vector3f &ref,
+                    const Vector3f &sample) const noexcept override {
+    const float internal_pdf = internal_->Pdf(ref, sample);
+    return internal_pdf * 0.5f;
   }
 
  private:

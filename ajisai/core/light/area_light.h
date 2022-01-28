@@ -35,6 +35,14 @@ class AreaLight : public Light {
                             const Vector2f &uv,
                             const Vector3f &light_to_out) const noexcept;
 
+  virtual const AreaLight *AsArea() const noexcept override { return this; }
+
+  virtual LightSampleResult Sample(const Vector3f &ref,
+                                   Sampler *sampler) const noexcept override;
+
+  virtual float Pdf(const Vector3f &ref, const Vector3f &pos,
+                    const Vector3f &normal) const noexcept;
+
  private:
   const Geometry *geometry_;
   Spectrum radiance_;

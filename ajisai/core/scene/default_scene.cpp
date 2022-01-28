@@ -42,6 +42,15 @@ class DefaultScene : public Scene {
     return aggregate_->Intersect(ray, inct);
   }
 
+  virtual bool Occlude(const Ray& ray) const noexcept override {
+    return aggregate_->Occlude(ray);
+  }
+
+  virtual std::span<const Light* const> Lights() const noexcept override {
+    const auto ptr = lights_.data();
+    return std::span<const Light* const>(ptr, lights_.size());
+  }
+
  private:
   std::vector<Rc<Primitive>> primitives_;
   Rc<Aggregate> aggregate_;

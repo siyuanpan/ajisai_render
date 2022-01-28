@@ -23,6 +23,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/ajisai.h>
 #include <ajisai/core/image.h>
 #include <ajisai/core/parallel.h>
+#include <ajisai/core/filter/filter.h>
 #include <ajisai/math/spectrum.h>
 #include <ajisai/math/bounds.h>
 #include <ajisai/math/vector2.h>
@@ -72,8 +73,12 @@ struct Tile {
   Bounds2i bounds{};
   Vector2i size;
   std::vector<Pixel> pixels;
-  explicit Tile(const Bounds2i& bounds)
-      : bounds{bounds}, size(bounds.size()), pixels(size.x() * size.y()) {}
+  const Filter* filter;
+  explicit Tile(const Bounds2i& bounds, const Filter* filter)
+      : bounds{bounds},
+        size(bounds.size()),
+        pixels(size.x() * size.y()),
+        filter(filter) {}
 
   auto& operator()(const Vector2i& p) {
     auto q = p - bounds.min();
@@ -85,21 +90,31 @@ struct Tile {
     return pixels[q.x() + q.y() * size.x()];
   }
 
-  void AddSample(const Vector2i& p, const Spectrum& radiance, float weight) {
-    auto& pix = (*this)(p);
-    pix.radiance += radiance;
-    pix.weight += weight;
-  }
+  void AddSample(const Vector2i& p, const Spectrum& radiance,
+                 float weight = 1.f);
+  // {
+  //   auto& pix = (*this)(p);
+  //   pix.radiance += radiance;
+  //   pix.weight += weight;
+  // }
 };
 
 class Film {
  public:
-  constexpr explicit Film(const Vector2i& dim)
-      : dim_{dim}, radiance(dim), weight(dim), splat(dim) {}
+  constexpr explicit Film(const Vector2i& dim, const Filter* filter)
+      : dim_{dim}, radiance(dim), weight(dim), splat(dim), filter_(filter) {}
 
   Vector2i Dimension() const { return dim_; }
 
-  Tile GetTile(const Bounds2i& bounds) const { return Tile{bounds}; }
+  Tile GetTile(const Bounds2i& bounds) const;
+  // {
+  //   Bounds2i tile_pixel_bounds{};
+  //   Vector2f half_pixel{0.5f};
+  //   Bounds2f float_bounds{bounds};
+  //   Ceil(float_bounds.min() - half_pixel - filter_->Radius());
+
+  //   return Tile{bounds};
+  // }
 
   void MergeTile(const Tile& tile) {
     const auto lo = tile.bounds.min();
@@ -151,6 +166,7 @@ class Film {
   Image<float> weight;
   Image<SplatPixel> splat;
   float SplatScale = 1.f;
+  const Filter* filter_;
 };
 
 AJ_END

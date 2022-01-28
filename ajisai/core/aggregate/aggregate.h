@@ -37,6 +37,8 @@ class Aggregate {
 
   virtual bool Intersect(const Ray& ray,
                          PrimitiveIntersection* inct) const noexcept = 0;
+
+  virtual bool Occlude(const Ray& ray) const noexcept = 0;
 };
 
 AJISAI_API Rc<Aggregate> CreateNativeAggregate();

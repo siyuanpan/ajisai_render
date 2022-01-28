@@ -61,6 +61,10 @@ struct PrimitiveIntersection : GeometryIntersection {
   const Medium* WrMedium() const noexcept {
     return dot(wr, geometry_normal) >= 0 ? medium_out : medium_in;
   }
+
+  const Medium* GetMedium(const Vector3f& d) const noexcept {
+    return dot(d, geometry_normal) >= 0 ? medium_out : medium_in;
+  }
 };
 
 struct DifferentialGeom {};

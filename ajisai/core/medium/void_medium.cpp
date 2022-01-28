@@ -37,6 +37,11 @@ class VoidMedium : public Medium {
     return {{}, Spectrum{1.f}, nullptr};
   }
 
+  virtual Spectrum Tr(const Vector3f& a, const Vector3f& b,
+                      Sampler* sampler) const noexcept override {
+    return Spectrum{1.f};
+  }
+
   virtual Spectrum Absorbtion(const Vector3f& a, const Vector3f& b,
                               Sampler* sampler) const noexcept override {
     return Spectrum{1.f};

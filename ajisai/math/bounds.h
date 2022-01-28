@@ -55,6 +55,9 @@ struct BoundsTraits<T, 3> {
 
 template <class T, std::size_t dimensions>
 class Bounds {
+  template <class, std::size_t>
+  friend class Bounds;
+
  public:
   typedef typename BoundsTraits<T, dimensions>::Type VectorType;
   // constexpr Bounds() noexcept: Bounds<T, size>{typename std::conditional<size
@@ -73,6 +76,10 @@ class Bounds {
   Bounds(const std::pair<Vector<T, dimensions>, Vector<T, dimensions>>&
              minmax) noexcept
       : _min{minmax.first}, _max{minmax.second} {}
+
+  template <class U>
+  constexpr explicit Bounds(const Bounds<U, dimensions>& other) noexcept
+      : _min(other._min), _max(other._max) {}
 
   constexpr Bounds(const Bounds<T, dimensions>&) noexcept = default;
 
@@ -106,15 +113,15 @@ inline Bounds<T, dim> join(const Bounds<T, dim>& a, const Bounds<T, dim>& b) {
 }
 
 template <class T, std::size_t dim>
-inline bool intersects(const Bounds<T, dim>& a, const Bounds<T, dim>& b) {
+inline bool Intersects(const Bounds<T, dim>& a, const Bounds<T, dim>& b) {
   return (a.max() > b.min()).all() && (a.min() < b.max()).all();
 }
 
 template <class T, std::size_t dim>
-inline Bounds<T, dim> intersect(const Bounds<T, dim>& a,
+inline Bounds<T, dim> Intersect(const Bounds<T, dim>& a,
                                 const Bounds<T, dim>& b) {
-  if (!intersects(a, b)) return {};
-  return {Math::max(a.min(), b.min()), Math::min(a.max(), b.max())};
+  if (!Intersects(a, b)) return {};
+  return {Max(a.min(), b.min()), Min(a.max(), b.max())};
 }
 
 AJ_END

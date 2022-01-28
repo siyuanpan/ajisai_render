@@ -61,6 +61,10 @@ class GeometricPrimitive : public Primitive {
     return true;
   }
 
+  virtual bool Occlude(const Ray& ray) const noexcept override {
+    return geometry_->Occlude(ray);
+  }
+
  private:
   Rc<const Geometry> geometry_;
   Rc<const Material> material_;

@@ -39,6 +39,10 @@ class Vector2 : public Vector<T, 2> {
 
   constexpr Vector2(T x, T y) noexcept : Vector<T, 2>(x, y) {}
 
+  template <class U>
+  constexpr explicit Vector2(const Vector<U, 2>& other) noexcept
+      : Vector<T, 2>(other) {}
+
   constexpr Vector2(const Vector<T, 2>& other) noexcept : Vector<T, 2>(other) {}
 
   T& x() { return Vector<T, 2>::_data[0]; }

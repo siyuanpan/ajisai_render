@@ -20,6 +20,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 #include <ajisai/core/light/area_light.h>
+#include <ajisai/core/sampler/sampler.h>
 
 AJ_BEGIN
 
@@ -30,6 +31,39 @@ Spectrum AreaLight::Radiance(const Vector3f &pos, const Vector3f &nor,
                              const Vector2f &uv,
                              const Vector3f &light_to_out) const noexcept {
   return dot(nor, light_to_out) > 0 ? radiance_ : Spectrum{0.f};
+}
+
+LightSampleResult AreaLight::Sample(const Vector3f &ref,
+                                    Sampler *sampler) const noexcept {
+  float pdf_area = 0.f;
+  auto inct = geometry_->Sample(ref, &pdf_area, sampler->Next3D());
+
+  if (dot(inct.geometry_normal, ref - inct.pos) <= 0) {
+    return kLightSampleResultNull;
+  }
+
+  const Vector3f inct2ref = ref - inct.pos;
+  const float dist2 = inct2ref.dot();
+
+  const float pdf =
+      pdf_area * dist2 / std::abs(dot(inct.geometry_normal, inct2ref));
+
+  return LightSampleResult{ref,     inct.pos,  inct.geometry_normal,
+                           inct.uv, radiance_, pdf};
+}
+
+float AreaLight::Pdf(const Vector3f &ref, const Vector3f &pos,
+                     const Vector3f &normal) const noexcept {
+  if (dot(ref - pos, normal) <= 0.f) return 0.f;
+
+  const float area_pdf = geometry_->Pdf(ref, pos);
+
+  const Vector3f light2ref = ref - pos;
+  const float dist2 = light2ref.dot();
+  const float abscos = std::abs(dot(light2ref, normal));
+  const float area_to_solid_angle_factor = dist2 / abscos;
+
+  return area_pdf * area_to_solid_angle_factor;
 }
 
 AJ_END

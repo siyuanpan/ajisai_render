@@ -84,27 +84,45 @@ inline Vector<T, size> lerp(const Vector<T, size>& a, const Vector<T, size>& b,
 }
 
 template <class T>
-constexpr typename std::enable_if<std::is_scalar<T>::value, T>::type min(T a,
+constexpr typename std::enable_if<std::is_scalar<T>::value, T>::type Min(T a,
                                                                          T b);
 
 template <class T, std::size_t size>
-inline Vector<T, size> min(const Vector<T, size>& a, const Vector<T, size>& b) {
+inline Vector<T, size> Min(const Vector<T, size>& a, const Vector<T, size>& b) {
   Vector<T, size> out;
   for (std::size_t i = 0; i != size; ++i) {
-    out[i] = Math::min(a[i], b[i]);
+    out[i] = Min(a[i], b[i]);
   }
   return out;
 }
 
 template <class T>
-constexpr typename std::enable_if<std::is_scalar<T>::value, T>::type max(T a,
+constexpr typename std::enable_if<std::is_scalar<T>::value, T>::type Max(T a,
                                                                          T b);
 
 template <class T, std::size_t size>
-inline Vector<T, size> max(const Vector<T, size>& a, const Vector<T, size>& b) {
+inline Vector<T, size> Max(const Vector<T, size>& a, const Vector<T, size>& b) {
   Vector<T, size> out;
   for (std::size_t i = 0; i != size; ++i) {
-    out[i] = Math::max(a[i], b[i]);
+    out[i] = Max(a[i], b[i]);
+  }
+  return out;
+}
+
+template <class T, std::size_t size>
+inline Vector<T, size> Ceil(const Vector<T, size>& v) {
+  Vector<T, size> out{};
+  for (std::size_t i = 0; i != size; ++i) {
+    out[i] = std::ceil(v[i]);
+  }
+  return out;
+}
+
+template <class T, std::size_t size>
+inline Vector<T, size> Floor(const Vector<T, size>& v) {
+  Vector<T, size> out{};
+  for (std::size_t i = 0; i != size; ++i) {
+    out[i] = std::floor(v[i]);
   }
   return out;
 }
