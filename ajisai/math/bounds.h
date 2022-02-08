@@ -109,7 +109,7 @@ template <class T, std::size_t dim>
 inline Bounds<T, dim> join(const Bounds<T, dim>& a, const Bounds<T, dim>& b) {
   if (a.min() == a.max()) return b;
   if (b.min() == b.max()) return a;
-  return {Math::min(a.min(), b.min()), Math::max(a.max(), b.max())};
+  return {Min(a.min(), b.min()), Max(a.max(), b.max())};
 }
 
 template <class T, std::size_t dim>

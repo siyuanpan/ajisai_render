@@ -383,7 +383,7 @@ inline T Vector<T, size>::min() const {
   T out(_data[0]);
 
   for (std::size_t i = 1; i != size; ++i) {
-    out = Math::min(out, _data[i]);
+    out = Min(out, _data[i]);
   }
 
   return out;
