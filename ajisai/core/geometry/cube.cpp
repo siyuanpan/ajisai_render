@@ -102,6 +102,18 @@ class Cube : public Geometry {
     return false;
   }
 
+  virtual Bounds3f AABB() const noexcept override {
+    Bounds3f bounds{Vector3f{std::numeric_limits<float>::max()},
+                    Vector3f{std::numeric_limits<float>::lowest()}};
+
+    for (const auto &v : positions_) {
+      bounds.min() = Min(bounds.min(), v);
+      bounds.max() = Max(bounds.max(), v);
+    }
+
+    return bounds;
+  }
+
   virtual Intersection Sample(float *pdf,
                               const Vector3f &sam) const noexcept override {
     Vector3f sam_new = sam;

@@ -45,6 +45,8 @@ class TwoSided : public Geometry {
     return internal_->Occlude(ray);
   }
 
+  virtual Bounds3f AABB() const noexcept override { return internal_->AABB(); }
+
   virtual Intersection Sample(float *pdf,
                               const Vector3f &sam) const noexcept override {
     Vector3f sam_new = sam;

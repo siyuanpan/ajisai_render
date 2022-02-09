@@ -50,6 +50,25 @@ DEALINGS IN THE SOFTWARE.
 #define AJ_BEGIN namespace aj {
 #define AJ_END }
 
+#if defined(__GNUC__) || defined(__clang__)
+#  define AJISAI_RESTRICT __restrict
+#  define AJISAI_ALWAYS_INLINE __attribute__((always_inline))
+#elif defined(_MSC_VER)
+#  define AJISAI_RESTRICT __restrict
+#  define AJISAI_ALWAYS_INLINE __forceinline
+#else
+#  define AJISAI_RESTRICT
+#  define AJISAI_ALWAYS_INLINE
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#  define AJISAI_LIKELY(x) __builtin_expect(x, true)
+#  define AJISAI_UNLIKELY(x) __builtin_expect(x, false)
+#else
+#  define AJISAI_LIKELY(x) x
+#  define AJISAI_UNLIKELY(x) x
+#endif
+
 // smart pointers
 #include <memory>
 

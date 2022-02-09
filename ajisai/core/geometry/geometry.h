@@ -23,6 +23,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/ajisai.h>
 #include <ajisai/core/intersection.h>
 #include <ajisai/math/matrix4.h>
+#include <ajisai/math/bounds.h>
 
 AJ_BEGIN
 
@@ -37,6 +38,8 @@ class Geometry {
                          GeometryIntersection *inct) const noexcept = 0;
 
   virtual bool Occlude(const Ray &ray) const noexcept = 0;
+
+  virtual Bounds3f AABB() const noexcept = 0;
 
   virtual Intersection Sample(float *pdf,
                               const Vector3f &sam) const noexcept = 0;

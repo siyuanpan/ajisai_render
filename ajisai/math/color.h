@@ -52,7 +52,7 @@ Color4<T> fromSrgba(const Vector4<T>& srgba) {
 template <class T>
 Vector3<T> toSrgb(const Color3<T>& rgb) {
   constexpr const T a = T(0.055);
-  return lerp(rgb * T(12.92),
+  return Lerp(rgb * T(12.92),
               (T(1.0) + a) * pow(rgb, T(1.0) / T(2.4)) - Vector3<T>{a},
               rgb > Vector3<T>(T(0.0031308)));
 }

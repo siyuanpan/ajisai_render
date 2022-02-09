@@ -42,5 +42,6 @@ class Aggregate {
 };
 
 AJISAI_API Rc<Aggregate> CreateNativeAggregate();
+AJISAI_API Rc<Aggregate> CreatePLOCAggregate(size_t search_radius);
 
 AJ_END

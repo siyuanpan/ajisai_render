@@ -24,6 +24,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/core/geometry/geometry.h>
 #include <ajisai/core/material/material.h>
 #include <ajisai/math/spectrum.h>
+#include <ajisai/math/bounds.h>
 
 AJ_BEGIN
 
@@ -44,6 +45,8 @@ class Primitive {
                          PrimitiveIntersection* inct) const noexcept = 0;
 
   virtual bool Occlude(const Ray& ray) const noexcept = 0;
+
+  virtual Bounds3f AABB() const noexcept = 0;
 
   void SetDenoise(bool denoise) noexcept { denoise_ = denoise; }
 

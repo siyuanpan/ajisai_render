@@ -34,6 +34,17 @@ class NativeAggregateCreatorImpl {
   }
 };
 
+class PLOCAggregateCreatorImpl {
+ public:
+  static std::string Name() { return "ploc"; }
+
+  static Rc<Aggregate> Create(const YAML::Node& node,
+                              const CreateFactory& factory) {
+    auto search_radius = node["search_radius"].as<size_t>(14);
+    return CreatePLOCAggregate(search_radius);
+  }
+};
+
 template <class TAggregateCreatorImpl>
 concept AggregateCreatorImpl = requires(TAggregateCreatorImpl) {
   { TAggregateCreatorImpl::Name() } -> std::convertible_to<std::string>;
@@ -46,9 +57,11 @@ template <AggregateCreatorImpl TAggregateCreatorImpl>
 class AggregateCreator : public TAggregateCreatorImpl {};
 
 using NativeAggregateCreator = AggregateCreator<NativeAggregateCreatorImpl>;
+using PLOCAggregateCreator = AggregateCreator<PLOCAggregateCreatorImpl>;
 
 void AddAggregateFactory(Factory<Aggregate>& factory) {
   factory.Add(NativeAggregateCreator::Name(), &NativeAggregateCreator::Create);
+  factory.Add(PLOCAggregateCreator::Name(), &PLOCAggregateCreator::Create);
 }
 
 AJ_END

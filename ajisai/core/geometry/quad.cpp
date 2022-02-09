@@ -71,6 +71,25 @@ class Quad : public Geometry {
     return OccludeTriangle(ray, a_, b_, c_) || OccludeTriangle(ray, a_, c_, d_);
   }
 
+  virtual Bounds3f AABB() const noexcept override {
+    Bounds3f bounds{Vector3f{std::numeric_limits<float>::max()},
+                    Vector3f{std::numeric_limits<float>::lowest()}};
+
+    bounds.min() = Min(bounds.min(), a_);
+    bounds.max() = Max(bounds.max(), a_);
+
+    bounds.min() = Min(bounds.min(), b_);
+    bounds.max() = Max(bounds.max(), b_);
+
+    bounds.min() = Min(bounds.min(), c_);
+    bounds.max() = Max(bounds.max(), c_);
+
+    bounds.min() = Min(bounds.min(), d_);
+    bounds.max() = Max(bounds.max(), d_);
+
+    return bounds;
+  }
+
   virtual Intersection Sample(float *pdf,
                               const Vector3f &sam) const noexcept override {
     Vector3f sam_new = sam;

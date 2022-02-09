@@ -42,7 +42,7 @@ BSDFSampleResult BSDF::SampleAll(const Vector3f& wo, TransMode mode,
   const Vector3f lwo = shading_coord_.World2Local(wo).normalized();
   if (!lwo.z()) return kBSDFSampleResultInvalid;
 
-  float weight_sum = std::accumulate(weights_.begin(), weights_.end(), 0);
+  float weight_sum = std::accumulate(weights_.begin(), weights_.end(), 0.f);
 
   if (!weight_sum) return kBSDFSampleResultInvalid;
 

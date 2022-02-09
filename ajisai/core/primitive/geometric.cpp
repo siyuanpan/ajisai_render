@@ -65,6 +65,8 @@ class GeometricPrimitive : public Primitive {
     return geometry_->Occlude(ray);
   }
 
+  virtual Bounds3f AABB() const noexcept override { return geometry_->AABB(); }
+
  private:
   Rc<const Geometry> geometry_;
   Rc<const Material> material_;

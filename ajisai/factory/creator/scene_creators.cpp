@@ -47,6 +47,8 @@ class DefaultSceneCreatorImpl {
 
     if (auto aggregate = node["aggregate"]) {
       AJ_INFO("use aggregate type: {} ", aggregate["type"].as<std::string>());
+      args.aggregate = factory.Create<Aggregate>(node["aggregate"]);
+      // args.aggregate = CreateNativeAggregate();
     } else {
       AJ_INFO("use native aggregate");
       args.aggregate = CreateNativeAggregate();
