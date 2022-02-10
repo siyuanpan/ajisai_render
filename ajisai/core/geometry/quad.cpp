@@ -40,6 +40,9 @@ class Quad : public Geometry {
     c_ = args.local2world.transformPoint(args.c);
     d_ = args.local2world.transformPoint(args.d);
 
+    position_buffer_ = {a_, b_, c_, d_};
+    index_buffer_ = {0, 1, 2, 0, 2, 3};
+
     auto abc = cross(b_ - a_, c_ - a_).length() * 0.5f;
     auto acd = cross(c_ - a_, d_ - a_).length() * 0.5f;
     surface_area_ = abc + acd;
@@ -67,6 +70,25 @@ class Quad : public Geometry {
     return false;
   }
 
+  virtual void PostIntersect(const Ray &ray, GeometryIntersection *inct,
+                             uint32_t id) const noexcept override {
+    inct->pos = ray.CalcPoint(inct->t);
+    inct->shading_normal = inct->geometry_normal;
+    inct->wr = -ray.d;
+    switch (id) {
+      case 0:
+        inct->uv = (1 - inct->uv.x() - inct->uv.y()) * ta_ +
+                   inct->uv.x() * tb_ + inct->uv.y() * tc_;
+        break;
+      case 1:
+        inct->uv = (1 - inct->uv.x() - inct->uv.y()) * ta_ +
+                   inct->uv.x() * tc_ + inct->uv.y() * td_;
+        break;
+      default:
+        assert(false && "unreachable!");
+    }
+  }
+
   virtual bool Occlude(const Ray &ray) const noexcept override {
     return OccludeTriangle(ray, a_, b_, c_) || OccludeTriangle(ray, a_, c_, d_);
   }
@@ -88,6 +110,20 @@ class Quad : public Geometry {
     bounds.max() = Max(bounds.max(), d_);
 
     return bounds;
+  }
+
+  virtual MeshView GetMeshView() const noexcept override {
+    MeshView ret{};
+    ret.position_buffer = static_cast<const void *>(position_buffer_.data());
+    ret.position_offset = 0;
+    ret.position_stride = sizeof(Vector3f);
+    ret.position_size = position_buffer_.size();
+    ret.index_buffer = static_cast<const void *>(index_buffer_.data());
+    ret.index_offset = 0;
+    ret.index_stride = 3 * sizeof(uint32_t);
+    ret.index_size = 2;
+
+    return ret;
   }
 
   virtual Intersection Sample(float *pdf,
@@ -137,6 +173,8 @@ class Quad : public Geometry {
  private:
   Vector3f a_, b_, c_, d_;
   Vector2f ta_, tb_, tc_, td_;
+  std::vector<Vector3f> position_buffer_;
+  std::vector<uint32_t> index_buffer_;
   float surface_area_;
   float sample_prob_;
 };

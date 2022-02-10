@@ -93,6 +93,20 @@ class Cube : public Geometry {
     return hit;
   }
 
+  virtual void PostIntersect(const Ray &ray, GeometryIntersection *inct,
+                             uint32_t id) const noexcept override {
+    auto [i, j, k] = tris_[id];
+
+    inct->pos = ray.CalcPoint(inct->t);
+    inct->geometry_normal =
+        cross(positions_[j] - positions_[i], positions_[k] - positions_[i])
+            .normalized();
+    inct->shading_normal = inct->geometry_normal;
+    inct->uv = (1 - inct->uv.x() - inct->uv.y()) * uv_[i] +
+               inct->uv.x() * uv_[j] + inct->uv.y() * uv_[k];
+    inct->wr = -ray.d;
+  }
+
   virtual bool Occlude(const Ray &ray) const noexcept override {
     for (auto [i, j, k] : tris_) {
       if (OccludeTriangle(ray, positions_[i], positions_[j], positions_[k])) {
@@ -112,6 +126,20 @@ class Cube : public Geometry {
     }
 
     return bounds;
+  }
+
+  virtual MeshView GetMeshView() const noexcept override {
+    MeshView ret{};
+    ret.position_buffer = static_cast<const void *>(positions_.data());
+    ret.position_offset = 0;
+    ret.position_stride = sizeof(Vector3f);
+    ret.position_size = positions_.size();
+    ret.index_buffer = static_cast<const void *>(tris_.data());
+    ret.index_offset = 0;
+    ret.index_stride = sizeof(std::tuple<uint32_t, uint32_t, uint32_t>);
+    ret.index_size = tris_.size();
+
+    return ret;
   }
 
   virtual Intersection Sample(float *pdf,

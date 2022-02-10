@@ -28,6 +28,7 @@ find_package(spdlog CONFIG REQUIRED)
 find_package(cxxopts CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
 find_package(TBB CONFIG REQUIRED)
+find_package(embree 3 CONFIG REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb.h")
 
 add_subdirectory(utility)

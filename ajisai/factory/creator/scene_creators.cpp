@@ -53,11 +53,11 @@ class DefaultSceneCreatorImpl {
       AJ_INFO("use native aggregate");
       args.aggregate = CreateNativeAggregate();
     }
-    AJ_INFO(">>> Native Aggregate Build Start <<<");
+    AJ_INFO(">>> Aggregate Build Start <<<");
 
     args.aggregate->Build(args.primitives);
 
-    AJ_INFO(">>> Native Aggregate Build End <<<");
+    AJ_INFO(">>> Aggregate Build End <<<");
     return CreateDefaultScene(args);
   }
 };

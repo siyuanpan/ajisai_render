@@ -30,6 +30,17 @@ AJ_BEGIN
 struct Ray;
 struct GeometryIntersection;
 
+struct MeshView {
+  const void *position_buffer;
+  size_t position_offset;
+  size_t position_stride;
+  size_t position_size;
+  const void *index_buffer;
+  size_t index_offset;
+  size_t index_stride;
+  size_t index_size;
+};
+
 class Geometry {
  public:
   virtual ~Geometry() = default;
@@ -37,9 +48,14 @@ class Geometry {
   virtual bool Intersect(const Ray &ray,
                          GeometryIntersection *inct) const noexcept = 0;
 
+  virtual void PostIntersect(const Ray &ray, GeometryIntersection *inct,
+                             uint32_t id) const noexcept = 0;
+
   virtual bool Occlude(const Ray &ray) const noexcept = 0;
 
   virtual Bounds3f AABB() const noexcept = 0;
+
+  virtual MeshView GetMeshView() const noexcept = 0;
 
   virtual Intersection Sample(float *pdf,
                               const Vector3f &sam) const noexcept = 0;

@@ -32,6 +32,7 @@ class AreaLight;
 struct Ray;
 struct PrimitiveIntersection;
 struct MediumInterface;
+class Geometry;
 
 class Primitive {
  public:
@@ -41,8 +42,13 @@ class Primitive {
 
   virtual AreaLight* AsLight() noexcept = 0;
 
+  virtual const Geometry* AsGeometry() const noexcept = 0;
+
   virtual bool Intersect(const Ray& ray,
                          PrimitiveIntersection* inct) const noexcept = 0;
+
+  virtual void PostIntersect(const Ray& ray, PrimitiveIntersection* inct,
+                             uint32_t id) const noexcept = 0;
 
   virtual bool Occlude(const Ray& ray) const noexcept = 0;
 

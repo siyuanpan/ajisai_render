@@ -45,6 +45,16 @@ class PLOCAggregateCreatorImpl {
   }
 };
 
+class EmbreeAggregateCreatorImpl {
+ public:
+  static std::string Name() { return "embree"; }
+
+  static Rc<Aggregate> Create(const YAML::Node& node,
+                              const CreateFactory& factory) {
+    return CreateEmbreeAggregate();
+  }
+};
+
 template <class TAggregateCreatorImpl>
 concept AggregateCreatorImpl = requires(TAggregateCreatorImpl) {
   { TAggregateCreatorImpl::Name() } -> std::convertible_to<std::string>;
@@ -58,10 +68,12 @@ class AggregateCreator : public TAggregateCreatorImpl {};
 
 using NativeAggregateCreator = AggregateCreator<NativeAggregateCreatorImpl>;
 using PLOCAggregateCreator = AggregateCreator<PLOCAggregateCreatorImpl>;
+using EmbreeAggregateCreator = AggregateCreator<EmbreeAggregateCreatorImpl>;
 
 void AddAggregateFactory(Factory<Aggregate>& factory) {
   factory.Add(NativeAggregateCreator::Name(), &NativeAggregateCreator::Create);
   factory.Add(PLOCAggregateCreator::Name(), &PLOCAggregateCreator::Create);
+  factory.Add(EmbreeAggregateCreator::Name(), &EmbreeAggregateCreator::Create);
 }
 
 AJ_END

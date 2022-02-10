@@ -50,6 +50,10 @@ class GeometricPrimitive : public Primitive {
 
   virtual AreaLight* AsLight() noexcept override { return area_light_.get(); }
 
+  virtual const Geometry* AsGeometry() const noexcept override {
+    return geometry_.get();
+  }
+
   virtual bool Intersect(const Ray& ray,
                          PrimitiveIntersection* inct) const noexcept override {
     if (!geometry_->Intersect(ray, inct)) return false;
@@ -59,6 +63,15 @@ class GeometricPrimitive : public Primitive {
     inct->medium_out = medium_interface_.out.get();
 
     return true;
+  }
+
+  virtual void PostIntersect(const Ray& ray, PrimitiveIntersection* inct,
+                             uint32_t id) const noexcept override {
+    geometry_->PostIntersect(ray, inct, id);
+    inct->primitive = this;
+    inct->material = material_.get();
+    inct->medium_in = medium_interface_.in.get();
+    inct->medium_out = medium_interface_.out.get();
   }
 
   virtual bool Occlude(const Ray& ray) const noexcept override {

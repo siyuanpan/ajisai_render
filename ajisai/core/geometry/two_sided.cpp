@@ -41,11 +41,26 @@ class TwoSided : public Geometry {
     return true;
   }
 
+  virtual void PostIntersect(const Ray &ray, GeometryIntersection *inct,
+                             uint32_t id) const noexcept override {
+    internal_->PostIntersect(ray, inct, id);
+
+    const bool backface = dot(inct->geometry_normal, inct->wr) < 0;
+    if (backface) {
+      inct->geometry_normal *= -1;
+      inct->shading_normal *= -1;
+    }
+  }
+
   virtual bool Occlude(const Ray &ray) const noexcept override {
     return internal_->Occlude(ray);
   }
 
   virtual Bounds3f AABB() const noexcept override { return internal_->AABB(); }
+
+  virtual MeshView GetMeshView() const noexcept override {
+    return internal_->GetMeshView();
+  }
 
   virtual Intersection Sample(float *pdf,
                               const Vector3f &sam) const noexcept override {

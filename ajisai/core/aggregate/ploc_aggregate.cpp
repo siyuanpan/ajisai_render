@@ -25,6 +25,7 @@ DEALINGS IN THE SOFTWARE.
 #include <variant>
 #include <numeric>
 #include <execution>
+#include <algorithm>
 #include <tbb/parallel_for.h>
 
 AJ_BEGIN
@@ -244,11 +245,10 @@ class PLOCAggregate : public Aggregate {
       return false;
     }
 
-    const bool left = OccludeAux(ray, inv_dir, dir_is_neg,
-                                 nodes_[node.first_child_or_primitive + 0]);
-    const bool right = OccludeAux(ray, inv_dir, dir_is_neg,
-                                  nodes_[node.first_child_or_primitive + 1]);
-    return left || right;
+    return OccludeAux(ray, inv_dir, dir_is_neg,
+                      nodes_[node.first_child_or_primitive + 0]) ||
+           OccludeAux(ray, inv_dir, dir_is_neg,
+                      nodes_[node.first_child_or_primitive + 1]);
   }
 
   bool IntersectAux(Ray& ray, const Vector3f& inv_dir,
@@ -424,8 +424,8 @@ class PLOCAggregate : public Aggregate {
                         sorted_primitive_indices, unsorted_primitive_indices,
                         primitive_count, kBitCount * 3);
 
-    assert(std::issorted(morton_codes.get(),
-                         morton_codes.get() + primitive_count) &&
+    assert(std::is_sorted(morton_codes.get(),
+                          morton_codes.get() + primitive_count) &&
            "morton codes must be sorted!");
     return std::move(primitive_indices);
   }

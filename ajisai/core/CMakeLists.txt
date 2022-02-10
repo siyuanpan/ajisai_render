@@ -9,6 +9,6 @@ target_include_directories(
   PUBLIC ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}
   PRIVATE ${STB_INCLUDE_DIRS})
 target_compile_definitions(AjisaiCore PRIVATE "AJISAI_EXPORTS")
-target_link_libraries(AjisaiCore PRIVATE TBB::tbb)
+target_link_libraries(AjisaiCore PRIVATE TBB::tbb embree)
 
 add_library(ajisai::core ALIAS AjisaiCore)
