@@ -98,7 +98,7 @@ class RadixSort {
     auto buckets_accum = std::make_unique<size_t[]>(bucket_count);
     buckets_accum[0] = 0;
     for (size_t bit = 0; bit < bit_count; bit += kBitsPerIteration) {
-      auto buckets_ptr = &buckets[0];
+      auto buckets_ptr = buckets.get();  //&buckets[0];
       std::fill(buckets_ptr, buckets_ptr + bucket_count, 0);
 
       tbb::parallel_for(tbb::blocked_range<size_t>(0, bucket_count),
@@ -120,7 +120,7 @@ class RadixSort {
       }
 
       for (size_t i = 0; i < count; ++i) {
-        size_t j = buckets[(keys[i] >> bit) & mask]++;
+        size_t j = buckets_accum[(keys[i] >> bit) & mask]++;
         keys_copy[j] = keys[i];
         values_copy[j] = values[i];
       }
@@ -193,8 +193,8 @@ class PLOCAggregate : public Aggregate {
                       [&](const tbb::blocked_range<size_t>& r) {
                         for (size_t i = r.begin(); i != r.end(); ++i) {
                           auto& node = nodes[begin + i];
-                          //   node = Leaf{primitives_[i]->AABB(), 1, i};
-                          node.bound = primitives_[i]->AABB();
+                          node.bound =
+                              primitives_[primitive_indices[i]]->AABB();
                           node.primitive_count = 1;
                           node.first_child_or_primitive = i;
                         }
@@ -239,7 +239,8 @@ class PLOCAggregate : public Aggregate {
     if (!IntersectP(node.bound, ray, inv_dir, dir_is_neg)) return false;
 
     if (node.IsLeaf()) {
-      if (primitives_[node.first_child_or_primitive]->Occlude(ray)) {
+      if (primitives_[primitive_indices_[node.first_child_or_primitive]]
+              ->Occlude(ray)) {
         return true;
       }
       return false;
@@ -259,7 +260,8 @@ class PLOCAggregate : public Aggregate {
 
     if (node.IsLeaf()) {
       bool ret = false;
-      if (primitives_[node.first_child_or_primitive]->Intersect(ray, inct)) {
+      if (primitives_[primitive_indices_[node.first_child_or_primitive]]
+              ->Intersect(ray, inct)) {
         ray.t_max = inct->t;
         ret = true;
       }
@@ -423,6 +425,11 @@ class PLOCAggregate : public Aggregate {
     RadixSort<10>::Sort(sorted_morton_codes, unsorted_morton_codes,
                         sorted_primitive_indices, unsorted_primitive_indices,
                         primitive_count, kBitCount * 3);
+
+    if (sorted_morton_codes != morton_codes.get()) {
+      std::swap(morton_codes, morton_codes_copy);
+      std::swap(primitive_indices, primitive_indices_copy);
+    }
 
     assert(std::is_sorted(morton_codes.get(),
                           morton_codes.get() + primitive_count) &&

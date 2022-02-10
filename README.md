@@ -24,7 +24,7 @@
 ### Acceleration Structure
 
 * [x] Parallel Locally-Ordered Clustering for Bounding Volume Hierarchy Construction from [D. Meister and J. Bittner](https://meistdan.github.io/publications/ploc/paper.pdf)
-* [ ] [Embree](https://embree.github.io/) can be optionally used (Introduce external dependency)
+* [x] [Embree](https://embree.github.io/) can be optionally used (Introduce external dependency)
 
 ### Light Source
 

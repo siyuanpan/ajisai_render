@@ -94,18 +94,6 @@ class EmbreeAggregate : public Aggregate {
     inct->uv = Vector2f{rayhit.hit.u, rayhit.hit.v};
     primitives_[rayhit.hit.geomID]->PostIntersect(ray, inct, rayhit.hit.primID);
 
-    // if (std::abs(inct->t - inc.t) < 1e-10)
-    //   printf("(%f) (%f)\n", inct->t, inc.t);
-    // if (inct->pos != inc.pos)
-    //   printf("(%f %f %f) (%f %f %f)\n", inct->pos[0], inct->pos[1],
-    //          inct->pos[2], inc.pos[0], inc.pos[1], inc.pos[2]);
-
-    // if (inct->geometry_normal != inc.geometry_normal)
-    //   printf("(%f %f %f) (%f %f %f)\n", inct->geometry_normal[0],
-    //          inct->geometry_normal[1], inct->geometry_normal[2],
-    //          inc.geometry_normal[0], inc.geometry_normal[1],
-    //          inc.geometry_normal[2]);
-
     return true;
   }
 
