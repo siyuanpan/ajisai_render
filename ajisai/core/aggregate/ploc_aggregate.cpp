@@ -161,6 +161,87 @@ static bool IntersectP(const Bounds3f& bounds, const Ray& ray,
   return (t_min.max() < ray.t_max) && (t_max.min() > ray.t_min);
 }
 
+struct Triangle {
+  Vector3f a, b, c;
+  const Primitive* primitive;
+  uint32_t id;
+  Bounds3f AABB() const {
+    Bounds3f bounds{Vector3f{std::numeric_limits<float>::max()},
+                    Vector3f{std::numeric_limits<float>::lowest()}};
+
+    bounds.min() = Min(bounds.min(), a);
+    bounds.max() = Max(bounds.max(), a);
+
+    bounds.min() = Min(bounds.min(), b);
+    bounds.max() = Max(bounds.max(), b);
+
+    bounds.min() = Min(bounds.min(), c);
+    bounds.max() = Max(bounds.max(), c);
+
+    return bounds;
+  }
+
+  bool Intersect(const Ray& ray, PrimitiveIntersection* inct) const {
+    bool hit = false;
+    auto v0 = a;
+    auto v1 = b;
+    auto v2 = c;
+    auto e0 = v1 - v0;
+    auto e1 = v2 - v0;
+    auto n = cross(e0, e1).normalized();
+    float a, f, u, v;
+    auto h = cross(ray.d, e1);
+    a = dot(e0, h);
+    if (a > -1e-6f && a < 1e-6f) return false;
+    f = 1.f / a;
+    auto s = ray.o - v0;
+    u = f * dot(s, h);
+    if (u < 0.f || u > 1.f) return false;
+    auto q = cross(s, e0);
+    v = f * dot(ray.d, q);
+    if (v < 0.f || u + v > 1.f) return false;
+    float t = f * dot(e1, q);
+
+    if (t > ray.t_min && t < ray.t_max) {
+      if (t < inct->t) {
+        inct->t = t;
+        inct->geometry_normal = n;
+        inct->uv = Vector2f{u, v};
+        hit = true;
+        primitive->PostIntersect(ray, inct, id);
+      }
+    }
+
+    return hit;
+  }
+
+  bool Occlude(const Ray& ray) const {
+    auto v0 = a;
+    auto v1 = b;
+    auto v2 = c;
+    auto e0 = v1 - v0;
+    auto e1 = v2 - v0;
+    auto n = cross(e0, e1).normalized();
+    float a, f, u, v;
+    auto h = cross(ray.d, e1);
+    a = dot(e0, h);
+    if (a > -1e-6f && a < 1e-6f) return false;
+    f = 1.f / a;
+    auto s = ray.o - v0;
+    u = f * dot(s, h);
+    if (u < 0.f || u > 1.f) return false;
+    auto q = cross(s, e0);
+    v = f * dot(ray.d, q);
+    if (v < 0.f || u + v > 1.f) return false;
+    float t = f * dot(e1, q);
+    if (t > ray.t_min && t < ray.t_max) {
+      return true;
+    }
+
+    return false;
+  }
+};
+
 /// See "Parallel Locally-Ordered Clustering for Bounding Volume Hierarchy
 /// Construction", by D. Meister and J. Bittner.
 class PLOCAggregate : public Aggregate {
@@ -175,11 +256,39 @@ class PLOCAggregate : public Aggregate {
                          Vector3f{std::numeric_limits<float>::lowest()}};
     for (auto& primitive : primitives_) {
       global_bbox = Join(global_bbox, primitive->AABB());
+      auto mesh_view = primitive->AsGeometry()->GetMeshView();
+
+      for (size_t i = 0; i < mesh_view.index_size; i++) {
+        auto idx1 = *(
+            uint32_t*)((char*)mesh_view.index_buffer + mesh_view.index_offset +
+                       i * mesh_view.index_stride + 0 * sizeof(uint32_t));
+        auto idx2 = *(
+            uint32_t*)((char*)mesh_view.index_buffer + mesh_view.index_offset +
+                       i * mesh_view.index_stride + 1 * sizeof(uint32_t));
+        auto idx3 = *(
+            uint32_t*)((char*)mesh_view.index_buffer + mesh_view.index_offset +
+                       i * mesh_view.index_stride + 2 * sizeof(uint32_t));
+
+        Triangle tri{};
+        tri.a = *(Vector3f*)((char*)mesh_view.position_buffer +
+                             mesh_view.position_offset +
+                             idx1 * mesh_view.position_stride);
+        tri.b = *(Vector3f*)((char*)mesh_view.position_buffer +
+                             mesh_view.position_offset +
+                             idx2 * mesh_view.position_stride);
+        tri.c = *(Vector3f*)((char*)mesh_view.position_buffer +
+                             mesh_view.position_offset +
+                             idx3 * mesh_view.position_stride);
+        tri.primitive = primitive.get();
+        tri.id = i;
+        triangles_.emplace_back(std::move(tri));
+      }
     }
 
     auto primitive_indices = SortPrimitivesByMortonCode<uint32_t>(global_bbox);
 
-    auto primitvie_count = primitives_.size();
+    // auto primitvie_count = primitives_.size();
+    auto primitvie_count = triangles_.size();
     auto node_count = 2 * primitvie_count - 1;
     auto nodes = std::make_unique<Node[]>(node_count);
     auto nodes_copy = std::make_unique<Node[]>(node_count);
@@ -193,8 +302,9 @@ class PLOCAggregate : public Aggregate {
                       [&](const tbb::blocked_range<size_t>& r) {
                         for (size_t i = r.begin(); i != r.end(); ++i) {
                           auto& node = nodes[begin + i];
-                          node.bound =
-                              primitives_[primitive_indices[i]]->AABB();
+                          // node.bound =
+                          // primitives_[primitive_indices[i]]->AABB();
+                          node.bound = triangles_[primitive_indices[i]].AABB();
                           node.primitive_count = 1;
                           node.first_child_or_primitive = i;
                         }
@@ -239,8 +349,10 @@ class PLOCAggregate : public Aggregate {
     if (!IntersectP(node.bound, ray, inv_dir, dir_is_neg)) return false;
 
     if (node.IsLeaf()) {
-      if (primitives_[primitive_indices_[node.first_child_or_primitive]]
-              ->Occlude(ray)) {
+      //   if (primitives_[primitive_indices_[node.first_child_or_primitive]]
+      //           ->Occlude(ray)) {
+      if (triangles_[primitive_indices_[node.first_child_or_primitive]].Occlude(
+              ray)) {
         return true;
       }
       return false;
@@ -260,9 +372,12 @@ class PLOCAggregate : public Aggregate {
 
     if (node.IsLeaf()) {
       bool ret = false;
-      if (primitives_[primitive_indices_[node.first_child_or_primitive]]
-              ->Intersect(ray, inct)) {
+      if (triangles_[primitive_indices_[node.first_child_or_primitive]]
+              .Intersect(ray, inct)) {
+        auto& triangle =
+            triangles_[primitive_indices_[node.first_child_or_primitive]];
         ray.t_max = inct->t;
+        // triangle.primitive->PostIntersect(ray, inct, triangle.id);
         ret = true;
       }
       return ret;
@@ -399,7 +514,8 @@ class PLOCAggregate : public Aggregate {
   std::unique_ptr<size_t[]> SortPrimitivesByMortonCode(
       const Bounds3f& global_bbox) {
     static constexpr size_t kBitCount = (sizeof(Morton) * CHAR_BIT) / 3;
-    auto primitive_count = primitives_.size();
+    // auto primitive_count = primitives_.size();
+    auto primitive_count = triangles_.size();
 
     auto morton_codes = std::make_unique<Morton[]>(primitive_count);
     auto morton_codes_copy = std::make_unique<Morton[]>(primitive_count);
@@ -416,8 +532,10 @@ class PLOCAggregate : public Aggregate {
     tbb::parallel_for(tbb::blocked_range<size_t>(0, primitive_count),
                       [&](const tbb::blocked_range<size_t>& r) {
                         for (size_t i = r.begin(); i != r.end(); ++i) {
+                          //   morton_codes[i] =
+                          //       encoder.Encode(primitives_[i]->AABB().center());
                           morton_codes[i] =
-                              encoder.Encode(primitives_[i]->AABB().center());
+                              encoder.Encode(triangles_[i].AABB().center());
                           primitive_indices[i] = i;
                         }
                       });
@@ -443,6 +561,8 @@ class PLOCAggregate : public Aggregate {
   std::unique_ptr<Node[]> nodes_;
   std::unique_ptr<size_t[]> primitive_indices_;
   size_t node_count_;
+
+  std::vector<Triangle> triangles_;
 };
 
 Rc<Aggregate> CreatePLOCAggregate(size_t search_radius) {
