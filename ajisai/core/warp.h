@@ -71,4 +71,28 @@ inline std::tuple<Vector3f, float> SquareToCosineHemisphereSample(
   return {{p.x(), p.y(), z}, z * inv_pi};
 }
 
+inline Vector3f UniformSampleCone(const Vector2f& u, float cos_theta_max) {
+  float cos_theta = (1.f - u[0]) + u[0] * cos_theta_max;
+  float sin_theta = std::sqrt(std::max(0.f, 1.f - cos_theta * cos_theta));
+  float phi = u[1] * 2 * Constants<float>::pi();
+  return Vector3f{std::cos(phi) * sin_theta, std::sin(phi) * sin_theta,
+                  cos_theta};
+}
+
+inline Vector3f UniformSampleCone(const Vector2f& u, float cos_theta_max,
+                                  const Vector3f& x, const Vector3f& y,
+                                  const Vector3f& z) {
+  float cos_theta = std::lerp(cos_theta_max, 1.f, u[0]);
+  float sin_theta = std::sqrt(std::max(0.f, 1.f - cos_theta * cos_theta));
+  float phi = u[1] * 2 * Constants<float>::pi();
+  return std::cos(phi) * sin_theta * x + std::sin(phi) * sin_theta * y +
+         cos_theta * z;
+}
+
+inline float UniformConePDF(float cos_theta_max) {
+  if (cos_theta_max == 1.0f) return 1.0f;
+
+  return 1.0f / (2.0f * Constants<float>::pi() * (1.0f - cos_theta_max));
+}
+
 AJ_END

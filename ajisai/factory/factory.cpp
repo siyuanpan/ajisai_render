@@ -31,6 +31,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/factory/creator/post_processor_creators.h>
 #include <ajisai/factory/creator/medium_creators.h>
 #include <ajisai/factory/creator/filter_creators.h>
+#include <ajisai/factory/creator/light_creators.h>
 
 AJ_BEGIN
 
@@ -41,6 +42,7 @@ CreateFactory::CreateFactory()
                      Factory<Renderer>("renderer"),
                      Factory<PostProcessor>("post_processor"),
                      Factory<Aggregate>("aggregate"),
+                     Factory<Light>("light"),
                      Factory<Primitive>("primitive"),
                      Factory<Geometry>("geometry"),
                      Factory<Material>("material"),
@@ -52,6 +54,7 @@ CreateFactory::CreateFactory()
   AddRendererFactory(GetFactory<Renderer>());
   AddPostProcessorFactory(GetFactory<PostProcessor>());
   AddAggregateFactory(GetFactory<Aggregate>());
+  AddLightFactory(GetFactory<Light>());
   AddPrimitiveFactory(GetFactory<Primitive>());
   AddGeometricFactory(GetFactory<Geometry>());
   AddMaterialFactory(GetFactory<Material>());

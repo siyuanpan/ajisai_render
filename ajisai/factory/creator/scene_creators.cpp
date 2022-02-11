@@ -44,6 +44,14 @@ class DefaultSceneCreatorImpl {
 
     // TODO: env
     //
+    if (auto lights = node["lights"]) {
+      AJ_INFO("create {} lights", lights.size());
+
+      for (size_t i = 0; i < lights.size(); ++i) {
+        auto light = factory.Create<Light>(lights[i]);
+        args.lights.push_back(light);
+      }
+    }
 
     if (auto aggregate = node["aggregate"]) {
       AJ_INFO("use aggregate type: {} ", aggregate["type"].as<std::string>());

@@ -33,6 +33,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/core/post_processor/post_processor.h>
 #include <ajisai/core/medium/medium.h>
 #include <ajisai/core/filter/filter.h>
+#include <ajisai/core/light/light.h>
 
 #include <yaml-cpp/yaml.h>
 
@@ -84,8 +85,8 @@ class AJISAI_API CreateFactory {
   template <class... Types>
   using FactoryTuple = std::tuple<Factory<Types>...>;
 
-  FactoryTuple<Scene, Camera, Filter, Renderer, PostProcessor, Aggregate, Primitive,
-               Geometry, Material, Medium, Texture2D>
+  FactoryTuple<Scene, Camera, Filter, Renderer, PostProcessor, Aggregate, Light,
+               Primitive, Geometry, Material, Medium, Texture2D>
       factory_tuple_;
 };
 

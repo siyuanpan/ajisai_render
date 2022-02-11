@@ -79,4 +79,8 @@ AJISAI_API Rc<Geometry> CreateCube(const Matrix4f &local2world);
 
 AJISAI_API Rc<Geometry> CreateTwoSided(Rc<const Geometry> internal);
 
+AJISAI_API Rc<Geometry> CreateMeshGeo(std::vector<Vector4f> &&position_and_us,
+                                      std::vector<Vector4f> &&normal_and_vs,
+                                      std::vector<uint32_t> &&indices);
+
 AJ_END

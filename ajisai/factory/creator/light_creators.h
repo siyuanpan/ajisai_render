@@ -21,34 +21,10 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/aggregate/aggregate.h>
-#include <ajisai/core/light/light.h>
-#include <span>
+#include <ajisai/factory/factory.h>
 
 AJ_BEGIN
 
-struct Ray;
-struct PrimitiveIntersection;
-class Light;
-
-struct SceneArgs {
-  std::vector<Rc<Primitive>> primitives;
-  std::vector<Rc<Light>> lights;
-  Rc<Aggregate> aggregate;
-};
-
-class Scene {
- public:
-  virtual ~Scene() = default;
-
-  virtual bool Intersect(const Ray& ray,
-                         PrimitiveIntersection* inct) const noexcept = 0;
-
-  virtual bool Occlude(const Ray& ray) const noexcept = 0;
-
-  virtual std::span<const Light* const> Lights() const noexcept = 0;
-};
-
-AJISAI_API Rc<Scene> CreateDefaultScene(const SceneArgs&);
+void AddLightFactory(Factory<Light>& factory);
 
 AJ_END

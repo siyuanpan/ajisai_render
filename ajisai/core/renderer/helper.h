@@ -67,6 +67,38 @@ inline Spectrum MISSampleAreaLight(const Scene* scene, const AreaLight* light,
   return f / light_sample.pdf * PowerHeuristic(light_sample.pdf, bsdf_pdf);
 }
 
+inline Spectrum MISSampleLight(const Scene* scene, const Light* light,
+                               const PrimitiveIntersection& inct,
+                               const ShadingPoint& sp, Sampler* sampler) {
+  if (auto area_light = light->AsArea()) {
+    return MISSampleAreaLight(scene, area_light, inct, sp, sampler);
+  } else {
+    const auto light_sample = light->Sample(inct.pos, sampler);
+    if (light_sample.radiance.IsBlack() || light_sample.pdf <= 0.f) return {};
+
+    const float shadow_ray_len =
+        (light_sample.pos - inct.pos).length() - Ray::Eps();
+    if (shadow_ray_len < Ray::Eps()) return {};
+
+    const Vector3f inct2light = (light_sample.pos - inct.pos).normalized();
+    const Ray shadow_ray{inct.pos, inct2light, Ray::Eps(),
+                         0.99f * shadow_ray_len};
+    if (scene->Occlude(shadow_ray)) return {};
+
+    auto med = inct.GetMedium(inct2light);
+    const auto bsdf_f =
+        sp.bsdf->EvalAll(inct2light, inct.wr, TransMode::Radiance);
+    if (bsdf_f.IsBlack()) return {};
+
+    const Spectrum f = med->Tr(light_sample.pos, inct.pos, sampler) *
+                       light_sample.radiance * bsdf_f *
+                       std::abs(dot(inct2light, inct.geometry_normal));
+    const float bsdf_pdf = sp.bsdf->PdfAll(inct2light, inct.wr);
+
+    return f / light_sample.pdf * PowerHeuristic(light_sample.pdf, bsdf_pdf);
+  }
+}
+
 inline Spectrum MISSampleBsdf(const Scene* scene,
                               const PrimitiveIntersection& inct,
                               const ShadingPoint& sp, Sampler* sampler) {

@@ -157,9 +157,11 @@ class PathTracing : public TiledIntegrator {
       Spectrum direct_illum{};
       for (auto i = 0; i < kDirectIllumSampleCount; ++i) {
         for (auto light : scene->Lights()) {
+          // direct_illum +=
+          //     throughput *
+          //     MISSampleAreaLight(scene, light->AsArea(), inct, sp, sampler);
           direct_illum +=
-              throughput *
-              MISSampleAreaLight(scene, light->AsArea(), inct, sp, sampler);
+              throughput * MISSampleLight(scene, light, inct, sp, sampler);
         }
         direct_illum += throughput * MISSampleBsdf(scene, inct, sp, sampler);
       }

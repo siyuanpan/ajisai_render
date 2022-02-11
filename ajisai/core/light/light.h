@@ -22,6 +22,7 @@ DEALINGS IN THE SOFTWARE.
 #pragma once
 #include <ajisai/ajisai.h>
 #include <ajisai/math/vector3.h>
+#include <ajisai/math/angle.h>
 #include <ajisai/math/spectrum.h>
 
 AJ_BEGIN
@@ -53,6 +54,12 @@ class Light {
 
   virtual LightSampleResult Sample(const Vector3f& ref,
                                    Sampler* sampler) const noexcept = 0;
+
+  virtual void Process(const Bounds3f&) noexcept {}
 };
+
+AJISAI_API Rc<Light> CreateDirectionalLight(const Vector3f& dir,
+                                            const Rad<float>& angle,
+                                            Spectrum radiance, int32_t power);
 
 AJ_END
