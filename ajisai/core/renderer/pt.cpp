@@ -171,8 +171,8 @@ class PathTracing : public TiledIntegrator {
       const auto bsdf_sample =
           sp.bsdf->SampleAll(inct.wr, TransMode::Radiance, sampler->Next3D());
       if (bsdf_sample.f.IsBlack() || bsdf_sample.pdf < 0.f) return pixel;
-      throughput *= bsdf_sample.f *
-                    std::abs(dot(inct.geometry_normal, bsdf_sample.dir)) /
+      const auto& normal = inct.shading_normal;
+      throughput *= bsdf_sample.f * std::abs(dot(normal, bsdf_sample.dir)) /
                     bsdf_sample.pdf;
       path_ray = Ray{inct.EpsOffset(bsdf_sample.dir), bsdf_sample.dir};
       specular_bounce = bsdf_sample.is_delta;

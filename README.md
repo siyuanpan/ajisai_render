@@ -29,7 +29,7 @@
 ### Light Source
 
 * [ ] Point Light
-* [ ] Directional Light
+* [x] Directional Light
 * [ ] Polygonal Area Light
 * [ ] Procedural Sky Light with Hosek Model
 * [ ] HDR Probe
@@ -44,8 +44,8 @@
 
 ### Sampler
 
-* [ ] Independent Sampler
-* [ ] Sobol Sequence with Screen Space Index Enumeration
+* [x] Independent Sampler
+* [ ] Sobol Sequence
 
 ### Editor
 
@@ -53,5 +53,8 @@
 
 ## Gallery
 
-Cornel Box (rendered with pt) (scene ref [here](https://benedikt-bitterli.me/resources/))
+Cornel Box (rendered with pt)
 ![pic](./gallery/cbox_path_spp_128_gaussian_mis.png)
+
+Dragon (rendered with pt)
+![pic](./gallery/dragon.png)

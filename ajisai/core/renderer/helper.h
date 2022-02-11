@@ -59,9 +59,10 @@ inline Spectrum MISSampleAreaLight(const Scene* scene, const AreaLight* light,
       sp.bsdf->EvalAll(inct2light, inct.wr, TransMode::Radiance);
   if (bsdf_f.IsBlack()) return {};
 
+  const auto& normal = inct.shading_normal;
   const Spectrum f = med->Tr(light_sample.pos, inct.pos, sampler) *
                      light_sample.radiance * bsdf_f *
-                     std::abs(dot(inct2light, inct.geometry_normal));
+                     std::abs(dot(inct2light, normal));
   const float bsdf_pdf = sp.bsdf->PdfAll(inct2light, inct.wr);
 
   return f / light_sample.pdf * PowerHeuristic(light_sample.pdf, bsdf_pdf);
@@ -90,9 +91,10 @@ inline Spectrum MISSampleLight(const Scene* scene, const Light* light,
         sp.bsdf->EvalAll(inct2light, inct.wr, TransMode::Radiance);
     if (bsdf_f.IsBlack()) return {};
 
+    const auto& normal = inct.shading_normal.normalized();
     const Spectrum f = med->Tr(light_sample.pos, inct.pos, sampler) *
                        light_sample.radiance * bsdf_f *
-                       std::abs(dot(inct2light, inct.geometry_normal));
+                       std::abs(dot(inct2light, normal));
     const float bsdf_pdf = sp.bsdf->PdfAll(inct2light, inct.wr);
 
     return f / light_sample.pdf * PowerHeuristic(light_sample.pdf, bsdf_pdf);
@@ -131,8 +133,9 @@ inline Spectrum MISSampleBsdf(const Scene* scene,
   if (light_radiance.IsBlack()) return {};
 
   const auto tr = medium->Tr(ray.o, pri_inct.pos, sampler);
-  const auto f = tr * light_radiance * bsdf_sample.f *
-                 std::abs(dot(inct.geometry_normal, ray.d));
+  const auto& normal = inct.shading_normal;
+  const auto f =
+      tr * light_radiance * bsdf_sample.f * std::abs(dot(normal, ray.d));
 
   if (bsdf_sample.is_delta) return f / bsdf_sample.pdf;
 
