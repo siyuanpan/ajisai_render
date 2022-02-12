@@ -20,10 +20,47 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 #include <ajisai/core/bsdf/bsdf.h>
+#include <ajisai/core/warp.h>
 #include <ajisai/utility/distribution.h>
+#include <ajisai/math/constants.h>
 #include <numeric>
 
 AJ_BEGIN
+
+BSDFSampleResult BSDF::SampleBlackFringes(const Vector3f& wo, TransMode mode,
+                                          const Vector3f& sam) const noexcept {
+  if (dot(geometry_normal_, wo) <= 0.f) return kBSDFSampleResultInvalid;
+
+  auto [lwi, pdf] = SquareToCosineHemisphereSample(sam.xy());
+
+  if (pdf < std::numeric_limits<float>::epsilon())
+    return kBSDFSampleResultInvalid;
+
+  const auto wi = geometry_coord_.Local2World(lwi).normalized();
+  const float factor =
+      CorrectShadingNormal(geometry_normal_, shading_normal_, wi);
+  const auto f = Albedo() / Constants<float>::pi() * factor;
+
+  return BSDFSampleResult{wi, f, pdf, false};
+}
+
+Spectrum BSDF::EvalBlackFringes(const Vector3f& wi, const Vector3f& wo,
+                                TransMode mode) const noexcept {
+  if ((dot(geometry_normal_, wi) <= 0.f) || (dot(geometry_normal_, wo) <= 0.f))
+    return {};
+
+  return Albedo() / Constants<float>::pi();
+}
+
+float BSDF::PdfBlackFringes(const Vector3f& wi,
+                            const Vector3f& wo) const noexcept {
+  if ((dot(geometry_normal_, wi) > 0.f) != (dot(geometry_normal_, wo) > 0.f))
+    return 0.f;
+
+  const auto local = geometry_coord_.World2Local(wi).normalized();
+  constexpr float inv_pi = 1.f / Constants<float>::pi();
+  return local.z() * inv_pi;
+}
 
 void BSDF::AddComponent(float weight, Rc<BSDFComponent> component) {
   weights_.push_back(weight);
@@ -35,16 +72,16 @@ Spectrum BSDF::Albedo() const { return albedo_; }
 BSDFSampleResult BSDF::SampleAll(const Vector3f& wo, TransMode mode,
                                  const Vector3f& sam) const noexcept {
   // process black fringes
-  //   if (CauseBlackFringes(wo)) {
-  //   return SampleBlack_fringes(wo, mode, sam);
-  //   }
+  if (CauseBlackFringes(wo)) {
+    return SampleBlackFringes(wo, mode, sam);
+  }
 
   const Vector3f lwo = shading_coord_.World2Local(wo).normalized();
-  if (!lwo.z()) return kBSDFSampleResultInvalid;
+  if (lwo.z() <= 0.f) return kBSDFSampleResultInvalid;
 
   float weight_sum = std::accumulate(weights_.begin(), weights_.end(), 0.f);
 
-  if (!weight_sum) return kBSDFSampleResultInvalid;
+  if (weight_sum <= 0.f) return kBSDFSampleResultInvalid;
 
   Distribution comp_selector{weights_.data(), weights_.size()};
 
@@ -81,10 +118,15 @@ BSDFSampleResult BSDF::SampleAll(const Vector3f& wo, TransMode mode,
 
 Spectrum BSDF::EvalAll(const Vector3f& wi, const Vector3f& wo,
                        TransMode mode) const noexcept {
+  if (CauseBlackFringes(wo)) {
+    return EvalBlackFringes(wi, wo, mode);
+  }
+
   const Vector3f& lwi = shading_coord_.World2Local(wi).normalized();
   const Vector3f& lwo = shading_coord_.World2Local(wo).normalized();
 
-  if (lwi.z() == 0.f || lwo.z() == 0.f) return {};
+  // if (lwi.z() == 0.f || lwo.z() == 0.f) return {};
+  if (lwi.z() <= 0.f || lwo.z() <= 0.f) return {};
 
   Spectrum ret{};
   for (auto i = 0; i < weights_.size(); ++i) {
@@ -95,10 +137,15 @@ Spectrum BSDF::EvalAll(const Vector3f& wi, const Vector3f& wo,
 }
 
 float BSDF::PdfAll(const Vector3f& wi, const Vector3f& wo) const noexcept {
+  if (CauseBlackFringes(wo)) {
+    return PdfBlackFringes(wi, wo);
+  }
+
   const Vector3f& lwi = shading_coord_.World2Local(wi).normalized();
   const Vector3f& lwo = shading_coord_.World2Local(wo).normalized();
 
-  if (lwi.z() == 0.f || lwo.z() == 0.f) return {};
+  // if (lwi.z() == 0.f || lwo.z() == 0.f) return {};
+  if (lwi.z() <= 0.f || lwo.z() <= 0.f) return {};
 
   float weight_sum = 0;
   float pdf = 0;

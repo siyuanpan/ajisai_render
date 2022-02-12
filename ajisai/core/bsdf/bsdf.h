@@ -80,6 +80,19 @@ class BSDF {
     return (dot(geometry_normal_, w) > 0) != (dot(shading_normal_, w) > 0);
   }
 
+  bool CauseBlackFringes(const Vector3f& w1,
+                         const Vector3f& w2) const noexcept {
+    return CauseBlackFringes(w1) || CauseBlackFringes(w2);
+  }
+
+  BSDFSampleResult SampleBlackFringes(const Vector3f& wo, TransMode mode,
+                                      const Vector3f& sam) const noexcept;
+
+  Spectrum EvalBlackFringes(const Vector3f& wi, const Vector3f& wo,
+                            TransMode mode) const noexcept;
+
+  float PdfBlackFringes(const Vector3f& wi, const Vector3f& wo) const noexcept;
+
  private:
   Vector3f geometry_normal_, shading_normal_;
   const CoordinateSystem geometry_coord_, shading_coord_;
