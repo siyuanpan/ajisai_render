@@ -62,100 +62,24 @@ float BSDF::PdfBlackFringes(const Vector3f& wi,
   return local.z() * inv_pi;
 }
 
-void BSDF::AddComponent(float weight, Rc<BSDFComponent> component) {
-  weights_.push_back(weight);
-  components_.push_back(component);
+Spectrum BSDF::EvalAll(const Vector3f& wi, const Vector3f& wo,
+                       TransMode mode) const noexcept {
+  return Eval(wi, wo, mode, kBSDFAll);
 }
-
-Spectrum BSDF::Albedo() const { return albedo_; }
 
 BSDFSampleResult BSDF::SampleAll(const Vector3f& wo, TransMode mode,
                                  const Vector3f& sam) const noexcept {
-  // process black fringes
-  if (CauseBlackFringes(wo)) {
-    return SampleBlackFringes(wo, mode, sam);
-  }
-
-  const Vector3f lwo = shading_coord_.World2Local(wo).normalized();
-  if (lwo.z() <= 0.f) return kBSDFSampleResultInvalid;
-
-  float weight_sum = std::accumulate(weights_.begin(), weights_.end(), 0.f);
-
-  if (weight_sum <= 0.f) return kBSDFSampleResultInvalid;
-
-  Distribution comp_selector{weights_.data(), weights_.size()};
-
-  auto idx = comp_selector.SampleDiscrete(sam.x());
-
-  const BSDFComponent* sam_comp = components_[idx].get();
-  float weight = weights_[idx];
-
-  if (!sam_comp) return kBSDFSampleResultInvalid;
-
-  auto sam_ret = sam_comp->Sample(lwo, mode, Vector2f{sam.y(), sam.z()});
-  if (!sam_ret.Valid()) {
-    return kBSDFSampleResultInvalid;
-  }
-
-  sam_ret.lwi = sam_ret.lwi.normalized();
-  sam_ret.pdf *= weight;
-
-  for (int i = 0; i < weights_.size(); ++i) {
-    if (i != idx) {
-      sam_ret.f += components_[i]->Eval(sam_ret.lwi, lwo, mode);
-      sam_ret.pdf += components_[i]->Pdf(sam_ret.lwi, lwo) * weights_[i];
-    }
-  }
-
-  const Vector3f wi = shading_coord_.Local2World(sam_ret.lwi);
-  const float factor =
-      CorrectShadingNormal(geometry_normal_, shading_normal_, wi);
-  //   printf("(%f %f %f) (%f %f %f)\n", sam_ret.lwi[0], sam_ret.lwi[1],
-  //          sam_ret.lwi[2], wi[0], wi[1], wi[2]);
-
-  return BSDFSampleResult{wi, sam_ret.f * factor, sam_ret.pdf, false};
-}
-
-Spectrum BSDF::EvalAll(const Vector3f& wi, const Vector3f& wo,
-                       TransMode mode) const noexcept {
-  if (CauseBlackFringes(wo)) {
-    return EvalBlackFringes(wi, wo, mode);
-  }
-
-  const Vector3f& lwi = shading_coord_.World2Local(wi).normalized();
-  const Vector3f& lwo = shading_coord_.World2Local(wo).normalized();
-
-  // if (lwi.z() == 0.f || lwo.z() == 0.f) return {};
-  if (lwi.z() <= 0.f || lwo.z() <= 0.f) return {};
-
-  Spectrum ret{};
-  for (auto i = 0; i < weights_.size(); ++i) {
-    ret += components_[i]->Eval(lwi, lwo, mode);
-  }
-
-  return ret;
+  return Sample(wo, mode, sam, kBSDFAll);
 }
 
 float BSDF::PdfAll(const Vector3f& wi, const Vector3f& wo) const noexcept {
-  if (CauseBlackFringes(wo)) {
-    return PdfBlackFringes(wi, wo);
-  }
+  return Pdf(wi, wo, kBSDFAll);
+}
 
-  const Vector3f& lwi = shading_coord_.World2Local(wi).normalized();
-  const Vector3f& lwo = shading_coord_.World2Local(wo).normalized();
+BSDFComponent::BSDFComponent(uint8_t type) noexcept : type_(type) {}
 
-  // if (lwi.z() == 0.f || lwo.z() == 0.f) return {};
-  if (lwi.z() <= 0.f || lwo.z() <= 0.f) return {};
-
-  float weight_sum = 0;
-  float pdf = 0;
-
-  for (int i = 0; i < weights_.size(); ++i) {
-    weight_sum += weights_[i];
-    pdf += weights_[i] * components_[i]->Pdf(lwi, lwo);
-  }
-
-  return weight_sum > 0 ? pdf / weight_sum : 0;
+bool BSDFComponent::Contained(uint8_t type) const noexcept {
+  return (type_ & type) == type_;
 }
 
 AJ_END

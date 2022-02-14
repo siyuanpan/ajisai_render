@@ -28,6 +28,15 @@ DEALINGS IN THE SOFTWARE.
 #include <vector>
 
 AJ_BEGIN
+
+enum BSDFComponentType : uint8_t {
+  eDiffuse = 1 << 0,
+  eGlossy = 1 << 1,
+  eSpecular = 1 << 2
+};
+
+constexpr uint8_t kBSDFAll = eDiffuse | eGlossy | eSpecular;
+
 class BSDFComponent;
 
 inline float CorrectShadingNormal(const Vector3f& ng, const Vector3f& ns,
@@ -56,24 +65,33 @@ inline const BSDFSampleResult kBSDFSampleResultInvalid =
 
 class BSDF {
  public:
-  BSDF(const Vector3f& ng, const Vector3f& ns, const Spectrum& albedo)
+  BSDF(const Vector3f& ng, const Vector3f& ns)
       : geometry_normal_(ng),
         geometry_coord_{ng},
         shading_normal_{ns},
-        shading_coord_{ns},
-        albedo_{albedo} {}
+        shading_coord_{ns} {}
 
-  void AddComponent(float weight, Rc<BSDFComponent> component);
+  // void AddComponent(float weight, Rc<BSDFComponent> component);
 
-  Spectrum Albedo() const;
+  virtual Spectrum Albedo() const = 0;
 
-  BSDFSampleResult SampleAll(const Vector3f& wo, TransMode mode,
-                             const Vector3f& sam) const noexcept;
+  virtual BSDFSampleResult SampleAll(const Vector3f& wo, TransMode mode,
+                                     const Vector3f& sam) const noexcept;
 
-  Spectrum EvalAll(const Vector3f& wi, const Vector3f& wo,
-                   TransMode mode) const noexcept;
+  virtual BSDFSampleResult Sample(const Vector3f& wo, TransMode mode,
+                                  const Vector3f& sam,
+                                  uint8_t type) const noexcept = 0;
 
-  float PdfAll(const Vector3f& wi, const Vector3f& wo) const noexcept;
+  virtual Spectrum EvalAll(const Vector3f& wi, const Vector3f& wo,
+                           TransMode mode) const noexcept;
+
+  virtual Spectrum Eval(const Vector3f& wi, const Vector3f& wo, TransMode mode,
+                        uint8_t type) const noexcept = 0;
+
+  virtual float PdfAll(const Vector3f& wi, const Vector3f& wo) const noexcept;
+
+  virtual float Pdf(const Vector3f& wi, const Vector3f& wo,
+                    uint8_t type) const noexcept = 0;
 
  protected:
   bool CauseBlackFringes(const Vector3f& w) const noexcept {
@@ -93,12 +111,12 @@ class BSDF {
 
   float PdfBlackFringes(const Vector3f& wi, const Vector3f& wo) const noexcept;
 
- private:
+ protected:
   Vector3f geometry_normal_, shading_normal_;
   const CoordinateSystem geometry_coord_, shading_coord_;
-  Spectrum albedo_;
-  std::vector<Rc<BSDFComponent>> components_;
-  std::vector<float> weights_;
+  // Spectrum albedo_;
+  // std::vector<Rc<BSDFComponent>> components_;
+  // std::vector<float> weights_;
 };
 
 class BSDFComponent {
@@ -111,6 +129,8 @@ class BSDFComponent {
     bool Valid() const noexcept { return pdf != 0; }
   };
 
+  BSDFComponent(uint8_t type) noexcept;
+
   virtual ~BSDFComponent() = default;
 
   virtual SampleResult Sample(const Vector3f& lwo, TransMode mode,
@@ -121,6 +141,11 @@ class BSDFComponent {
 
   virtual float Pdf(const Vector3f& lwi,
                     const Vector3f& lwo) const noexcept = 0;
+
+  bool Contained(uint8_t type) const noexcept;
+
+ private:
+  uint8_t type_;
 };
 
 AJ_END

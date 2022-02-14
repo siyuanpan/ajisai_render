@@ -27,30 +27,34 @@ DEALINGS IN THE SOFTWARE.
 
 AJ_BEGIN
 
-class Plastic : public Material {
- public:
-  explicit Plastic(Rc<const Texture2D>&& albedo, float int_ior, float ext_ior)
-      : albedo_(albedo), int_ior_(int_ior), ext_ior_(ext_ior) {}
+// class Plastic : public Material {
+//  public:
+//   explicit Plastic(Rc<const Texture2D>&& albedo, float int_ior, float
+//   ext_ior)
+//       : albedo_(albedo), int_ior_(int_ior), ext_ior_(ext_ior) {
 
-  virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const override {
-    const auto albedo = albedo_->SampleSpectrum(inct.uv);
-    auto bsdf = new BSDF(inct.geometry_normal, inct.shading_normal, albedo);
-    bsdf->AddComponent(1.f, RcNew<DiffuseComponent>(albedo));
+//       }
 
-    ShadingPoint sp{};
-    sp.bsdf = bsdf;
-    sp.shading_normal = inct.shading_normal;
+//   virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const
+//   override {
+//     const auto albedo = albedo_->SampleSpectrum(inct.uv);
+//     auto bsdf = new BSDF(inct.geometry_normal, inct.shading_normal, albedo);
+//     bsdf->AddComponent(1.f, RcNew<DiffuseComponent>(albedo));
 
-    return std::move(sp);
-  }
+//     ShadingPoint sp{};
+//     sp.bsdf = bsdf;
+//     sp.shading_normal = inct.shading_normal;
 
- private:
-  Rc<const Texture2D> albedo_;
-  float int_ior_, ext_ior_;
-};
+//     return std::move(sp);
+//   }
 
-Rc<Material> CreateDiffuse(Rc<const Texture2D> albedo) {
-  return RcNew<Diffuse>(albedo);
-}
+//  private:
+//   Rc<const Texture2D> albedo_;
+//   float int_ior_, ext_ior_;
+// };
+
+// Rc<Material> CreateDiffuse(Rc<const Texture2D> albedo) {
+//   return RcNew<Diffuse>(albedo);
+// }
 
 AJ_END

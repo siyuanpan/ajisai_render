@@ -22,6 +22,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/ajisai.h>
 #include <ajisai/core/material/material.h>
 #include <ajisai/core/bsdf/bsdf.h>
+#include <ajisai/core/bsdf/aggregate_bsdf.h>
 #include <ajisai/core/intersection.h>
 #include <ajisai/core/bsdf/diffuse_component.h>
 
@@ -33,7 +34,8 @@ class Diffuse : public Material {
 
   virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const override {
     const auto albedo = albedo_->SampleSpectrum(inct.uv);
-    auto bsdf = new BSDF(inct.geometry_normal, inct.shading_normal, albedo);
+    AggregateBSDF* bsdf =
+        new AggregateBSDF(inct.geometry_normal, inct.shading_normal, albedo);
     bsdf->AddComponent(1.f, RcNew<DiffuseComponent>(albedo));
 
     ShadingPoint sp{};

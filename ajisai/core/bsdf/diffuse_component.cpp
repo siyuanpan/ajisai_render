@@ -25,7 +25,8 @@ DEALINGS IN THE SOFTWARE.
 
 AJ_BEGIN
 
-DiffuseComponent::DiffuseComponent(const Spectrum& albedo) noexcept {
+DiffuseComponent::DiffuseComponent(const Spectrum& albedo) noexcept
+    : BSDFComponent(BSDFComponentType::eDiffuse) {
   coef_ = albedo / Constants<float>::pi();
 }
 
