@@ -39,6 +39,19 @@ class DirectionalCreatorImpl {
   }
 };
 
+class EnvmapCreatorImpl {
+ public:
+  static std::string Name() { return "envmap"; }
+
+  static Rc<Light> Create(const YAML::Node& node,
+                          const CreateFactory& factory) {
+    auto texture = factory.Create<Texture2D>(node["texture"]);
+    float rot = node["rot"].as<float>(0.f);
+
+    return CreateEnvLight(std::move(texture), rot);
+  }
+};
+
 template <class TLightCreatorImpl>
 concept LightCreatorImpl = requires(TLightCreatorImpl) {
   { TLightCreatorImpl::Name() } -> std::convertible_to<std::string>;
@@ -51,9 +64,11 @@ template <LightCreatorImpl TLightCreatorImpl>
 class LightCreator : public TLightCreatorImpl {};
 
 using DirectionalCreator = LightCreator<DirectionalCreatorImpl>;
+using EnvmapCreator = LightCreator<EnvmapCreatorImpl>;
 
 void AddLightFactory(Factory<Light>& factory) {
   factory.Add(DirectionalCreator::Name(), &DirectionalCreator::Create);
+  factory.Add(EnvmapCreator::Name(), &EnvmapCreator::Create);
 }
 
 AJ_END

@@ -192,7 +192,7 @@ class MeshGeoCreatorImpl {
           }
 
           Vector4f normal_and_v(normal.x(), normal.y(), normal.z(),
-                                1.0f - texcoord.y());
+                                texcoord.y());
           position_and_us.push_back(position_and_u);
           normal_and_vs.push_back(normal_and_v);
 

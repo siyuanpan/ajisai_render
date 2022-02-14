@@ -30,6 +30,7 @@ AJ_BEGIN
 struct Ray;
 struct PrimitiveIntersection;
 class Light;
+class EnvLight;
 
 struct SceneArgs {
   std::vector<Rc<Primitive>> primitives;
@@ -47,6 +48,8 @@ class Scene {
   virtual bool Occlude(const Ray& ray) const noexcept = 0;
 
   virtual std::span<const Light* const> Lights() const noexcept = 0;
+
+  virtual const EnvLight* GetEnvLight() const noexcept = 0;
 };
 
 AJISAI_API Rc<Scene> CreateDefaultScene(const SceneArgs&);

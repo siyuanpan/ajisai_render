@@ -19,29 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
+#pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/texture2d/texture2d.h>
+#include <ajisai/core/light/light.h>
+#include <ajisai/core/geometry/geometry.h>
+#include <ajisai/utility/distribution.h>
+#include <ajisai/math/spectrum.h>
+
+#include <optional>
 
 AJ_BEGIN
 
-class Constant2D : public Texture2D {
+class EnvLight : public Light {
  public:
-  explicit Constant2D(const Spectrum& texel) : texel_(texel) {}
+  EnvLight(Rc<const Texture2D> &&texture, float rot);
 
-  virtual Spectrum SampleSpectrum(const Vector2f& uv) const noexcept override {
-    return texel_;
+  virtual const EnvLight *AsEnv() const noexcept override { return this; }
+
+  virtual Spectrum Radiance(const Vector3f &ref,
+                            const Vector3f &ref2light) const noexcept;
+
+  virtual LightSampleResult Sample(const Vector3f &ref,
+                                   Sampler *sampler) const noexcept override;
+
+  virtual float Pdf(const Vector3f &ref,
+                    const Vector3f &ref2light) const noexcept;
+
+  virtual void Process(const Bounds3f &bounds) noexcept override {
+    aabb_ = bounds;
   }
 
-  virtual size_t Width() const noexcept override { return 1; }
-
-  virtual size_t Height() const noexcept override { return 1; }
-
  private:
-  Spectrum texel_;
+  Rc<const Texture2D> texture_;
+  float env_map_rot_ = 0.f;
+  std::optional<Distribution2D> sampler_;
+  Bounds3f aabb_;
 };
-
-Rc<Texture2D> CreateConstant2DTexture(const Spectrum& texel) {
-  return RcNew<Constant2D>(texel);
-}
 
 AJ_END

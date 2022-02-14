@@ -26,6 +26,8 @@ DEALINGS IN THE SOFTWARE.
 #include <cstdio>
 #include <vector>
 #include <cassert>
+#include <numeric>
+#include <queue>
 
 AJ_BEGIN
 
@@ -101,6 +103,138 @@ class Distribution {
   //  private:
   std::vector<float> func, cdf;
   float funcInt;
+};
+
+class Distribution2D {
+ public:
+  Distribution2D() = default;
+
+  Distribution2D(const float* f, size_t size_x, size_t size_y) {
+    for (size_t i = 0; i < size_y; ++i) {
+      conditional_.emplace_back(BoxNew<Distribution>(&f[i * size_x], size_x));
+    }
+
+    auto marginal_f = BoxNew<float[]>(size_y);
+    for (size_t i = 0; i < size_y; ++i) {
+      marginal_f[i] = conditional_[i]->funcInt;
+    }
+
+    marginal_ = BoxNew<Distribution>(marginal_f.get(), size_y);
+  }
+
+  void SampleContinuous(float u, float v, float* sample_u, float* sample_v,
+                        float* pdf) const {
+    float pdfs[2];
+    int iv;
+    *sample_v = marginal_->SampleContinuous(v, &pdfs[1], &iv);
+    *sample_u = conditional_[iv]->SampleContinuous(u, &pdfs[0]);
+    *pdf = pdfs[0] * pdfs[1];
+    assert(!std::isnan(*pdf));
+  }
+
+  float Pdf(float u, float v) const {
+    int iu = std::clamp((int)(u * conditional_[0]->Count()), 0,
+                        conditional_[0]->Count() - 1);
+    int iv =
+        std::clamp((int)(v * marginal_->Count()), 0, marginal_->Count() - 1);
+    if (conditional_[iv]->funcInt * marginal_->funcInt == 0.0f) return 0.f;
+
+    return (conditional_[iv]->func[iu] * marginal_->func[iv]) /
+           (conditional_[iv]->funcInt * marginal_->funcInt);
+  }
+
+ private:
+  std::vector<Box<Distribution>> conditional_;
+  Box<Distribution> marginal_;
+};
+
+/// Random-number sampling using the Walker-Vose alias method,
+/// as described by Keith Schwarz (2011)
+/// [http://www.keithschwarz.com/darts-dice-coins]
+template <class ValueType, class SizeType>
+class AliasMethod {
+  static_assert(std::is_floating_point_v<ValueType> &&
+                    std::is_integral_v<SizeType>,
+                "AliasMethod : ValueType must floating type and SizeType must "
+                "integral type");
+
+ public:
+  AliasMethod() = default;
+
+  AliasMethod(const ValueType* f, SizeType n) { Init(f, n); }
+
+  void Init(const ValueType* f, SizeType n) {
+    const ValueType sum = std::accumulate(f, f + n, ValueType(0.0));
+    const ValueType n_div_sum = ValueType(n) / sum;
+    tables.resize(n);
+    std::queue<SizeType> small, large;
+
+    for (SizeType i = 0; i != n; ++i) {
+      const ValueType p = f[i] * n_div_sum;
+      tables[i].first = p;
+      tables[i].second = i;
+
+      if (p < ValueType(1)) {
+        small.push(i);
+      } else {
+        large.push(i);
+      }
+    }
+
+    while (!small.empty() && !large.empty()) {
+      auto s = small.front(), l = large.front();
+      small.pop();
+      large.pop();
+      tables[s].second = l;
+      tables[l].first -= (ValueType(1) - tables[s].first);
+
+      if (tables[l].first < ValueType(1)) {
+        small.push(l);
+      } else {
+        large.push(l);
+      }
+    }
+
+    for (auto l : large) {
+      tables[l].first = ValueType(1);
+    }
+
+    for (auto s : small) {
+      tables[s].first = ValueType(1);
+    }
+  }
+
+  void Clear() { tables.clear(); }
+
+  SizeType Sample(ValueType u) const noexcept {
+    assert(ValueType(0) <= u && u <= ValueType(1));
+
+    SizeType i = std::clamp(static_cast<SizeType>(u * tables.size()),
+                            SizeType(0), (SizeType)tables.size() - SizeType(1));
+
+    const ValueType s = u * tables.size() - i;
+
+    if (s < tables[i].first)
+      return i;
+    else
+      return tables[i].second;
+  }
+
+  SizeType Sample(ValueType u1, ValueType u2) const noexcept {
+    assert(ValueType(0) <= u1 && u1 <= ValueType(1));
+    assert(ValueType(0) <= u2 && u2 <= ValueType(1));
+
+    SizeType i = std::clamp(static_cast<SizeType>(u1 * tables.size()),
+                            SizeType(0), (SizeType)tables.size() - SizeType(1));
+
+    if (u2 < tables[i].first)
+      return i;
+    else
+      return tables[i].second;
+  }
+
+ private:
+  std::vector<std::pair<ValueType, SizeType>> tables;
 };
 
 AJ_END

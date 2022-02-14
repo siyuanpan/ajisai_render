@@ -28,7 +28,9 @@ DEALINGS IN THE SOFTWARE.
 AJ_BEGIN
 
 class AreaLight;
+class EnvLight;
 class Sampler;
+class Texture2D;
 
 struct LightSampleResult {
   Vector3f ref;
@@ -52,6 +54,8 @@ class Light {
 
   virtual const AreaLight* AsArea() const noexcept { return nullptr; }
 
+  virtual const EnvLight* AsEnv() const noexcept { return nullptr; }
+
   virtual LightSampleResult Sample(const Vector3f& ref,
                                    Sampler* sampler) const noexcept = 0;
 
@@ -61,5 +65,7 @@ class Light {
 AJISAI_API Rc<Light> CreateDirectionalLight(const Vector3f& dir,
                                             const Rad<float>& angle,
                                             Spectrum radiance, int32_t power);
+
+AJISAI_API Rc<Light> CreateEnvLight(Rc<const Texture2D>&& texture, float rot);
 
 AJ_END

@@ -23,6 +23,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/ajisai.h>
 #include <ajisai/core/scene/scene.h>
 #include <ajisai/core/light/area_light.h>
+#include <ajisai/core/light/env_light.h>
 #include <ajisai/core/intersection.h>
 #include <ajisai/core/sampler/sampler.h>
 #include <ajisai/math/spectrum.h>
@@ -68,11 +69,40 @@ inline Spectrum MISSampleAreaLight(const Scene* scene, const AreaLight* light,
   return f / light_sample.pdf * PowerHeuristic(light_sample.pdf, bsdf_pdf);
 }
 
+inline Spectrum MISSampleEnvLight(const Scene* scene, const EnvLight* light,
+                                  const PrimitiveIntersection& inct,
+                                  const ShadingPoint& sp, Sampler* sampler) {
+  const auto light_sample = light->Sample(inct.pos, sampler);
+  if (light_sample.radiance.IsBlack() || light_sample.pdf <= 0.f) return {};
+
+  const float shadow_ray_len =
+      (light_sample.pos - inct.pos).length() - Ray::Eps();
+  if (shadow_ray_len < Ray::Eps()) return {};
+
+  const Vector3f inct2light = (light_sample.pos - inct.pos).normalized();
+  const Ray shadow_ray{inct.pos, inct2light, Ray::Eps(),
+                       0.99f * shadow_ray_len};
+  if (scene->Occlude(shadow_ray)) return {};
+
+  const auto bsdf_f =
+      sp.bsdf->EvalAll(inct2light, inct.wr, TransMode::Radiance);
+  if (bsdf_f.IsBlack()) return {};
+
+  const auto& normal = inct.shading_normal.normalized();
+  const Spectrum f =
+      light_sample.radiance * bsdf_f * std::abs(dot(inct2light, normal));
+  const float bsdf_pdf = sp.bsdf->PdfAll(inct2light, inct.wr);
+
+  return f / light_sample.pdf * PowerHeuristic(light_sample.pdf, bsdf_pdf);
+}
+
 inline Spectrum MISSampleLight(const Scene* scene, const Light* light,
                                const PrimitiveIntersection& inct,
                                const ShadingPoint& sp, Sampler* sampler) {
   if (auto area_light = light->AsArea()) {
     return MISSampleAreaLight(scene, area_light, inct, sp, sampler);
+  } else if (auto env_light = light->AsEnv()) {
+    return MISSampleEnvLight(scene, env_light, inct, sp, sampler);
   } else {
     const auto light_sample = light->Sample(inct.pos, sampler);
     if (light_sample.radiance.IsBlack() || light_sample.pdf <= 0.f) return {};
@@ -117,12 +147,26 @@ inline Spectrum MISSampleBsdf(const Scene* scene,
   const Medium* medium = inct.GetMedium(bsdf_sample.dir);
 
   if (!intersected) {
-    Spectrum envir{};
+    Spectrum envir_illum{};
 
-    // TODO: env light
-    // if (auto light = scene->EnvirLight())
+    if (auto light = scene->GetEnvLight()) {
+      const Spectrum light_radiance = light->Radiance(ray.o, ray.d);
+      if (light_radiance.IsBlack()) return {};
 
-    return envir;
+      const auto& normal = inct.shading_normal;
+      const Spectrum f =
+          light_radiance * bsdf_sample.f * std::abs(dot(normal, ray.d));
+
+      if (bsdf_sample.is_delta)
+        envir_illum += f / bsdf_sample.pdf;
+      else {
+        float light_pdf = light->Pdf(ray.o, ray.d);
+        envir_illum +=
+            f / bsdf_sample.pdf * PowerHeuristic(bsdf_sample.pdf, light_pdf);
+      }
+    }
+
+    return envir_illum;
   }
 
   auto light = pri_inct.primitive->AsLight();

@@ -23,6 +23,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/math/math.h>
 #include <ajisai/math/vector3.h>
 #include <ajisai/math/vector4.h>
+#include <ajisai/math/functions.h>
 
 AJ_BEGIN
 

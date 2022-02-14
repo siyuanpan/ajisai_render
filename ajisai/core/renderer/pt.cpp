@@ -26,6 +26,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/core/scene/scene.h>
 #include <ajisai/core/medium/medium.h>
 #include <ajisai/core/light/area_light.h>
+#include <ajisai/core/light/env_light.h>
 #include <ajisai/core/film.h>
 #include <ajisai/core/parallel.h>
 #include <ajisai/core/intersection.h>
@@ -107,6 +108,12 @@ class PathTracing : public TiledIntegrator {
       PrimitiveIntersection inct;
       bool intersected = scene->Intersect(path_ray, &inct);
       if (!intersected) {
+        if (bounce == 0) {
+          if (auto env_light = scene->GetEnvLight()) {
+            pixel.value += env_light->Radiance(path_ray.o, path_ray.d);
+          }
+        }
+
         return pixel;
       }
 
@@ -197,6 +204,9 @@ class PathTracing : public TiledIntegrator {
       PrimitiveIntersection inct;
       bool intersected = scene->Intersect(path_ray, &inct);
       if (!intersected) {
+        if (auto env_light = scene->GetEnvLight()) {
+          pixel.value += env_light->Radiance(path_ray.o, path_ray.d);
+        }
         return pixel;
       }
 

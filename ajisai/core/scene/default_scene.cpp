@@ -22,6 +22,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/ajisai.h>
 #include <ajisai/core/scene/scene.h>
 #include <ajisai/core/light/area_light.h>
+#include <ajisai/core/light/env_light.h>
 
 AJ_BEGIN
 
@@ -38,6 +39,10 @@ class DefaultScene : public Scene {
     }
 
     for (auto& light : args.lights) {
+      if (auto env_light = light->AsEnv()) {
+        env_light_ = const_cast<EnvLight*>(env_light);
+      }
+
       lights_ptr_.push_back(light.get());
       light->Process(world_bound);
     }
@@ -60,11 +65,16 @@ class DefaultScene : public Scene {
     return std::span<const Light* const>(ptr, lights_ptr_.size());
   }
 
+  virtual const EnvLight* GetEnvLight() const noexcept override {
+    return env_light_;
+  }
+
  private:
   std::vector<Rc<Primitive>> primitives_;
   std::vector<Rc<Light>> lights_;
   Rc<Aggregate> aggregate_;
   std::vector<Light*> lights_ptr_;
+  EnvLight* env_light_;
 };
 
 Rc<Scene> CreateDefaultScene(const SceneArgs& args) {

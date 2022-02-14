@@ -21,6 +21,7 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
+#include <ajisai/core/image.h>
 #include <ajisai/math/spectrum.h>
 
 AJ_BEGIN
@@ -30,8 +31,13 @@ class Texture2D {
   virtual ~Texture2D() = default;
 
   virtual Spectrum SampleSpectrum(const Vector2f& uv) const noexcept = 0;
+
+  virtual size_t Width() const noexcept = 0;
+
+  virtual size_t Height() const noexcept = 0;
 };
 
 AJISAI_API Rc<Texture2D> CreateConstant2DTexture(const Spectrum& texel);
+AJISAI_API Rc<Texture2D> CreateHDRTexture(Rc<RGBImage>&& image);
 
 AJ_END
