@@ -41,10 +41,15 @@ class QuadCreatorImpl {
     const Vector3f c = node["c"].as<Vector3f>(Vector3f{1.f, 1.f, 0.f});
     const Vector3f d = node["d"].as<Vector3f>(Vector3f{-1.f, 1.f, 0.f});
 
-    const Vector2f ta = node["ta"].as<Vector2f>(Vector2f{});
-    const Vector2f tb = node["tb"].as<Vector2f>(Vector2f{});
-    const Vector2f tc = node["tc"].as<Vector2f>(Vector2f{});
-    const Vector2f td = node["td"].as<Vector2f>(Vector2f{});
+    const Vector2f ta = node["ta"].as<Vector2f>(Vector2f{0.f, 0.f});
+    const Vector2f tb = node["tb"].as<Vector2f>(Vector2f{1.f, 0.f});
+    const Vector2f tc = node["tc"].as<Vector2f>(Vector2f{1.f, 1.f});
+    const Vector2f td = node["td"].as<Vector2f>(Vector2f{0.f, 1.f});
+
+    // const Vector2f ta = node["ta"].as<Vector2f>(Vector2f{});
+    // const Vector2f tb = node["tb"].as<Vector2f>(Vector2f{});
+    // const Vector2f tc = node["tc"].as<Vector2f>(Vector2f{});
+    // const Vector2f td = node["td"].as<Vector2f>(Vector2f{});
 
     // std::stringstream ss;
     // ss << "---\n"

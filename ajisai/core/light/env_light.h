@@ -32,7 +32,7 @@ AJ_BEGIN
 
 class EnvLight : public Light {
  public:
-  EnvLight(Rc<const Texture2D> &&texture, float rot);
+  EnvLight(Rc<const Texture2D> &&texture, float rot, float);
 
   virtual const EnvLight *AsEnv() const noexcept override { return this; }
 
@@ -54,6 +54,7 @@ class EnvLight : public Light {
   float env_map_rot_ = 0.f;
   std::optional<Distribution2D> sampler_;
   Bounds3f aabb_;
+  float scaler_ = 1.f;
 };
 
 AJ_END

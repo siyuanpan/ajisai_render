@@ -66,6 +66,7 @@ AJISAI_API Rc<Light> CreateDirectionalLight(const Vector3f& dir,
                                             const Rad<float>& angle,
                                             Spectrum radiance, int32_t power);
 
-AJISAI_API Rc<Light> CreateEnvLight(Rc<const Texture2D>&& texture, float rot);
+AJISAI_API Rc<Light> CreateEnvLight(Rc<const Texture2D>&& texture, float rot,
+                                    float scaler);
 
 AJ_END

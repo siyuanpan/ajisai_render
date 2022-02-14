@@ -19,28 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/image.h>
-#include <ajisai/math/spectrum.h>
+#include <ajisai/core/texture2d/texture2d.h>
 
 AJ_BEGIN
 
-class Texture2D {
+class Checker : public Texture2D {
  public:
-  virtual ~Texture2D() = default;
+  explicit Checker(const Spectrum& on_color, const Spectrum& off_color,
+                   int res_u, int res_v)
+      : on_color_(on_color),
+        off_color_(off_color),
+        res_u_(res_u),
+        res_v_(res_v) {}
 
-  virtual Spectrum SampleSpectrum(const Vector2f& uv) const noexcept = 0;
+  virtual Spectrum SampleSpectrum(const Vector2f& uv) const noexcept override {
+    Vector2i uv_i{(int)(uv.x() * (float)res_u_), (int)(uv.y() * (float)res_v_)};
+    // std::cout << uv_i << std::endl;
+    bool on = (uv_i.x() ^ uv_i.y()) & 1;
+    return on ? on_color_ : off_color_;
+  }
 
-  virtual size_t Width() const noexcept = 0;
+  virtual size_t Width() const noexcept override { return 1; }
 
-  virtual size_t Height() const noexcept = 0;
+  virtual size_t Height() const noexcept override { return 1; }
+
+ private:
+  Spectrum on_color_, off_color_;
+  int res_u_, res_v_;
 };
 
-AJISAI_API Rc<Texture2D> CreateConstant2DTexture(const Spectrum& texel);
-AJISAI_API Rc<Texture2D> CreateHDRTexture(Rc<RGBImage>&& image);
-AJISAI_API Rc<Texture2D> CreateCheckerTexture(const Spectrum& on_color,
-                                              const Spectrum& off_color,
-                                              int res_u, int res_v);
+Rc<Texture2D> CreateCheckerTexture(const Spectrum& on_color,
+                                   const Spectrum& off_color, int res_u,
+                                   int res_v) {
+  return RcNew<Checker>(on_color, off_color, res_u, res_v);
+}
 
 AJ_END

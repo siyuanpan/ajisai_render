@@ -25,8 +25,8 @@ DEALINGS IN THE SOFTWARE.
 
 AJ_BEGIN
 
-EnvLight::EnvLight(Rc<const Texture2D> &&texture, float rot)
-    : texture_(std::move(texture)), env_map_rot_(rot) {
+EnvLight::EnvLight(Rc<const Texture2D> &&texture, float rot, float scaler)
+    : texture_(std::move(texture)), env_map_rot_(rot), scaler_(scaler) {
   auto width = texture_->Width();
   auto height = texture_->Height();
 
@@ -60,7 +60,7 @@ Spectrum EnvLight::Radiance(const Vector3f &ref,
   if (uv.x() > 1.f) uv.x() -= 1.f;
   if (uv.x() < 0.f) uv.x() += 1.f;
 
-  return texture_->SampleSpectrum(uv);
+  return scaler_ * texture_->SampleSpectrum(uv);
 }
 
 LightSampleResult EnvLight::Sample(const Vector3f &ref,
@@ -116,8 +116,9 @@ float EnvLight::Pdf(const Vector3f &ref,
   return sampler_->Pdf(uv[0], uv[1]);
 }
 
-Rc<Light> CreateEnvLight(Rc<const Texture2D> &&texture, float rot) {
-  return RcNew<EnvLight>(std::move(texture), rot);
+Rc<Light> CreateEnvLight(Rc<const Texture2D> &&texture, float rot,
+                         float scaler) {
+  return RcNew<EnvLight>(std::move(texture), rot, scaler);
 }
 
 AJ_END

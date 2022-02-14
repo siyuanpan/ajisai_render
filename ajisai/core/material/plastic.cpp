@@ -19,28 +19,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/image.h>
-#include <ajisai/math/spectrum.h>
+#include <ajisai/core/material/material.h>
+#include <ajisai/core/bsdf/bsdf.h>
+#include <ajisai/core/intersection.h>
+#include <ajisai/core/bsdf/diffuse_component.h>
 
 AJ_BEGIN
 
-class Texture2D {
+class Plastic : public Material {
  public:
-  virtual ~Texture2D() = default;
+  explicit Plastic(Rc<const Texture2D>&& albedo, float int_ior, float ext_ior)
+      : albedo_(albedo), int_ior_(int_ior), ext_ior_(ext_ior) {}
 
-  virtual Spectrum SampleSpectrum(const Vector2f& uv) const noexcept = 0;
+  virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const override {
+    const auto albedo = albedo_->SampleSpectrum(inct.uv);
+    auto bsdf = new BSDF(inct.geometry_normal, inct.shading_normal, albedo);
+    bsdf->AddComponent(1.f, RcNew<DiffuseComponent>(albedo));
 
-  virtual size_t Width() const noexcept = 0;
+    ShadingPoint sp{};
+    sp.bsdf = bsdf;
+    sp.shading_normal = inct.shading_normal;
 
-  virtual size_t Height() const noexcept = 0;
+    return std::move(sp);
+  }
+
+ private:
+  Rc<const Texture2D> albedo_;
+  float int_ior_, ext_ior_;
 };
 
-AJISAI_API Rc<Texture2D> CreateConstant2DTexture(const Spectrum& texel);
-AJISAI_API Rc<Texture2D> CreateHDRTexture(Rc<RGBImage>&& image);
-AJISAI_API Rc<Texture2D> CreateCheckerTexture(const Spectrum& on_color,
-                                              const Spectrum& off_color,
-                                              int res_u, int res_v);
+Rc<Material> CreateDiffuse(Rc<const Texture2D> albedo) {
+  return RcNew<Diffuse>(albedo);
+}
 
 AJ_END

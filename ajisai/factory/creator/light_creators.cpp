@@ -47,8 +47,9 @@ class EnvmapCreatorImpl {
                           const CreateFactory& factory) {
     auto texture = factory.Create<Texture2D>(node["texture"]);
     float rot = node["rot"].as<float>(0.f);
+    float scaler = node["scaler"].as<float>(1.f);
 
-    return CreateEnvLight(std::move(texture), rot);
+    return CreateEnvLight(std::move(texture), rot, scaler);
   }
 };
 
