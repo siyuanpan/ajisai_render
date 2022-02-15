@@ -29,7 +29,7 @@
 ### Light Source
 
 * [ ] Point Light
-* [x] Enviorment Light
+* [x] Environment Light
 * [x] Directional Light
 * [ ] Polygonal Area Light
 * [ ] Procedural Sky Light with Hosek Model
