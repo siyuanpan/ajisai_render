@@ -54,11 +54,8 @@
 
 ## Gallery
 
-Cornel Box (rendered with pt)
-![pic](./gallery/cbox_path_spp_128_gaussian_mis.png)
-
 Dragon (rendered with pt)
 ![pic](./gallery/dragon.png)
 
 Material-testball
-![pic](./material_spp_200_gaussian.png)
+![pic](./gallery/material_spp_200_gaussian.png)
