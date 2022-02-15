@@ -56,7 +56,7 @@ class HdrCreatorImpl {
 
     int w, h, channels;
     float* data = stbi_loadf(filename.c_str(), &w, &h, &channels, STBI_rgb);
-    // float* data = stbi_loadf(filename.c_str(), &w, &h, &channels, 0);
+    // float* data = stbi_loadf(filename.c_str(), &w, &h, &channels, 4);
 
     if (!data) {
       AJ_ERROR("load file {} error", filename);

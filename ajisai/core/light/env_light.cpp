@@ -93,7 +93,7 @@ LightSampleResult EnvLight::Sample(const Vector3f &ref,
 
   return LightSampleResult{ref,
                            ref + 2.f * radius * dir,
-                           {},
+                           -dir,
                            {},
                            texture_->SampleSpectrum(Vector2f{u, v}),
                            pdf};

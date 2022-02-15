@@ -185,6 +185,7 @@ class PathTracing : public TiledIntegrator {
       path_ray = Ray{inct.EpsOffset(bsdf_sample.dir), bsdf_sample.dir};
       specular_bounce = bsdf_sample.is_delta;
     }
+
     return pixel;
   }
 

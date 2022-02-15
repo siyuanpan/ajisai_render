@@ -22,25 +22,30 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/ajisai.h>
 #include <ajisai/core/material/material.h>
 #include <ajisai/core/bsdf/bsdf.h>
-#include <ajisai/core/bsdf/plastic_bsdf.h>
+#include <ajisai/core/bsdf/aggregate_bsdf.h>
+#include <ajisai/core/bsdf/microfacet_reflection_component.h>
 #include <ajisai/core/intersection.h>
-#include <ajisai/core/bsdf/diffuse_component.h>
+#include <ajisai/core/material/fresnel.h>
 
 AJ_BEGIN
 
-class Plastic : public Material {
+class Metal : public Material {
  public:
-  explicit Plastic(Rc<const Texture2D>&& albedo, float ior, float thickness,
-                   float sigma_a)
-      : albedo_(std::move(albedo)),
-        ior_(ior),
-        thickness_(thickness),
-        sigma_a_(sigma_a) {}
+  explicit Metal(Rc<const Texture2D> k, Rc<const Texture2D> eta,
+                 float uroughness, float vroughness)
+      : k_(k), eta_(eta), uroughness_(uroughness), vroughness_(vroughness) {}
 
   virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const override {
-    const auto albedo = albedo_->SampleSpectrum(inct.uv);
-    auto bsdf = new PlasticBsdf(inct.geometry_normal, inct.shading_normal,
-                                albedo, ior_, thickness_, sigma_a_);
+    // const auto color = color_->SampleSpectrum(inct.uv);
+    const auto k = k_->SampleSpectrum(inct.uv);
+    const auto eta = eta_->SampleSpectrum(inct.uv);
+
+    const Rc<Fresnel> fresnel = RcNew<ConductorFresnel>(Spectrum{1.f}, eta, k);
+
+    AggregateBSDF* bsdf = new AggregateBSDF(inct.geometry_normal,
+                                            inct.shading_normal, Spectrum{1.f});
+    bsdf->AddComponent(1.f, RcNew<GGXMicrofacetReflectionComponent>(
+                                fresnel, uroughness_, vroughness_));
 
     ShadingPoint sp{};
     sp.bsdf = bsdf;
@@ -50,13 +55,15 @@ class Plastic : public Material {
   }
 
  private:
-  Rc<const Texture2D> albedo_;
-  float ior_, thickness_, sigma_a_;
+  //   Rc<const Texture2D> color_;
+  Rc<const Texture2D> k_;
+  Rc<const Texture2D> eta_;
+  float uroughness_, vroughness_;
 };
 
-Rc<Material> CreatePlastic(Rc<const Texture2D>&& albedo, float ior,
-                           float thickness, float sigma_a) {
-  return RcNew<Plastic>(std::move(albedo), ior, thickness, sigma_a);
+Rc<Material> CreateMetal(Rc<const Texture2D> k, Rc<const Texture2D> eta,
+                         float uroughness, float vroughness) {
+  return RcNew<Metal>(std::move(k), std::move(eta), uroughness, vroughness);
 }
 
 AJ_END

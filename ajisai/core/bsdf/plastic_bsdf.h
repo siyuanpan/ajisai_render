@@ -20,26 +20,32 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 #pragma once
-#include <ajisai/ajisai.h>
-#include <ajisai/core/texture2d/texture2d.h>
+#include <ajisai/core/bsdf/bsdf.h>
 
 AJ_BEGIN
 
-struct ShadingPoint;
-struct PrimitiveIntersection;
-
-class Material {
+class PlasticBsdf : public BSDF {
  public:
-  virtual ~Material() = default;
+  PlasticBsdf(const Vector3f& ng, const Vector3f& ns, const Spectrum& albedo,
+              float ior, float thickness, float sigma_a);
 
-  virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const = 0;
+  virtual Spectrum Albedo() const override { return albedo_; }
+
+  virtual BSDFSampleResult Sample(const Vector3f& wo, TransMode mode,
+                                  const Vector3f& sam,
+                                  uint8_t type) const noexcept override;
+
+  virtual Spectrum Eval(const Vector3f& wi, const Vector3f& wo, TransMode mode,
+                        uint8_t type) const noexcept override;
+
+  virtual float Pdf(const Vector3f& wi, const Vector3f& wo,
+                    uint8_t type) const noexcept override;
+
+ private:
+  Spectrum albedo_;
+  float ior_, thickness_, sigma_a_;
+  Vector3f scaled_sigma_a_;
+  float avg_transmittance_;  //, diffuse_fresnel_;
 };
-
-AJISAI_API Rc<Material> CreateDiffuse(Rc<const Texture2D> albedo);
-AJISAI_API Rc<Material> CreatePlastic(Rc<const Texture2D>&& albedo, float ior,
-                                      float thickness, float sigma_a);
-AJISAI_API Rc<Material> CreateMetal(Rc<const Texture2D> k,
-                                    Rc<const Texture2D> eta, float uroughness,
-                                    float vroughness);
 
 AJ_END

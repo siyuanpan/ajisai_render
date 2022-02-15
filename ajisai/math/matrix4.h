@@ -131,7 +131,8 @@ Matrix4<T> Matrix4<T>::lookAt(const Vector3<T>& eye, const Vector3<T>& target,
   const Vector3<T> backward = (eye - target).normalized();
   const Vector3<T> right = cross(up, backward).normalized();
   const Vector3<T> realUp = cross(backward, right).normalized();
-  return from({right, realUp, backward}, eye).invertedRigid();
+  // return from({right, realUp, backward}, eye).invertedRigid();
+  return from({right, realUp, backward}, eye).inverted();
 }
 
 template <class T>

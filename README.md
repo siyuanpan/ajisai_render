@@ -1,5 +1,5 @@
 
-# 🌺Ajisai
+# 🌺Ajisai (WIP)
 
 **A physically based renderer lab based on ray tracing**
 
@@ -29,6 +29,7 @@
 ### Light Source
 
 * [ ] Point Light
+* [x] Enviorment Light
 * [x] Directional Light
 * [ ] Polygonal Area Light
 * [ ] Procedural Sky Light with Hosek Model
@@ -58,3 +59,6 @@ Cornel Box (rendered with pt)
 
 Dragon (rendered with pt)
 ![pic](./gallery/dragon.png)
+
+Material-testball
+![pic](./material_spp_200_gaussian.png)

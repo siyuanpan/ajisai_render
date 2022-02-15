@@ -21,25 +21,30 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/texture2d/texture2d.h>
+#include <ajisai/core/bsdf/bsdf.h>
+#include <ajisai/core/material/fresnel.h>
+#include <ajisai/math/spectrum.h>
 
 AJ_BEGIN
 
-struct ShadingPoint;
-struct PrimitiveIntersection;
-
-class Material {
+class GGXMicrofacetReflectionComponent : public BSDFComponent {
  public:
-  virtual ~Material() = default;
+  GGXMicrofacetReflectionComponent(Rc<Fresnel> fresnel, float uroughness,
+                                   float vroughness) noexcept;
 
-  virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const = 0;
+  virtual BSDFComponent::SampleResult Sample(
+      const Vector3f& lwo, TransMode mode,
+      const Vector2f& sam) const noexcept override;
+
+  virtual Spectrum Eval(const Vector3f& lwi, const Vector3f& lwo,
+                        TransMode mode) const noexcept override;
+
+  virtual float Pdf(const Vector3f& lwi,
+                    const Vector3f& lwo) const noexcept override;
+
+ private:
+  Rc<Fresnel> fresnel_;
+  float uroughness_, vroughness_;
 };
-
-AJISAI_API Rc<Material> CreateDiffuse(Rc<const Texture2D> albedo);
-AJISAI_API Rc<Material> CreatePlastic(Rc<const Texture2D>&& albedo, float ior,
-                                      float thickness, float sigma_a);
-AJISAI_API Rc<Material> CreateMetal(Rc<const Texture2D> k,
-                                    Rc<const Texture2D> eta, float uroughness,
-                                    float vroughness);
 
 AJ_END

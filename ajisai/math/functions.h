@@ -53,6 +53,15 @@ inline Vector<T, size> pow(const Vector<T, size>& base, T exponent) {
 }
 
 template <class T, std::size_t size>
+inline Vector<T, size> Exp(const Vector<T, size>& value) {
+  Vector<T, size> out{};
+  for (std::size_t i = 0; i != size; ++i) {
+    out[i] = std::exp(value[i]);
+  }
+  return out;
+}
+
+template <class T, std::size_t size>
 inline Vector<T, size> clamp(const Vector<T, size>& value, T min, T max) {
   Vector<T, size> out;
   for (std::size_t i = 0; i != size; ++i) {

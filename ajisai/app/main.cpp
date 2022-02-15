@@ -108,6 +108,7 @@ void run(int argc, char* argv[]) {
   auto film = camera->CreateFilm();
   auto sampler = CreateRandomSampler();
   renderer->Render(scene.get(), camera.get(), film.get(), sampler.get());
+  AJ_INFO(">>> End Rendering <<<");
 
   // film->WriteImage("normal.png");
   for (auto& processor : post_processors) {

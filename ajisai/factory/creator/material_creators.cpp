@@ -38,6 +38,36 @@ class DiffuseCreatorImpl {
   }
 };
 
+class PlasticCreatorImpl {
+ public:
+  static std::string Name() { return "plastic"; }
+
+  static Rc<Material> Create(const YAML::Node& node,
+                             const CreateFactory& factory) {
+    const auto albedo = factory.Create<Texture2D>(node["albedo"]);
+    const auto ior = node["ior"].as<float>(1.5);
+    const auto thickness = node["thickness"].as<float>(1);
+    const auto sigma_a = node["sigma_a"].as<float>(0);
+
+    return CreatePlastic(std::move(albedo), ior, thickness, sigma_a);
+  }
+};
+
+class MetalCreatorImpl {
+ public:
+  static std::string Name() { return "metal"; }
+
+  static Rc<Material> Create(const YAML::Node& node,
+                             const CreateFactory& factory) {
+    const auto k = factory.Create<Texture2D>(node["k"]);
+    const auto eta = factory.Create<Texture2D>(node["eta"]);
+    const auto uroughness = node["uroughness"].as<float>(0.1f);
+    const auto vroughness = node["vroughness"].as<float>(0.1f);
+
+    return CreateMetal(std::move(k), std::move(eta), uroughness, vroughness);
+  }
+};
+
 template <class TMaterialCreatorImpl>
 concept MaterialCreatorImpl = requires(TMaterialCreatorImpl) {
   { TMaterialCreatorImpl::Name() } -> std::convertible_to<std::string>;
@@ -50,9 +80,13 @@ template <MaterialCreatorImpl TMaterialCreatorImpl>
 class MaterialCreator : public TMaterialCreatorImpl {};
 
 using DiffuseCreator = MaterialCreator<DiffuseCreatorImpl>;
+using PlasticCreator = MaterialCreator<PlasticCreatorImpl>;
+using MetalCreator = MaterialCreator<MetalCreatorImpl>;
 
 void AddMaterialFactory(Factory<Material>& factory) {
   factory.Add(DiffuseCreator::Name(), &DiffuseCreator::Create);
+  factory.Add(PlasticCreator::Name(), &PlasticCreator::Create);
+  factory.Add(MetalCreator::Name(), &MetalCreator::Create);
 }
 
 AJ_END

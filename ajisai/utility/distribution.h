@@ -195,12 +195,14 @@ class AliasMethod {
       }
     }
 
-    for (auto l : large) {
-      tables[l].first = ValueType(1);
+    while (!large.empty()) {
+      tables[large.front()].first = ValueType(1);
+      large.pop();
     }
 
-    for (auto s : small) {
-      tables[s].first = ValueType(1);
+    while (!small.empty()) {
+      tables[small.front()].first = ValueType(1);
+      small.pop();
     }
   }
 

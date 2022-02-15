@@ -163,10 +163,15 @@ class MeshGeoCreatorImpl {
                              attrib.texcoords[texcoord_index * 2 + 1]);
 
           // push new position
-          Vector4f position_and_u(attrib.vertices[vertex_index * 3 + 0],
-                                  attrib.vertices[vertex_index * 3 + 1],
-                                  attrib.vertices[vertex_index * 3 + 2],
-                                  texcoord.x());
+          Vector3f position{attrib.vertices[vertex_index * 3 + 0],
+                            attrib.vertices[vertex_index * 3 + 1],
+                            attrib.vertices[vertex_index * 3 + 2]};
+          position = transform.transformPoint(position);
+          // Vector4f position_and_u(attrib.vertices[vertex_index * 3 + 0],
+          //                         attrib.vertices[vertex_index * 3 + 1],
+          //                         attrib.vertices[vertex_index * 3 + 2],
+          //                         texcoord.x());
+          Vector4f position_and_u(position, texcoord.x());
 
           // dealing with normal
           Vector3f normal;
@@ -190,11 +195,13 @@ class MeshGeoCreatorImpl {
             normal =
                 cross(positions[1] - positions[0], positions[2] - positions[0])
                     .normalized();
+            // normal = transform.transformVector(normal);
           } else {
             normal = Vector3f(attrib.normals[normal_index * 3 + 0],
                               attrib.normals[normal_index * 3 + 1],
                               attrib.normals[normal_index * 3 + 2]);
           }
+          normal = transform.transformVector(normal).normalized();
 
           Vector4f normal_and_v(normal.x(), normal.y(), normal.z(),
                                 texcoord.y());
