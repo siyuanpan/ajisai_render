@@ -40,6 +40,10 @@ class Checker : public Texture2D {
     return on ? on_color_ : off_color_;
   }
 
+  virtual float SampleReal(const Vector2f& uv) const noexcept override {
+    return SampleSpectrum(uv)[0];
+  }
+
   virtual size_t Width() const noexcept override { return 1; }
 
   virtual size_t Height() const noexcept override { return 1; }

@@ -68,6 +68,45 @@ class MetalCreatorImpl {
   }
 };
 
+class MirrorCreatorImpl {
+ public:
+  static std::string Name() { return "mirror"; }
+
+  static Rc<Material> Create(const YAML::Node& node,
+                             const CreateFactory& factory) {
+    const auto kr = factory.Create<Texture2D>(node["kr"]);
+
+    return CreateMirror(std::move(kr));
+  }
+};
+
+class DisneyCreatorImpl {
+ public:
+  static std::string Name() { return "disney"; }
+
+  static Rc<Material> Create(const YAML::Node& node,
+                             const CreateFactory& factory) {
+    const auto base_color = factory.Create<Texture2D>(node["base_color"]);
+    const auto subsurface = factory.Create<Texture2D>(node["subsurface"]);
+    const auto metallic = factory.Create<Texture2D>(node["metallic"]);
+    const auto specular = factory.Create<Texture2D>(node["specular"]);
+    const auto specular_tint = factory.Create<Texture2D>(node["specular_tint"]);
+    const auto roughness = factory.Create<Texture2D>(node["roughness"]);
+    const auto anisotropic = factory.Create<Texture2D>(node["anisotropic"]);
+    const auto sheen = factory.Create<Texture2D>(node["sheen"]);
+    const auto sheen_tint = factory.Create<Texture2D>(node["sheen_tint"]);
+    const auto clearcoat = factory.Create<Texture2D>(node["clearcoat"]);
+    const auto clearcoat_gloss =
+        factory.Create<Texture2D>(node["clearcoat_gloss"]);
+
+    return CreateDisney(
+        std::move(base_color), std::move(subsurface), std::move(metallic),
+        std::move(specular), std::move(specular_tint), std::move(roughness),
+        std::move(anisotropic), std::move(sheen), std::move(sheen_tint),
+        std::move(clearcoat), std::move(clearcoat_gloss));
+  }
+};
+
 template <class TMaterialCreatorImpl>
 concept MaterialCreatorImpl = requires(TMaterialCreatorImpl) {
   { TMaterialCreatorImpl::Name() } -> std::convertible_to<std::string>;
@@ -82,11 +121,15 @@ class MaterialCreator : public TMaterialCreatorImpl {};
 using DiffuseCreator = MaterialCreator<DiffuseCreatorImpl>;
 using PlasticCreator = MaterialCreator<PlasticCreatorImpl>;
 using MetalCreator = MaterialCreator<MetalCreatorImpl>;
+using MirrorCreator = MaterialCreator<MirrorCreatorImpl>;
+using DisneyCreator = MaterialCreator<DisneyCreatorImpl>;
 
 void AddMaterialFactory(Factory<Material>& factory) {
   factory.Add(DiffuseCreator::Name(), &DiffuseCreator::Create);
   factory.Add(PlasticCreator::Name(), &PlasticCreator::Create);
   factory.Add(MetalCreator::Name(), &MetalCreator::Create);
+  factory.Add(MirrorCreator::Name(), &MirrorCreator::Create);
+  factory.Add(DisneyCreator::Name(), &DisneyCreator::Create);
 }
 
 AJ_END

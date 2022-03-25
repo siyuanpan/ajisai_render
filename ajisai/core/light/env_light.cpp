@@ -113,7 +113,10 @@ float EnvLight::Pdf(const Vector3f &ref,
   if (uv.x() > 1.f) uv.x() -= 1.f;
   if (uv.x() < 0.f) uv.x() += 1.f;
 
-  return sampler_->Pdf(uv[0], uv[1]);
+  float sin_theta = std::sin(theta);
+
+  return sampler_->Pdf(uv[0], uv[1]) /
+         (2.f * Constants<float>::pi() * Constants<float>::pi() * sin_theta);
 }
 
 Rc<Light> CreateEnvLight(Rc<const Texture2D> &&texture, float rot,

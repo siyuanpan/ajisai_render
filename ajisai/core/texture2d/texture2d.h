@@ -32,6 +32,8 @@ class Texture2D {
 
   virtual Spectrum SampleSpectrum(const Vector2f& uv) const noexcept = 0;
 
+  virtual float SampleReal(const Vector2f& uv) const noexcept = 0;
+
   virtual size_t Width() const noexcept = 0;
 
   virtual size_t Height() const noexcept = 0;

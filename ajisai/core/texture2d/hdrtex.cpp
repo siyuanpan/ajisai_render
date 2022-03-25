@@ -33,6 +33,10 @@ class HDRTexture : public Texture2D {
     // return NearestSampleImpl(uv);
   }
 
+  virtual float SampleReal(const Vector2f& uv) const noexcept override {
+    return SampleSpectrum(uv)[0];
+  }
+
   virtual size_t Width() const noexcept override {
     return image_->Dimension().x();
   }
@@ -59,7 +63,7 @@ class HDRTexture : public Texture2D {
 
     auto& image = *image_;
 
-    auto coord = uv * dim;
+    auto coord = uv * dim - Vector2f{0.5f};
 
     coord = clamp(coord, Vector2f{0.f}, dim - Vector2f{1.f});
 

@@ -15,7 +15,7 @@
 ### Materials
 
 * [x] Lambertion Diffuse
-* [ ] Disney principled BSDF
+* [x] Disney principled BSDF
 * [ ] Subsurface Scattering
 * [ ] DreamWorks fabric
 * [ ] Homogeneous/heterogeneous participating medium
@@ -58,4 +58,4 @@ Dragon (rendered with pt)
 ![pic](./gallery/dragon.png)
 
 Material-testball
-![pic](./gallery/material_spp_200_gaussian.png)
+![pic](./gallery/material_spp_100_gaussian.png)

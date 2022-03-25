@@ -36,9 +36,13 @@ class ConstantCreatorImpl {
 
   static Rc<Texture2D> Create(const YAML::Node& node,
                               const CreateFactory& factory) {
-    const auto texel = node["texel"].as<Vector3f>();
+    if (node["texel"].IsSequence())
+      return CreateConstant2DTexture(Spectrum{node["texel"].as<Vector3f>()});
+    else
+      return CreateConstant2DTexture(Spectrum{node["texel"].as<float>()});
+    // const auto texel = node["texel"].as<Vector3f>();
 
-    return CreateConstant2DTexture(Spectrum{texel});
+    // return CreateConstant2DTexture(Spectrum{texel});
   }
 };
 
