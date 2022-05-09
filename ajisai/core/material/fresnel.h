@@ -73,4 +73,57 @@ class ConductorFresnel : public Fresnel {
   Spectrum eta_2_, eta_k_2_;
 };
 
+class ColoredConductorFresnel : public ConductorFresnel {
+ public:
+  ColoredConductorFresnel(const Spectrum& color, const Spectrum& eta_out,
+                          const Spectrum& eta_in, const Spectrum& k) noexcept
+      : ConductorFresnel{eta_out, eta_in, k}, color_{color} {}
+
+  virtual Spectrum Eval(float cos_theta_i) const noexcept override {
+    return color_ * ConductorFresnel::Eval(cos_theta_i);
+  }
+
+ private:
+  Spectrum color_;
+};
+
+class DielectricFresnel : public Fresnel {
+ public:
+  DielectricFresnel(float eta_in, float eta_out) noexcept
+      : eta_out_(eta_out), eta_in_(eta_in) {}
+
+  virtual Spectrum Eval(float cos_theta_i) const noexcept override {
+    auto eta_out = eta_out_;
+    auto eta_in = eta_in_;
+
+    if (cos_theta_i < 0) {
+      std::swap(eta_in, eta_out);
+      cos_theta_i = -cos_theta_i;
+    }
+
+    const auto sin_theta_i =
+        std::sqrt(std::max(0.f, 1 - cos_theta_i * cos_theta_i));
+    const auto sin_theta_t = eta_out / eta_in * sin_theta_i;
+
+    if (sin_theta_t >= 1.f) return Spectrum{1.f};
+
+    const auto cos_theta_t =
+        std::sqrt(std::max(0.f, 1 - sin_theta_t * sin_theta_t));
+
+    const auto para = ((eta_in * cos_theta_i) - (eta_out * cos_theta_t)) /
+                      ((eta_in * cos_theta_i) + (eta_out * cos_theta_t));
+    const auto perp = ((eta_out * cos_theta_i) - (eta_in * cos_theta_t)) /
+                      ((eta_out * cos_theta_i) + (eta_in * cos_theta_t));
+
+    return Spectrum{0.5f * (para * para + perp * perp)};
+  }
+
+  float eta_i() const noexcept { return eta_in_; }
+
+  float eta_o() const noexcept { return eta_out_; }
+
+ private:
+  float eta_out_, eta_in_;
+};
+
 AJ_END

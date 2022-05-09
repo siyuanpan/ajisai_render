@@ -40,6 +40,8 @@ class Texture2D {
 };
 
 AJISAI_API Rc<Texture2D> CreateConstant2DTexture(const Spectrum& texel);
+AJISAI_API Rc<Texture2D> CreateImageTexture(
+    Rc<Image<Color3<unsigned char>>>&& image);
 AJISAI_API Rc<Texture2D> CreateHDRTexture(Rc<RGBImage>&& image);
 AJISAI_API Rc<Texture2D> CreateCheckerTexture(const Spectrum& on_color,
                                               const Spectrum& off_color,

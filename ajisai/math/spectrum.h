@@ -39,6 +39,10 @@ class CoefficientSpectrum : public Vector<float, size> {
   constexpr CoefficientSpectrum(const Vector<float, size>& other) noexcept
       : Vector<float, size>(other) {}
 
+  template <class U>
+  constexpr explicit CoefficientSpectrum(const Vector<U, size>& other) noexcept
+      : Vector<float, size>(other) {}
+
   template <class... U, class V = typename std::enable_if<
                             sizeof...(U) + 1 == size, float>::type>
   constexpr CoefficientSpectrum(float first, U... next) noexcept

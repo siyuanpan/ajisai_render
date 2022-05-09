@@ -59,3 +59,6 @@ Dragon (rendered with pt)
 
 Material-testball
 ![pic](./gallery/material_spp_100_gaussian.png)
+
+Spaceship
+![pic](./gallery/spaceship.png)

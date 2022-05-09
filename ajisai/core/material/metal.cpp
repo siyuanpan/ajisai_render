@@ -31,16 +31,23 @@ AJ_BEGIN
 
 class Metal : public Material {
  public:
-  explicit Metal(Rc<const Texture2D> k, Rc<const Texture2D> eta,
-                 float uroughness, float vroughness)
-      : k_(k), eta_(eta), uroughness_(uroughness), vroughness_(vroughness) {}
+  explicit Metal(Rc<const Texture2D> color, Rc<const Texture2D> k,
+                 Rc<const Texture2D> eta, float uroughness, float vroughness)
+      : color_(color),
+        k_(k),
+        eta_(eta),
+        uroughness_(uroughness),
+        vroughness_(vroughness) {}
 
   virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const override {
-    // const auto color = color_->SampleSpectrum(inct.uv);
+    const auto color = color_->SampleSpectrum(inct.uv);
     const auto k = k_->SampleSpectrum(inct.uv);
     const auto eta = eta_->SampleSpectrum(inct.uv);
 
-    const Rc<Fresnel> fresnel = RcNew<ConductorFresnel>(Spectrum{1.f}, eta, k);
+    // const Rc<Fresnel> fresnel = RcNew<ConductorFresnel>(Spectrum{1.f}, eta,
+    // k);
+    const Rc<Fresnel> fresnel =
+        RcNew<ColoredConductorFresnel>(color, Spectrum{1.f}, eta, k);
 
     AggregateBSDF* bsdf = new AggregateBSDF(inct.geometry_normal,
                                             inct.shading_normal, Spectrum{1.f});
@@ -55,15 +62,17 @@ class Metal : public Material {
   }
 
  private:
-  //   Rc<const Texture2D> color_;
+  Rc<const Texture2D> color_;
   Rc<const Texture2D> k_;
   Rc<const Texture2D> eta_;
   float uroughness_, vroughness_;
 };
 
-Rc<Material> CreateMetal(Rc<const Texture2D> k, Rc<const Texture2D> eta,
-                         float uroughness, float vroughness) {
-  return RcNew<Metal>(std::move(k), std::move(eta), uroughness, vroughness);
+Rc<Material> CreateMetal(Rc<const Texture2D> color, Rc<const Texture2D> k,
+                         Rc<const Texture2D> eta, float uroughness,
+                         float vroughness) {
+  return RcNew<Metal>(std::move(color), std::move(k), std::move(eta),
+                      uroughness, vroughness);
 }
 
 AJ_END

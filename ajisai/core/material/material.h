@@ -38,7 +38,8 @@ class Material {
 AJISAI_API Rc<Material> CreateDiffuse(Rc<const Texture2D> albedo);
 AJISAI_API Rc<Material> CreatePlastic(Rc<const Texture2D>&& albedo, float ior,
                                       float thickness, float sigma_a);
-AJISAI_API Rc<Material> CreateMetal(Rc<const Texture2D> k,
+AJISAI_API Rc<Material> CreateMetal(Rc<const Texture2D> color,
+                                    Rc<const Texture2D> k,
                                     Rc<const Texture2D> eta, float uroughness,
                                     float vroughness);
 AJISAI_API Rc<Material> CreateMirror(Rc<const Texture2D> kr);
@@ -49,5 +50,8 @@ AJISAI_API Rc<Material> CreateDisney(
     Rc<const Texture2D> anisotropic, Rc<const Texture2D> sheen,
     Rc<const Texture2D> sheen_tint, Rc<const Texture2D> clearcoat,
     Rc<const Texture2D> clearcoat_gloss);
+AJISAI_API Rc<Material> CreateGlass(Rc<const Texture2D> color_reflection,
+                                    Rc<const Texture2D> color_refraction,
+                                    Rc<const Texture2D> ior);
 
 AJ_END

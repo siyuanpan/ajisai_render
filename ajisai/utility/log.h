@@ -39,9 +39,15 @@ class AJISAI_API Log {
 
 AJ_END
 
-#define AJ_TRACE(...) ::aj::Log::Inst().GetLogger().trace(__VA_ARGS__)
-#define AJ_DEBUG(...) ::aj::Log::Inst().GetLogger().debug(__VA_ARGS__)
-#define AJ_INFO(...) ::aj::Log::Inst().GetLogger().info(__VA_ARGS__)
-#define AJ_WARN(...) ::aj::Log::Inst().GetLogger().warn(__VA_ARGS__)
-#define AJ_ERROR(...) ::aj::Log::Inst().GetLogger().error(__VA_ARGS__)
-#define AJ_CRITICAL(...) ::aj::Log::Inst().GetLogger().critical(__VA_ARGS__)
+#define AJ_TRACE(str, ...) \
+  ::aj::Log::Inst().GetLogger().trace(fmt::runtime(str), __VA_ARGS__)
+#define AJ_DEBUG(str, ...) \
+  ::aj::Log::Inst().GetLogger().debug(fmt::runtime(str), __VA_ARGS__)
+#define AJ_INFO(str, ...) \
+  ::aj::Log::Inst().GetLogger().info(fmt::runtime(str), __VA_ARGS__)
+#define AJ_WARN(str, ...) \
+  ::aj::Log::Inst().GetLogger().warn(fmt::runtime(str), __VA_ARGS__)
+#define AJ_ERROR(str, ...) \
+  ::aj::Log::Inst().GetLogger().error(fmt::runtime(str), __VA_ARGS__)
+#define AJ_CRITICAL(str, ...) \
+  ::aj::Log::Inst().GetLogger().critical(fmt::runtime(str), __VA_ARGS__)

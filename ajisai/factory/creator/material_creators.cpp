@@ -59,12 +59,14 @@ class MetalCreatorImpl {
 
   static Rc<Material> Create(const YAML::Node& node,
                              const CreateFactory& factory) {
+    const auto color = factory.Create<Texture2D>(node["color"]);
     const auto k = factory.Create<Texture2D>(node["k"]);
     const auto eta = factory.Create<Texture2D>(node["eta"]);
     const auto uroughness = node["uroughness"].as<float>(0.1f);
     const auto vroughness = node["vroughness"].as<float>(0.1f);
 
-    return CreateMetal(std::move(k), std::move(eta), uroughness, vroughness);
+    return CreateMetal(std::move(color), std::move(k), std::move(eta),
+                       uroughness, vroughness);
   }
 };
 
@@ -107,6 +109,34 @@ class DisneyCreatorImpl {
   }
 };
 
+class GlassCreatorImpl {
+ public:
+  static std::string Name() { return "glass"; }
+
+  static Rc<Material> Create(const YAML::Node& node,
+                             const CreateFactory& factory) {
+    Rc<Texture2D> color_reflection;
+    Rc<Texture2D> color_refraction;
+
+    if (node["color_reflection"].IsDefined()) {
+      color_reflection = factory.Create<Texture2D>(node["color_reflection"]);
+    } else {
+      color_reflection = CreateConstant2DTexture(Spectrum{1.f});
+    }
+
+    if (node["color_refraction"].IsDefined()) {
+      color_refraction = factory.Create<Texture2D>(node["color_refraction"]);
+    } else {
+      color_refraction = CreateConstant2DTexture(Spectrum{1.f});
+    }
+
+    const auto ior = factory.Create<Texture2D>(node["ior"]);
+
+    return CreateGlass(std::move(color_reflection), std::move(color_refraction),
+                       std::move(ior));
+  }
+};
+
 template <class TMaterialCreatorImpl>
 concept MaterialCreatorImpl = requires(TMaterialCreatorImpl) {
   { TMaterialCreatorImpl::Name() } -> std::convertible_to<std::string>;
@@ -123,6 +153,7 @@ using PlasticCreator = MaterialCreator<PlasticCreatorImpl>;
 using MetalCreator = MaterialCreator<MetalCreatorImpl>;
 using MirrorCreator = MaterialCreator<MirrorCreatorImpl>;
 using DisneyCreator = MaterialCreator<DisneyCreatorImpl>;
+using GlassCreator = MaterialCreator<GlassCreatorImpl>;
 
 void AddMaterialFactory(Factory<Material>& factory) {
   factory.Add(DiffuseCreator::Name(), &DiffuseCreator::Create);
@@ -130,6 +161,7 @@ void AddMaterialFactory(Factory<Material>& factory) {
   factory.Add(MetalCreator::Name(), &MetalCreator::Create);
   factory.Add(MirrorCreator::Name(), &MirrorCreator::Create);
   factory.Add(DisneyCreator::Name(), &DisneyCreator::Create);
+  factory.Add(GlassCreator::Name(), &GlassCreator::Create);
 }
 
 AJ_END
