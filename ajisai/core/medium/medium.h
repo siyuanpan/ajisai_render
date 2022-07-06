@@ -23,6 +23,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/ajisai.h>
 #include <ajisai/core/intersection.h>
 #include <ajisai/core/bsdf/bsdf.h>
+#include <ajisai/core/medium/phase_function.h>
 
 AJ_BEGIN
 
@@ -32,14 +33,34 @@ struct SampleOutScatteringResult {
   MediumScattering scattering_point;
   Spectrum throughput;
 
-  const BSDF* phase_function;
+  const PhaseFunction* phase_function;
 
   SampleOutScatteringResult(const MediumScattering sp,
                             const Spectrum& throughput,
-                            const BSDF* phase_function)
+                            const PhaseFunction* phase_function)
       : scattering_point(sp),
         throughput(throughput),
         phase_function(phase_function) {}
+
+  ~SampleOutScatteringResult() {
+    if (phase_function) delete phase_function;
+  }
+
+  SampleOutScatteringResult(SampleOutScatteringResult&& other) {
+    scattering_point = other.scattering_point;
+    throughput = other.throughput;
+    phase_function = other.phase_function;
+    other.phase_function = nullptr;
+  }
+
+  SampleOutScatteringResult& operator=(SampleOutScatteringResult&& other) {
+    scattering_point = other.scattering_point;
+    throughput = other.throughput;
+    phase_function = other.phase_function;
+    other.phase_function = nullptr;
+
+    return *this;
+  }
 
   bool ScatteringHappened() const { return phase_function != nullptr; }
 };
@@ -67,5 +88,6 @@ struct MediumInterface {
 };
 
 AJISAI_API Rc<Medium> CreateVoidMedium();
+AJISAI_API Rc<Medium> CreateHomogeneousMedium();
 
 AJ_END

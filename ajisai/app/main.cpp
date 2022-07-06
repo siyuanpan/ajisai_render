@@ -73,6 +73,8 @@ void run(int argc, char* argv[]) {
   AJ_INFO(">>> Loading file : {} <<<", params.scene_name.string());
   auto config = YAML::LoadFile(params.scene_name.string());
 
+  AJ_INFO(">>> loading sucessed <<<");
+
   const auto& scene_config = config["scene"];
   const auto& camera_config = config["camera"];
   const auto& renderer_config = config["renderer"];
