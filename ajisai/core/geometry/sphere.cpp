@@ -22,160 +22,187 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/ajisai.h>
 #include <ajisai/core/geometry/geometry.h>
 #include <ajisai/core/geometry/helper.h>
+#include <ajisai/core/warp.h>
+#include <ajisai/core/coordinate_system.h>
 #include <vector>
+#include <algorithm>
 
 AJ_BEGIN
 
-// class Sphere : public Geometry {
-//  public:
-//   explicit Sphere(float radius, const Vector3f &center) {
-//     radius_ = radius;
-//     center_ = center;
-//   }
+class Sphere : public Geometry {
+ public:
+  explicit Sphere(float radius, const Vector3f &center) {
+    radius_ = radius;
+    center_ = center;
+  }
 
-//   virtual bool Intersect(const Ray &ray,
-//                          GeometryIntersection *inct) const noexcept override
-//                          {
-//     const auto p = ray.o - center_;
-//     float B = dot(p, ray.d);
-//     float C = p.dot() - radius_ * radius_;
-//     float detSq = B * B - C;
-//     if (detSq > 0.f) {
-//       float det = std::sqrt(detSq);
-//       float t = -B - det;
-//       if (t < ray.t_max && t > ray.t_min) {
-//         inct->pos = ray.CalcPoint(t);
-//         inct->geometry_normal = (inct->pos - center_).normalized();
-//         inct->shading_normal = inct->geometry_normal;
-//         // inct->uv = (1 - inct->uv.x() - inct->uv.y()) * uv_[i] +
-//         //            inct->uv.x() * uv_[j] + inct->uv.y() * uv_[k];
-//         inct->wr = -ray.d;
-//         return true;
-//       }
+  virtual bool Intersect(const Ray &ray,
+                         GeometryIntersection *inct) const noexcept override {
+    constexpr float inv_2_pi = 1.f / (2.f * Constants<float>::pi());
+    constexpr float inv_pi = 1.f / Constants<float>::pi();
 
-//       t = -B + det;
-//       if (t < ray.t_max && t > ray.t_min) {
-//         inct->pos = ray.CalcPoint(t);
-//         inct->geometry_normal = (inct->pos - center_).normalized();
-//         inct->shading_normal = inct->geometry_normal;
-//         // inct->uv = (1 - inct->uv.x() - inct->uv.y()) * uv_[i] +
-//         //            inct->uv.x() * uv_[j] + inct->uv.y() * uv_[k];
-//         inct->wr = -ray.d;
-//         return true;
-//       }
-//     }
+    const auto p = ray.o - center_;
+    float B = dot(p, ray.d);
+    float C = p.dot() - radius_ * radius_;
+    float detSq = B * B - C;
+    if (detSq > 0.f) {
+      float det = std::sqrt(detSq);
+      float t = -B - det;
+      if (t < ray.t_max && t > ray.t_min) {
+        inct->pos = ray.CalcPoint(t);
+        inct->geometry_normal = (inct->pos - center_).normalized();
+        inct->shading_normal = inct->geometry_normal;
+        inct->uv = Vector2f{
+            std::atan2(inct->geometry_normal.z(), inct->geometry_normal.x()) *
+                    inv_2_pi +
+                0.5f,
+            std::acos(std::clamp(inct->geometry_normal.y(), -1.f, 1.f)) *
+                inv_pi};
+        inct->wr = -ray.d;
+        return true;
+      }
 
-//     return false;
-//   }
+      t = -B + det;
+      if (t < ray.t_max && t > ray.t_min) {
+        inct->pos = ray.CalcPoint(t);
+        inct->geometry_normal = (inct->pos - center_).normalized();
+        inct->shading_normal = inct->geometry_normal;
+        inct->uv = Vector2f{
+            std::atan2(inct->geometry_normal.z(), inct->geometry_normal.x()) *
+                    inv_2_pi +
+                0.5f,
+            std::acos(std::clamp(inct->geometry_normal.y(), -1.f, 1.f)) *
+                inv_pi};
+        inct->wr = -ray.d;
+        return true;
+      }
+    }
 
-//   virtual void PostIntersect(const Ray &ray, GeometryIntersection *inct,
-//                              uint32_t id) const noexcept override {
-//     auto [i, j, k] = tris_[id];
+    return false;
+  }
 
-//     inct->pos = ray.CalcPoint(inct->t);
-//     inct->geometry_normal =
-//         cross(positions_[j] - positions_[i], positions_[k] - positions_[i])
-//             .normalized();
-//     inct->shading_normal = inct->geometry_normal;
-//     inct->uv = (1 - inct->uv.x() - inct->uv.y()) * uv_[i] +
-//                inct->uv.x() * uv_[j] + inct->uv.y() * uv_[k];
-//     inct->wr = -ray.d;
-//   }
+  virtual void PostIntersect(const Ray &ray, GeometryIntersection *inct,
+                             uint32_t id) const noexcept override {}
 
-//   virtual bool Occlude(const Ray &ray) const noexcept override {
-//     for (auto [i, j, k] : tris_) {
-//       if (OccludeTriangle(ray, positions_[i], positions_[j], positions_[k]))
-//       {
-//         return true;
-//       }
-//     }
-//     return false;
-//   }
+  virtual bool Occlude(const Ray &ray) const noexcept override {
+    const auto p = ray.o - center_;
+    float B = dot(p, ray.d);
+    float C = p.dot() - radius_ * radius_;
+    float detSq = B * B - C;
+    if (detSq < 0.f) return false;
 
-//   virtual Bounds3f AABB() const noexcept override {
-//     Bounds3f bounds{Vector3f{std::numeric_limits<float>::max()},
-//                     Vector3f{std::numeric_limits<float>::lowest()}};
+    float det = std::sqrt(detSq);
+    float t1 = -B - det;
+    float t2 = -B + det;
 
-//     for (const auto &v : positions_) {
-//       bounds.min() = Min(bounds.min(), v);
-//       bounds.max() = Max(bounds.max(), v);
-//     }
+#define BETWEEN(r, t) (r.t_min <= t && t <= r.t_max)
 
-//     return bounds;
-//   }
+    return BETWEEN(ray, t1) || BETWEEN(ray, t2);
 
-//   virtual MeshView GetMeshView() const noexcept override {
-//     MeshView ret{};
-//     ret.position_buffer = static_cast<const void *>(positions_.data());
-//     ret.position_offset = 0;
-//     ret.position_stride = sizeof(Vector3f);
-//     ret.position_size = positions_.size();
-//     ret.index_buffer = static_cast<const void *>(tris_.data());
-//     ret.index_offset = 0;
-//     ret.index_stride = sizeof(std::tuple<uint32_t, uint32_t, uint32_t>);
-//     ret.index_size = tris_.size();
+#undef BETWEEN
+  }
 
-//     return ret;
-//   }
+  virtual Bounds3f AABB() const noexcept override {
+    Bounds3f bounds{
+        center_ - Vector3f{radius_ + std::numeric_limits<float>::epsilon()},
+        center_ + Vector3f{radius_ + std::numeric_limits<float>::epsilon()},
+    };
 
-//   virtual Intersection Sample(float *pdf,
-//                               const Vector3f &sam) const noexcept override {
-//     Vector3f sam_new = sam;
-//     if (sam_new.x() + sam_new.y() > 1.f) {
-//       sam_new.x() = 1.f - sam_new.x();
-//       sam_new.y() = 1.f - sam_new.y();
-//     }
-//     Intersection inct;
-//     int idx = std::min(int(sam.z() * tris_.size()), (int)tris_.size() - 1);
-//     auto [a, b, c] = tris_[idx];
+    return bounds;
+  }
 
-//     inct.pos = (1 - sam_new.x() - sam_new.y()) * positions_[a] +
-//                sam_new.x() * positions_[b] + sam_new.y() * positions_[c];
-//     inct.uv = (1 - sam_new.x() - sam_new.y()) * uv_[a] + sam_new.x() * uv_[b]
-//     +
-//               sam_new.y() * uv_[c];
-//     inct.geometry_normal =
-//         cross(positions_[b] - positions_[a], positions_[c] - positions_[a])
-//             .normalized();
-//     inct.shading_normal = inct.geometry_normal;
+  virtual MeshView GetMeshView() const noexcept override {
+    MeshView ret{};
 
-//     *pdf = 1.f /
-//            (12.f *
-//             cross(positions_[b] - positions_[a], positions_[c] -
-//             positions_[a])
-//                 .length() *
-//             0.5f);
+    return ret;
+  }
 
-//     return inct;
-//   }
+  virtual Intersection Sample(float *pdf,
+                              const Vector3f &sam) const noexcept override {
+    constexpr float inv_2_pi = 1.f / (2.f * Constants<float>::pi());
+    constexpr float inv_pi = 1.f / Constants<float>::pi();
 
-//   virtual Intersection Sample(const Vector3f &ref, float *pdf,
-//                               const Vector3f &sam) const noexcept override {
-//     return Sample(pdf, sam);
-//   }
+    Vector3f unit_n = UniformSphere(Vector2f{sam.x(), sam.y()});
+    *pdf = 1.f / (4 * Constants<float>::pi() * radius_ * radius_);
 
-//   virtual float Pdf(const Vector3f &sample) const noexcept override {
-//     auto [a, b, c] = tris_[0];
-//     return 1.f /
-//            (12.f *
-//             cross(positions_[b] - positions_[a], positions_[c] -
-//             positions_[a])
-//                 .length() *
-//             0.5f);
-//   }
+    Intersection inct;
 
-//   virtual float Pdf(const Vector3f &ref,
-//                     const Vector3f &sample) const noexcept override {
-//     return Pdf(sample);
-//   }
+    inct.pos = unit_n * radius_ + center_;
+    inct.uv = Vector2f{std::atan2(unit_n.z(), unit_n.x()) * inv_2_pi + 0.5f,
+                       std::acos(std::clamp(unit_n.y(), -1.f, 1.f)) * inv_pi};
+    inct.geometry_normal = unit_n;
+    inct.shading_normal = inct.geometry_normal;
 
-//  private:
-//   float radius_;
-//   Vector3f center_;
-// };
+    return inct;
+  }
 
-// Rc<Geometry> CreateCube(const Matrix4f &local2world) {
-//   return RcNew<Cube>(Cube::Args{local2world});
-// }
+  virtual Intersection Sample(const Vector3f &ref, float *pdf,
+                              const Vector3f &sam) const noexcept override {
+    constexpr float inv_2_pi = 1.f / (2.f * Constants<float>::pi());
+    constexpr float inv_pi = 1.f / Constants<float>::pi();
+
+    Vector3f L = ref - center_;
+    float d = L.length();
+    if (d <= radius_) return Sample(pdf, sam);
+
+    float sin_theta_max = radius_ / d;
+    float sin_theta_max2 = sin_theta_max * sin_theta_max;
+    float inv_sin_theta_max = 1.f / sin_theta_max;
+    float cos_theta_max = std::sqrt(std::max(0.f, 1 - sin_theta_max2));
+
+    const float cos_theta = (cos_theta_max - 1.f) * sam.x() + 1.f;
+    const float sin_theta =
+        std::sqrt(std::max(0.f, 1.f - cos_theta * cos_theta));
+    float cos_alpha =
+        sin_theta * sin_theta * inv_sin_theta_max +
+        cos_theta * std::sqrt(std::max(0.f, 1.f - sin_theta * sin_theta *
+                                                      inv_sin_theta_max *
+                                                      inv_sin_theta_max));
+    float sin_alpha = std::sqrt(std::max(0.f, 1.f - cos_alpha * cos_alpha));
+    const float phi = sam.y() * 2.f * Constants<float>::pi();
+    Vector3f dir = Vector3f{std::cos(phi) * sin_alpha,
+                            std::sin(phi) * sin_alpha, cos_alpha};
+
+    CoordinateSystem frame(L.normalized());
+
+    Vector3f unit_n = frame.Local2World(dir);
+    Intersection inct;
+    inct.pos = center_ + frame.Local2World(dir) * radius_;
+    inct.uv = Vector2f{std::atan2(unit_n.z(), unit_n.x()) * inv_2_pi + 0.5f,
+                       std::acos(std::clamp(unit_n.y(), -1.f, 1.f)) * inv_pi};
+    inct.geometry_normal = unit_n;
+    inct.shading_normal = inct.geometry_normal;
+
+    *pdf = 1.f / (2.f * Constants<float>::pi() * (1.f * cos_theta_max));
+
+    return inct;
+  }
+
+  virtual float Pdf(const Vector3f &sample) const noexcept override {
+    return 1.f / (4 * Constants<float>::pi() * radius_ * radius_);
+  }
+
+  virtual float Pdf(const Vector3f &ref,
+                    const Vector3f &sample) const noexcept override {
+    Vector3f L = ref - center_;
+    float d = L.length();
+    if (d <= radius_) return Pdf(sample);
+
+    float sin_theta_max = radius_ / d;
+    float sin_theta_max2 = sin_theta_max * sin_theta_max;
+    float inv_sin_theta_max = 1.f / sin_theta_max;
+    float cos_theta_max = std::sqrt(std::max(0.f, 1 - sin_theta_max2));
+
+    return 1.f / (2.f * Constants<float>::pi() * (1.f * cos_theta_max));
+  }
+
+ private:
+  float radius_;
+  Vector3f center_;
+};
+
+Rc<Geometry> CreateSphere(float radius, const Vector3f &center) {
+  return RcNew<Sphere>(radius, center);
+}
 
 AJ_END

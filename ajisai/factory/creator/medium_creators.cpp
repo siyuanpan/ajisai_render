@@ -34,6 +34,30 @@ class VoidMediumCreatorImpl {
   }
 };
 
+class HomogeneousMediumCreatorImpl {
+ public:
+  static std::string Name() { return "homogeneous"; }
+
+  static Rc<Medium> Create(const YAML::Node& node,
+                           const CreateFactory& factory) {
+    Spectrum sigma_a{}, sigma_s{};
+    if (node["sigma_a"].IsSequence())
+      sigma_a = Spectrum{node["sigma_a"].as<Vector3f>()};
+    else
+      sigma_a = Spectrum{node["sigma_a"].as<float>()};
+
+    if (node["sigma_s"].IsSequence())
+      sigma_s = Spectrum{node["sigma_s"].as<Vector3f>()};
+    else
+      sigma_s = Spectrum{node["sigma_s"].as<float>()};
+
+    const float g = node["g"].as<float>(0.f);
+    const int max_bounces =
+        node["max_bounces"].as<int>(std::numeric_limits<int>::infinity());
+    return CreateHomogeneousMedium(sigma_a, sigma_s, g, max_bounces);
+  }
+};
+
 template <class TMediumCreatorImpl>
 concept MediumCreatorImpl = requires(TMediumCreatorImpl) {
   { TMediumCreatorImpl::Name() } -> std::convertible_to<std::string>;
@@ -46,9 +70,12 @@ template <MediumCreatorImpl TMediumCreatorImpl>
 class MediumCreator : public TMediumCreatorImpl {};
 
 using VoidMediumCreator = MediumCreator<VoidMediumCreatorImpl>;
+using HomogeneousMediumCreator = MediumCreator<HomogeneousMediumCreatorImpl>;
 
 void AddMediumFactory(Factory<Medium>& factory) {
   factory.Add(VoidMediumCreator::Name(), &VoidMediumCreator::Create);
+  factory.Add(HomogeneousMediumCreator::Name(),
+              &HomogeneousMediumCreator::Create);
 }
 
 AJ_END

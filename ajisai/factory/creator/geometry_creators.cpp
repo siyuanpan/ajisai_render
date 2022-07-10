@@ -74,6 +74,19 @@ class CubeCreatorImpl {
   }
 };
 
+class SphereCreatorImpl {
+ public:
+  static std::string Name() { return "sphere"; }
+
+  static Rc<Geometry> Create(const YAML::Node& node,
+                             const CreateFactory& factory) {
+    const float radius = node["radius"].as<float>();
+    const Vector3f center = node["center"].as<Vector3f>();
+
+    return CreateSphere(radius, center);
+  }
+};
+
 class TwosidedCreatorImpl {
  public:
   static std::string Name() { return "twosided"; }
@@ -240,12 +253,14 @@ class GeometryCreator : public TGeometryCreatorImpl {};
 
 using QuadCreator = GeometryCreator<QuadCreatorImpl>;
 using CubeCreator = GeometryCreator<CubeCreatorImpl>;
+using SphereCreator = GeometryCreator<SphereCreatorImpl>;
 using TwosidedCreator = GeometryCreator<TwosidedCreatorImpl>;
 using MeshGeoCreator = GeometryCreator<MeshGeoCreatorImpl>;
 
 void AddGeometricFactory(Factory<Geometry>& factory) {
   factory.Add(QuadCreator::Name(), &QuadCreator::Create);
   factory.Add(CubeCreator::Name(), &CubeCreator::Create);
+  factory.Add(SphereCreator::Name(), &SphereCreator::Create);
   factory.Add(TwosidedCreator::Name(), &TwosidedCreator::Create);
   factory.Add(MeshGeoCreator::Name(), &MeshGeoCreator::Create);
 }

@@ -53,5 +53,6 @@ AJISAI_API Rc<Material> CreateDisney(
 AJISAI_API Rc<Material> CreateGlass(Rc<const Texture2D> color_reflection,
                                     Rc<const Texture2D> color_refraction,
                                     Rc<const Texture2D> ior);
+AJISAI_API Rc<Material> CreateNull();
 
 AJ_END

@@ -88,6 +88,8 @@ struct MediumInterface {
 };
 
 AJISAI_API Rc<Medium> CreateVoidMedium();
-AJISAI_API Rc<Medium> CreateHomogeneousMedium();
+AJISAI_API Rc<Medium> CreateHomogeneousMedium(const Spectrum& sigma_a,
+                                              const Spectrum& sigma_s, float g,
+                                              int max_scattering_count);
 
 AJ_END

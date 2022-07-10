@@ -136,14 +136,29 @@ class PathTracing : public TiledIntegrator {
           const auto& scattering_point = medium_sample.scattering_point;
           const auto phase_function = medium_sample.phase_function;
 
-          //   const auto phase_sample = phase_function->SampleAll(
-          //       inct.wr, TransMode::Radiance, sampler->Next3D());
-          //   if (!phase_sample.f) return pixel;
+          // direct illumination
+          Spectrum direct_illum{};
+          for (auto i = 0; i < kDirectIllumSampleCount; ++i) {
+            for (auto light : scene->Lights()) {
+              direct_illum +=
+                  throughput * MISSampleLight(scene, light, inct, sp, sampler);
+            }
+            direct_illum +=
+                throughput * MISSampleBsdf(scene, inct, sp, sampler);
+          }
 
-          //   coef *= phase_sample.f / phase_sample.pdf;
-          //   r = Ray(scattering_point.pos, phase_sample.dir);
+          pixel.value += 1.f / kDirectIllumSampleCount * direct_illum;
 
-          //   continue;
+          const auto phase_sample = phase_function->SampleAll(
+              inct.wr, TransMode::Radiance, sampler->Next3D());
+          if (phase_sample.f.IsBlack() ||
+              phase_sample.pdf < std::numeric_limits<float>::epsilon())
+            return pixel;
+
+          throughput *= phase_sample.f / phase_sample.pdf;
+          path_ray = Ray(scattering_point.pos, phase_sample.dir);
+
+          continue;
         }
       } else {
         const Spectrum ab = medium->Absorbtion(path_ray.o, inct.pos, sampler);

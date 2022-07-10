@@ -77,6 +77,8 @@ AJISAI_API Rc<Geometry> CreateQuad(const Vector3f &a, const Vector3f &b,
 
 AJISAI_API Rc<Geometry> CreateCube(const Matrix4f &local2world);
 
+AJISAI_API Rc<Geometry> CreateSphere(float radius, const Vector3f &center);
+
 AJISAI_API Rc<Geometry> CreateTwoSided(Rc<const Geometry> internal);
 
 AJISAI_API Rc<Geometry> CreateMeshGeo(std::vector<Vector4f> &&position_and_us,

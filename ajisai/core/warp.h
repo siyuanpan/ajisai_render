@@ -89,10 +89,26 @@ inline Vector3f UniformSampleCone(const Vector2f& u, float cos_theta_max,
          cos_theta * z;
 }
 
+inline Vector3f UniformSphericalCap(const Vector2f& u, float cos_theta_max) {
+  const float cos_theta = (cos_theta_max - 1.f) * u[0] + 1.f;
+  const float sin_theta = std::sqrt(std::max(0.f, 1.f - cos_theta * cos_theta));
+  const float phi = u[1] * 2.f * Constants<float>::pi();
+  return Vector3f{
+      {std::cos(phi) * sin_theta, std::sin(phi) * sin_theta, cos_theta}};
+}
+
 inline float UniformConePDF(float cos_theta_max) {
   if (cos_theta_max == 1.0f) return 1.0f;
 
   return 1.0f / (2.0f * Constants<float>::pi() * (1.0f - cos_theta_max));
+}
+
+inline Vector3f UniformSphere(const Vector2f& u) {
+  float phi = u.x() * 2.f * Constants<float>::pi();
+  float z = u.y() * 2.f - 1.f;
+  float r = std::sqrt(std::max(1.f - z * z, 0.f));
+
+  return Vector3f{std::cos(phi) * r, std::sin(phi) * r, z};
 }
 
 AJ_END

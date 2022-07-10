@@ -34,6 +34,11 @@ class PhaseFunction {
                                   const Vector3f& sam,
                                   uint8_t type) const noexcept = 0;
 
+  virtual BSDFSampleResult SampleAll(const Vector3f& wo, TransMode mode,
+                                     const Vector3f& sam) const noexcept {
+    return Sample(wo, mode, sam, kBSDFAll);
+  }
+
   virtual ~PhaseFunction() = default;
 };
 

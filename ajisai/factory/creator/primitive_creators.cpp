@@ -51,7 +51,14 @@ class GeometricPrimitiveCreatorImpl {
                               const CreateFactory& factory) {
     auto geometry = factory.Create<Geometry>(node["geometry"]);
 
-    auto material = factory.Create<Material>(node["material"]);
+    Rc<Material> material;
+    if (auto mat = node["material"]) {
+      material = factory.Create<Material>(mat);
+    } else {
+      material = CreateNull();
+    }
+
+    // auto material = factory.Create<Material>(node["material"]);
 
     const auto medium = CreateMediumInterface(node, factory);
 
