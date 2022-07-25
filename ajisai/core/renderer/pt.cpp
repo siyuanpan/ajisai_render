@@ -133,6 +133,10 @@ class PathTracing : public TiledIntegrator {
         if (medium_sample.ScatteringHappened()) {
           ++scattering_count;
 
+          // if (scattering_count > 1)
+          //   std::cout << "scattering_count : " << scattering_count <<
+          //   std::endl;
+
           const auto& scattering_point = medium_sample.scattering_point;
           const auto phase_function = medium_sample.phase_function;
 
@@ -141,19 +145,33 @@ class PathTracing : public TiledIntegrator {
           for (auto i = 0; i < kDirectIllumSampleCount; ++i) {
             for (auto light : scene->Lights()) {
               direct_illum +=
-                  throughput * MISSampleLight(scene, light, inct, sp, sampler);
+                  throughput * MISSampleLight(scene, light, scattering_point,
+                                              phase_function, sampler);
             }
-            direct_illum +=
-                throughput * MISSampleBsdf(scene, inct, sp, sampler);
+            direct_illum += throughput * MISSampleBsdf(scene, scattering_point,
+                                                       phase_function, sampler);
           }
 
           pixel.value += 1.f / kDirectIllumSampleCount * direct_illum;
 
           const auto phase_sample = phase_function->SampleAll(
               inct.wr, TransMode::Radiance, sampler->Next3D());
+
+          // if (!direct_illum.IsBlack()) {
+          // printf("direct_illum (%f %f %f)\n", direct_illum[0],
+          // direct_illum[1],
+          //        direct_illum[2]);
+          // printf("f (%f %f %f)\n", phase_sample.f[0], phase_sample.f[1],
+          //        phase_sample.f[2]);
+          // printf("pdf %f\n", phase_sample.pdf);
+          // }
+
           if (phase_sample.f.IsBlack() ||
               phase_sample.pdf < std::numeric_limits<float>::epsilon())
             return pixel;
+
+          // std::cout << "scattering_count : " << scattering_count <<
+          // std::endl;
 
           throughput *= phase_sample.f / phase_sample.pdf;
           path_ray = Ray(scattering_point.pos, phase_sample.dir);

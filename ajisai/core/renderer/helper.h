@@ -27,6 +27,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/core/intersection.h>
 #include <ajisai/core/sampler/sampler.h>
 #include <ajisai/math/spectrum.h>
+#include <ajisai/core/medium/medium.h>
 
 AJ_BEGIN
 
@@ -131,6 +132,80 @@ inline Spectrum MISSampleLight(const Scene* scene, const Light* light,
   }
 }
 
+inline Spectrum MISSampleAreaLight(const Scene* scene, const AreaLight* light,
+                                   const MediumScattering& scattering,
+                                   const PhaseFunction* phase_function,
+                                   Sampler* sampler) {
+  const auto light_sample = light->Sample(scattering.pos, sampler);
+  if (light_sample.radiance.IsBlack() || light_sample.pdf <= 0.f) return {};
+
+  const float shadow_ray_len =
+      (light_sample.pos - scattering.pos).length() - Ray::Eps();
+  if (shadow_ray_len < Ray::Eps()) return {};
+
+  const Vector3f inct2light = (light_sample.pos - scattering.pos).normalized();
+  const Ray shadow_ray{scattering.pos, inct2light, Ray::Eps(),
+                       0.99f * shadow_ray_len};
+  if (scene->Occlude(shadow_ray)) return {};
+
+  const Spectrum bsdf_f =
+      phase_function->EvalAll(inct2light, scattering.wr, TransMode::Radiance);
+  if (bsdf_f.IsBlack()) return {};
+
+  auto med = scattering.medium;
+
+  const Spectrum f = med->Tr(light_sample.pos, scattering.pos, sampler) *
+                     light_sample.radiance * bsdf_f;
+  const float bsdf_pdf = phase_function->PdfAll(inct2light, scattering.wr);
+
+  return f / light_sample.pdf * PowerHeuristic(light_sample.pdf, bsdf_pdf);
+}
+
+inline Spectrum MISSampleEnvLight(const Scene* scene, const EnvLight* light,
+                                  const MediumScattering& scattering,
+                                  const PhaseFunction* phase_function,
+                                  Sampler* sampler) {
+  return {};
+}
+
+inline Spectrum MISSampleLight(const Scene* scene, const Light* light,
+                               const MediumScattering& scattering,
+                               const PhaseFunction* phase_function,
+                               Sampler* sampler) {
+  if (auto area_light = light->AsArea()) {
+    return MISSampleAreaLight(scene, area_light, scattering, phase_function,
+                              sampler);
+  } else if (auto env_light = light->AsEnv()) {
+    return MISSampleEnvLight(scene, env_light, scattering, phase_function,
+                             sampler);
+  } else {
+    const auto light_sample = light->Sample(scattering.pos, sampler);
+    if (light_sample.radiance.IsBlack() || light_sample.pdf <= 0.f) return {};
+
+    const float shadow_ray_len =
+        (light_sample.pos - scattering.pos).length() - Ray::Eps();
+    if (shadow_ray_len < Ray::Eps()) return {};
+
+    const Vector3f inct2light =
+        (light_sample.pos - scattering.pos).normalized();
+    const Ray shadow_ray{scattering.pos, inct2light, Ray::Eps(),
+                         0.99f * shadow_ray_len};
+    if (scene->Occlude(shadow_ray)) return {};
+
+    const Spectrum bsdf_f =
+        phase_function->EvalAll(inct2light, scattering.wr, TransMode::Radiance);
+    if (bsdf_f.IsBlack()) return {};
+
+    auto med = scattering.medium;
+
+    const Spectrum f = med->Tr(light_sample.pos, scattering.pos, sampler) *
+                       light_sample.radiance * bsdf_f;
+    const float bsdf_pdf = phase_function->PdfAll(inct2light, scattering.wr);
+
+    return f / light_sample.pdf * PowerHeuristic(light_sample.pdf, bsdf_pdf);
+  }
+}
+
 inline Spectrum MISSampleBsdf(const Scene* scene,
                               const PrimitiveIntersection& inct,
                               const ShadingPoint& sp, Sampler* sampler) {
@@ -180,6 +255,60 @@ inline Spectrum MISSampleBsdf(const Scene* scene,
   const auto& normal = inct.shading_normal;
   const auto f =
       tr * light_radiance * bsdf_sample.f * std::abs(dot(normal, ray.d));
+
+  if (bsdf_sample.is_delta) return f / bsdf_sample.pdf;
+
+  const float light_pdf =
+      light->Pdf(ray.o, pri_inct.pos, pri_inct.geometry_normal);
+  return f / bsdf_sample.pdf * PowerHeuristic(bsdf_sample.pdf, light_pdf);
+}
+
+inline Spectrum MISSampleBsdf(const Scene* scene,
+                              const MediumScattering& scattering,
+                              const PhaseFunction* phase_function,
+                              Sampler* sampler) {
+  auto bsdf_sample = phase_function->SampleAll(
+      scattering.wr, TransMode::Radiance, sampler->Next3D());
+  if (bsdf_sample.f.IsBlack() || bsdf_sample.pdf == 0.f) return {};
+
+  bsdf_sample.dir = bsdf_sample.dir.normalized();
+
+  const Ray ray{scattering.pos, bsdf_sample.dir};
+  PrimitiveIntersection pri_inct;
+  bool intersected = scene->Intersect(ray, &pri_inct);
+
+  const Medium* medium = scattering.medium;
+
+  if (!intersected) {
+    Spectrum envir_illum{};
+
+    if (auto light = scene->GetEnvLight()) {
+      const Spectrum light_radiance = light->Radiance(ray.o, ray.d);
+      if (light_radiance.IsBlack()) return {};
+
+      const Spectrum f = light_radiance * bsdf_sample.f;
+
+      if (bsdf_sample.is_delta)
+        envir_illum += f / bsdf_sample.pdf;
+      else {
+        float light_pdf = light->Pdf(ray.o, ray.d);
+        envir_illum +=
+            f / bsdf_sample.pdf * PowerHeuristic(bsdf_sample.pdf, light_pdf);
+      }
+    }
+
+    return envir_illum;
+  }
+
+  auto light = pri_inct.primitive->AsLight();
+  if (!light) return {};
+
+  const auto light_radiance = light->Radiance(
+      pri_inct.pos, pri_inct.geometry_normal, pri_inct.uv, pri_inct.wr);
+  if (light_radiance.IsBlack()) return {};
+
+  const auto tr = medium->Tr(ray.o, pri_inct.pos, sampler);
+  const auto f = tr * light_radiance * bsdf_sample.f;
 
   if (bsdf_sample.is_delta) return f / bsdf_sample.pdf;
 

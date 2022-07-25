@@ -39,6 +39,21 @@ class PhaseFunction {
     return Sample(wo, mode, sam, kBSDFAll);
   }
 
+  virtual Spectrum EvalAll(const Vector3f& wi, const Vector3f& wo,
+                           TransMode mode) const noexcept {
+    return Eval(wi, wo, mode, kBSDFAll);
+  }
+
+  virtual Spectrum Eval(const Vector3f& wi, const Vector3f& wo, TransMode mode,
+                        uint8_t type) const noexcept = 0;
+
+  virtual float PdfAll(const Vector3f& wi, const Vector3f& wo) const noexcept {
+    return Pdf(wi, wo, kBSDFAll);
+  }
+
+  virtual float Pdf(const Vector3f& wi, const Vector3f& wo,
+                    uint8_t type) const noexcept = 0;
+
   virtual ~PhaseFunction() = default;
 };
 
@@ -46,6 +61,12 @@ class HenyeyGreensteinPhaseFunction : public PhaseFunction {
  public:
   HenyeyGreensteinPhaseFunction(float g, const Spectrum& albedo)
       : g_{g}, albedo_{albedo} {}
+
+  virtual Spectrum Eval(const Vector3f& wi, const Vector3f& wo, TransMode mode,
+                        uint8_t type) const noexcept override {
+    const float u = -dot(wi, wo);
+    return Spectrum{phase_func(u)};
+  }
 
   virtual BSDFSampleResult Sample(const Vector3f& wo, TransMode mode,
                                   const Vector3f& sam,
@@ -71,6 +92,12 @@ class HenyeyGreensteinPhaseFunction : public PhaseFunction {
     const auto wi = CoordinateSystem(wo).Local2World(lwi);
 
     return BSDFSampleResult{wi, Spectrum{phase_value}, phase_value, false};
+  }
+
+  virtual float Pdf(const Vector3f& wi, const Vector3f& wo,
+                    uint8_t type) const noexcept override {
+    const float u = -dot(wi, wo);
+    return phase_func(u);
   }
 
  private:
