@@ -37,10 +37,14 @@ class Plastic : public Material {
         thickness_(thickness),
         sigma_a_(sigma_a) {}
 
-  virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const override {
+  virtual ShadingPoint Shade(const PrimitiveIntersection& inct,
+                             MemoryArena& arena) const override {
     const auto albedo = albedo_->SampleSpectrum(inct.uv);
-    auto bsdf = new PlasticBsdf(inct.geometry_normal, inct.shading_normal,
-                                albedo, ior_, thickness_, sigma_a_);
+    auto bsdf =
+        arena.Create<PlasticBsdf>(inct.geometry_normal, inct.shading_normal,
+                                  albedo, ior_, thickness_, sigma_a_);
+    // new PlasticBsdf(inct.geometry_normal, inct.shading_normal,
+    //                             albedo, ior_, thickness_, sigma_a_);
 
     ShadingPoint sp{};
     sp.bsdf = bsdf;

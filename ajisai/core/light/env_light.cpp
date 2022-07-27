@@ -22,6 +22,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/core/light/env_light.h>
 #include <ajisai/core/texture2d/texture2d.h>
 #include <ajisai/core/sampler/sampler.h>
+#include <ajisai/core/warp.h>
 
 AJ_BEGIN
 
@@ -56,6 +57,7 @@ Spectrum EnvLight::Radiance(const Vector3f &ref,
   Vector2f uv{
       (Constants<float>::pi() + std::atan2(dir.z(), dir.x())) * inv_2_pi,
       theta * inv_pi};
+
   uv += Vector2f{env_map_rot_ / 180 * Constants<float>::pi() * inv_2_pi, 0.f};
   if (uv.x() > 1.f) uv.x() -= 1.f;
   if (uv.x() < 0.f) uv.x() += 1.f;
@@ -97,6 +99,53 @@ LightSampleResult EnvLight::Sample(const Vector3f &ref,
                            {},
                            texture_->SampleSpectrum(Vector2f{u, v}),
                            pdf};
+}
+
+LightEmitResult EnvLight::SampleEmit(Sampler *sampler) const noexcept {
+  float u, v, pdf;
+  sampler_->SampleContinuous(sampler->Next1D(), sampler->Next1D(), &u, &v,
+                             &pdf);
+
+  if (pdf == 0.f) {
+    return {Vector3f{}, Vector3f{}, Vector3f{}, Vector2f{}, Spectrum{}, 0, 0};
+  }
+
+  constexpr float inv_2_pi = 1.f / (2.f * Constants<float>::pi());
+  constexpr float two_pi = 2.f * Constants<float>::pi();
+  u -= env_map_rot_ / 180 * Constants<float>::pi() * inv_2_pi;
+  if (u > 1.f) u -= 1.f;
+  if (u < 0.f) u += 1.f;
+  float phi = u * two_pi;
+  float theta = v * Constants<float>::pi();
+  float sin_theta = std::sin(theta);
+
+  pdf = sin_theta != 0.f ? pdf / (2.f * Constants<float>::pi() *
+                                  Constants<float>::pi() * sin_theta)
+                         : 0.f;
+
+  Vector3f dir{-std::sin(theta) * std::cos(phi), std::cos(theta),
+               -std::sin(theta) * std::sin(phi)};
+
+  dir = -dir;
+  auto radius = (aabb_.max() - aabb_.center()).length();
+
+  const Vector2f disk_sam = squareToUniformDiskConcentric(sampler->Next2D());
+
+  auto dir_coord = CoordinateSystem(-dir);
+
+  const Vector3f pos = aabb_.center() + (disk_sam.x() * dir_coord.x() +
+                                         disk_sam.y() * dir_coord.y() - dir) *
+                                            radius;
+
+  return LightEmitResult{
+      pos,
+      dir,
+      dir.normalized(),
+      {},
+      texture_->SampleSpectrum(Vector2f{u, v}),
+      1.f / (Constants<float>::pi() * radius * radius),
+      pdf,
+  };
 }
 
 float EnvLight::Pdf(const Vector3f &ref,

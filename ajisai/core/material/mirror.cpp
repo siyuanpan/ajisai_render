@@ -36,6 +36,8 @@ class MirrorBSDF : public BSDF {
       : BSDF{ng, ns}, kr_{kr} {}
   virtual Spectrum Albedo() const override { return kr_; }
 
+  virtual bool HasDiffuseComponent() const override { return false; }
+
   virtual BSDFSampleResult Sample(const Vector3f& wo, TransMode mode,
                                   const Vector3f& sam,
                                   uint8_t type) const noexcept override {
@@ -75,10 +77,13 @@ class Mirror : public Material {
  public:
   explicit Mirror(Rc<const Texture2D> kr) : kr_(kr) {}
 
-  virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const override {
+  virtual ShadingPoint Shade(const PrimitiveIntersection& inct,
+                             MemoryArena& arena) const override {
     const auto kr = kr_->SampleSpectrum(inct.uv);
 
-    BSDF* bsdf = new MirrorBSDF(inct.geometry_normal, inct.shading_normal, kr);
+    BSDF* bsdf =
+        arena.Create<MirrorBSDF>(inct.geometry_normal, inct.shading_normal, kr);
+    // new MirrorBSDF(inct.geometry_normal, inct.shading_normal, kr);
 
     ShadingPoint sp{};
     sp.bsdf = bsdf;

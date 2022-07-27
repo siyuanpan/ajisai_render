@@ -22,6 +22,7 @@ DEALINGS IN THE SOFTWARE.
 #pragma once
 #include <ajisai/ajisai.h>
 #include <ajisai/math/spectrum.h>
+#include <ajisai/utility/mem_arena.h>
 #include <mutex>
 
 AJ_BEGIN
@@ -59,8 +60,8 @@ class Renderer {
 
 class Integrator : public Renderer {
  public:
-  virtual RenderPixel Li(const Ray& ray, const Scene* scene,
-                         Sampler* sampler) const = 0;
+  virtual RenderPixel Li(const Ray& ray, const Scene* scene, Sampler* sampler,
+                         MemoryArena& arena) const = 0;
 };
 
 class TiledIntegrator : public Integrator {
@@ -77,5 +78,25 @@ class TiledIntegrator : public Integrator {
 };
 
 AJISAI_API Rc<Renderer> CreatePTRenderer(const PTRendererArgs&);
+
+struct SPPMRendererArgs {
+  // int forward_task_grid_size = 64;
+  int forward_max_depth = 8;
+
+  float init_radius = 0.1f;
+
+  int iteration_count = 100;
+  int photons_per_iteration = 100000;
+
+  int photon_min_depth = 5;
+  int photon_max_depth = 10;
+  float photon_cont_prob = 0.9f;
+
+  float update_alpha = 2.f / 3;
+
+  // int grid_accel_resolution = 64;
+};
+
+AJISAI_API Rc<Renderer> CreateSPPMRenderer(const SPPMRendererArgs&);
 
 AJ_END

@@ -21,6 +21,7 @@ DEALINGS IN THE SOFTWARE.
 */
 #include <ajisai/core/light/area_light.h>
 #include <ajisai/core/sampler/sampler.h>
+#include <ajisai/core/warp.h>
 
 AJ_BEGIN
 
@@ -50,6 +51,19 @@ LightSampleResult AreaLight::Sample(const Vector3f &ref,
 
   return LightSampleResult{ref,     inct.pos,  inct.geometry_normal,
                            inct.uv, radiance_, pdf};
+}
+
+LightEmitResult AreaLight::SampleEmit(Sampler *sampler) const noexcept {
+  float pdf_pos = 0.f;
+  auto inct = geometry_->Sample(&pdf_pos, sampler->Next3D());
+
+  auto [lwi, pdf_dir] = SquareToCosineHemisphereSample(sampler->Next2D());
+
+  const Vector3f dir = CoordinateSystem(inct.geometry_normal).Local2World(lwi);
+
+  return LightEmitResult{
+      inct.pos, dir, inct.geometry_normal, inct.uv, radiance_, pdf_pos, pdf_dir,
+  };
 }
 
 float AreaLight::Pdf(const Vector3f &ref, const Vector3f &pos,

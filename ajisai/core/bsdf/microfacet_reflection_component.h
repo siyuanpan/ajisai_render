@@ -32,6 +32,8 @@ class GGXMicrofacetReflectionComponent : public BSDFComponent {
   GGXMicrofacetReflectionComponent(Rc<Fresnel> fresnel, float uroughness,
                                    float vroughness) noexcept;
 
+  virtual bool HasDiffuseComponent() const override { return false; }
+
   virtual BSDFComponent::SampleResult Sample(
       const Vector3f& lwo, TransMode mode,
       const Vector2f& sam) const noexcept override;

@@ -32,10 +32,12 @@ class Diffuse : public Material {
  public:
   explicit Diffuse(Rc<const Texture2D> albedo) : albedo_(albedo) {}
 
-  virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const override {
+  virtual ShadingPoint Shade(const PrimitiveIntersection& inct,
+                             MemoryArena& arena) const override {
     const auto albedo = albedo_->SampleSpectrum(inct.uv);
-    AggregateBSDF* bsdf =
-        new AggregateBSDF(inct.geometry_normal, inct.shading_normal, albedo);
+    AggregateBSDF* bsdf = arena.Create<AggregateBSDF>(
+        inct.geometry_normal, inct.shading_normal, albedo);
+    // new AggregateBSDF(inct.geometry_normal, inct.shading_normal, albedo);
     bsdf->AddComponent(1.f, RcNew<DiffuseComponent>(albedo));
 
     ShadingPoint sp{};

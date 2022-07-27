@@ -226,6 +226,7 @@ inline Spectrum MISSampleBsdf(const Scene* scene,
 
     if (auto light = scene->GetEnvLight()) {
       const Spectrum light_radiance = light->Radiance(ray.o, ray.d);
+
       if (light_radiance.IsBlack()) return {};
 
       const auto& normal = inct.shading_normal;

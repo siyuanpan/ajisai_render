@@ -92,9 +92,9 @@ struct ShadingPoint {
     return *this;
   }
 
-  ~ShadingPoint() {
-    if (bsdf) delete bsdf;
-  }
+  // ~ShadingPoint() {
+  //   if (bsdf) delete bsdf;
+  // }
 };
 
 struct MediumPoint {

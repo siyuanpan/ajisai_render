@@ -39,7 +39,8 @@ class Metal : public Material {
         uroughness_(uroughness),
         vroughness_(vroughness) {}
 
-  virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const override {
+  virtual ShadingPoint Shade(const PrimitiveIntersection& inct,
+                             MemoryArena& arena) const override {
     const auto color = color_->SampleSpectrum(inct.uv);
     const auto k = k_->SampleSpectrum(inct.uv);
     const auto eta = eta_->SampleSpectrum(inct.uv);
@@ -49,8 +50,11 @@ class Metal : public Material {
     const Rc<Fresnel> fresnel =
         RcNew<ColoredConductorFresnel>(color, Spectrum{1.f}, eta, k);
 
-    AggregateBSDF* bsdf = new AggregateBSDF(inct.geometry_normal,
-                                            inct.shading_normal, Spectrum{1.f});
+    AggregateBSDF* bsdf = arena.Create<AggregateBSDF>(
+        inct.geometry_normal, inct.shading_normal, Spectrum{1.f});
+    // new AggregateBSDF(inct.geometry_normal,
+    //                                         inct.shading_normal,
+    //                                         Spectrum{1.f});
     bsdf->AddComponent(1.f, RcNew<GGXMicrofacetReflectionComponent>(
                                 fresnel, uroughness_, vroughness_));
 

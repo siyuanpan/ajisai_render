@@ -53,6 +53,41 @@ class PathTracingCreatorImpl {
   }
 };
 
+class SPPMCreatorImpl {
+ public:
+  static std::string Name() { return "sppm"; }
+
+  static Rc<Renderer> Create(const YAML::Node& node,
+                             const CreateFactory& factory) {
+    const int forward_max_depth = node["forward_max_depth"].as<int>(8);
+    const float init_radius = node["init_radius"].as<float>(0.1f);
+    const int iteration_count = node["iteration_count"].as<int>(100);
+    const int photons_per_iteration =
+        node["photons_per_iteration"].as<int>(100000);
+    const int photon_min_depth = node["photon_min_depth"].as<int>(5);
+    const int photon_max_depth = node["photon_max_depth"].as<int>(10);
+    const float photon_cont_prob = node["photon_cont_prob"].as<float>(0.9f);
+    const float update_alpha = node["update_alpha"].as<float>(2.f / 3);
+
+    AJ_INFO("forward_max_depth : {}", forward_max_depth);
+    AJ_INFO("init_radius : {}", init_radius);
+    AJ_INFO("iteration_count : {}", iteration_count);
+    AJ_INFO("photons_per_iteration : {}", photons_per_iteration);
+    AJ_INFO("photon_min_depth : {}", photon_min_depth);
+    AJ_INFO("photon_max_depth : {}", photon_max_depth);
+    AJ_INFO("photon_cont_prob : {}", photon_cont_prob);
+    AJ_INFO("update_alpha : {}", update_alpha);
+
+    SPPMRendererArgs args{
+        forward_max_depth,     init_radius,      iteration_count,
+        photons_per_iteration, photon_min_depth, photon_max_depth,
+        photon_cont_prob,      update_alpha,
+    };
+
+    return CreateSPPMRenderer(args);
+  }
+};
+
 template <class TRendererCreatorImpl>
 concept RendererCreatorImpl = requires(TRendererCreatorImpl) {
   { TRendererCreatorImpl::Name() } -> std::convertible_to<std::string>;
@@ -65,9 +100,11 @@ template <RendererCreatorImpl TRendererCreatorImpl>
 class RendererCreator : public TRendererCreatorImpl {};
 
 using PathTracingCreator = RendererCreator<PathTracingCreatorImpl>;
+using SPPMCreator = RendererCreator<SPPMCreatorImpl>;
 
 void AddRendererFactory(Factory<Renderer>& factory) {
   factory.Add(PathTracingCreator::Name(), &PathTracingCreator::Create);
+  factory.Add(SPPMCreator::Name(), &SPPMCreator::Create);
 }
 
 AJ_END

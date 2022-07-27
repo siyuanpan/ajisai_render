@@ -26,6 +26,7 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/math/vector.h>
 
 AJ_BEGIN
+
 template <std::size_t size>
 class CoefficientSpectrum : public Vector<float, size> {
  public:
@@ -67,6 +68,15 @@ class CoefficientSpectrum : public Vector<float, size> {
   }
 
   bool IsBlack() const { return this->max() <= 0; }
+
+  bool IsFinite() const {
+    for (size_t i = 0; i < size; ++i) {
+      auto x = (*this)[i];
+      if (std::isnan(x) || std::isinf(x)) return false;
+    }
+    return true;
+  }
+
   [[nodiscard]] float Luminance() const {
     return 0.2126 * (*this)[0] + 0.7152 * (*this)[1] + 0.0722 * (*this)[2];
   }

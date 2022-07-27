@@ -48,6 +48,16 @@ struct LightSampleResult {
 inline const LightSampleResult kLightSampleResultNull = {
     Vector3f{}, Vector3f{}, Vector3f{}, Vector2f{}, Spectrum{}, 0};
 
+struct LightEmitResult {
+  Vector3f pos;
+  Vector3f dir;
+  Vector3f normal;
+  Vector2f uv;
+  Spectrum radiance;
+  float pdf_pos;
+  float pdf_dir;
+};
+
 class Light {
  public:
   virtual ~Light() = default;
@@ -58,6 +68,8 @@ class Light {
 
   virtual LightSampleResult Sample(const Vector3f& ref,
                                    Sampler* sampler) const noexcept = 0;
+
+  virtual LightEmitResult SampleEmit(Sampler* sampler) const noexcept = 0;
 
   virtual void Process(const Bounds3f&) noexcept {}
 };

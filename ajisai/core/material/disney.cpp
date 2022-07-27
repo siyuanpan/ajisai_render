@@ -76,6 +76,8 @@ class DisneyBSDF : public BSDF {
         clearcoat_gloss_{clearcoat_gloss} {}
   virtual Spectrum Albedo() const override { return base_color_; }
 
+  virtual bool HasDiffuseComponent() const override { return metallic_ < 1.f; }
+
   virtual BSDFSampleResult Sample(const Vector3f& wo, TransMode mode,
                                   const Vector3f& sam,
                                   uint8_t type) const noexcept override {
@@ -492,7 +494,8 @@ class Disney : public Material {
         clearcoat_{clearcoat},
         clearcoat_gloss_{clearcoat_gloss} {}
 
-  virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const override {
+  virtual ShadingPoint Shade(const PrimitiveIntersection& inct,
+                             MemoryArena& arena) const override {
     const auto base_color = base_color_->SampleSpectrum(inct.uv);
     const auto subsurface = subsurface_->SampleReal(inct.uv);
     const auto metallic = metallic_->SampleReal(inct.uv);
@@ -505,10 +508,14 @@ class Disney : public Material {
     const auto clearcoat = clearcoat_->SampleReal(inct.uv);
     const auto clearcoat_gloss = clearcoat_gloss_->SampleReal(inct.uv);
 
-    BSDF* bsdf = new DisneyBSDF(inct.geometry_normal, inct.shading_normal,
-                                base_color, subsurface, metallic, specular,
-                                specular_tint, roughness, anisotropic, sheen,
-                                sheen_tint, clearcoat, clearcoat_gloss);
+    BSDF* bsdf = arena.Create<DisneyBSDF>(
+        inct.geometry_normal, inct.shading_normal, base_color, subsurface,
+        metallic, specular, specular_tint, roughness, anisotropic, sheen,
+        sheen_tint, clearcoat, clearcoat_gloss);
+    // new DisneyBSDF(inct.geometry_normal, inct.shading_normal,
+    //                             base_color, subsurface, metallic, specular,
+    //                             specular_tint, roughness, anisotropic, sheen,
+    //                             sheen_tint, clearcoat, clearcoat_gloss);
 
     ShadingPoint sp{};
     sp.bsdf = bsdf;

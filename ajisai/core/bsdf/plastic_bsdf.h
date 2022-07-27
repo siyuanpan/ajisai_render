@@ -31,6 +31,8 @@ class PlasticBsdf : public BSDF {
 
   virtual Spectrum Albedo() const override { return albedo_; }
 
+  virtual bool HasDiffuseComponent() const override { return true; }
+
   virtual BSDFSampleResult Sample(const Vector3f& wo, TransMode mode,
                                   const Vector3f& sam,
                                   uint8_t type) const noexcept override;

@@ -42,6 +42,8 @@ class GlassBSDF : public BSDF {
     return 0.5f * (color_reflection_ + color_refraction_);
   }
 
+  virtual bool HasDiffuseComponent() const override { return false; }
+
   virtual BSDFSampleResult Sample(const Vector3f& wo, TransMode mode,
                                   const Vector3f& sam,
                                   uint8_t type) const noexcept override {
@@ -121,7 +123,8 @@ class Glass : public Material {
         color_refraction_(color_refraction),
         ior_(ior) {}
 
-  virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const override {
+  virtual ShadingPoint Shade(const PrimitiveIntersection& inct,
+                             MemoryArena& arena) const override {
     const auto ior = ior_->SampleReal(inct.uv);
 
     const auto color_reflection = color_reflection_->SampleSpectrum(inct.uv);
@@ -135,8 +138,11 @@ class Glass : public Material {
 
     const Rc<DielectricFresnel> fresnel = RcNew<DielectricFresnel>(ior, 1.f);
 
-    BSDF* bsdf = new GlassBSDF(inct.geometry_normal, inct.shading_normal,
-                               fresnel, color_reflection, color_refraction);
+    BSDF* bsdf =
+        arena.Create<GlassBSDF>(inct.geometry_normal, inct.shading_normal,
+                                fresnel, color_reflection, color_refraction);
+    // new GlassBSDF(inct.geometry_normal, inct.shading_normal,
+    //                            fresnel, color_reflection, color_refraction);
 
     ShadingPoint sp{};
     sp.bsdf = bsdf;

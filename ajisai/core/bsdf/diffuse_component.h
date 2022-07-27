@@ -30,6 +30,8 @@ class DiffuseComponent : public BSDFComponent {
  public:
   DiffuseComponent(const Spectrum& albedo) noexcept;
 
+  virtual bool HasDiffuseComponent() const override { return true; }
+
   virtual BSDFComponent::SampleResult Sample(
       const Vector3f& lwo, TransMode mode,
       const Vector2f& sam) const noexcept override;

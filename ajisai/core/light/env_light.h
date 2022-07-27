@@ -42,6 +42,8 @@ class EnvLight : public Light {
   virtual LightSampleResult Sample(const Vector3f &ref,
                                    Sampler *sampler) const noexcept override;
 
+  virtual LightEmitResult SampleEmit(Sampler *sampler) const noexcept override;
+
   virtual float Pdf(const Vector3f &ref,
                     const Vector3f &ref2light) const noexcept;
 

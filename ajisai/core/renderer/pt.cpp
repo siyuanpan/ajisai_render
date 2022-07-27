@@ -33,15 +33,17 @@ DEALINGS IN THE SOFTWARE.
 #include <ajisai/core/renderer/helper.h>
 #include <ajisai/math/vector2.h>
 #include <ajisai/math/spectrum.h>
+#include <ajisai/utility/mem_arena.h>
 
 AJ_BEGIN
 
 void TiledIntegrator::Render(Scene* scene, Camera* camera, Film* film,
                              Sampler* sampler) {
+  std::vector<MemoryArena> arenas(std::thread::hardware_concurrency());
   auto n_tiles =
       (film->Dimension() + Vector2i{tile_size_ - 1}) / Vector2i{tile_size_};
   auto beginTime = std::chrono::high_resolution_clock::now();
-  parallel_for_2d(n_tiles, [=](Vector2i tile_pos, uint32_t tid) {
+  parallel_for_2d(n_tiles, [&](Vector2i tile_pos, uint32_t tid) {
     (void)tid;
     Bounds2i tile_bounds = Bounds2i{tile_pos * (int)tile_size_,
                                     (tile_pos + Vector2i(1)) * (int)tile_size_};
@@ -57,7 +59,7 @@ void TiledIntegrator::Render(Scene* scene, Camera* camera, Film* film,
           const float v = y + tile_sampler->Next1D();
           auto ray =
               camera->GenerateRay(Vector2f{u, v}, tile_sampler->Next2D());
-          auto li = Li(ray, scene, tile_sampler.get());
+          auto li = Li(ray, scene, tile_sampler.get(), arenas[tid]);
           tile.AddSample(Vector2i{x, y}, li.value, 1.f);
         }
       }
@@ -71,7 +73,8 @@ void TiledIntegrator::Render(Scene* scene, Camera* camera, Film* film,
 }
 
 class PathTracing : public TiledIntegrator {
-  using LiImpl = std::function<RenderPixel(const Ray&, const Scene*, Sampler*)>;
+  using LiImpl = std::function<RenderPixel(const Ray&, const Scene*, Sampler*,
+                                           MemoryArena& arena)>;
 
  public:
   explicit PathTracing(const PTRendererArgs& args)
@@ -83,16 +86,17 @@ class PathTracing : public TiledIntegrator {
         specular_depth_{args.specular_depth} {
     func_ = std::bind(use_mis_ ? &PathTracing::TraceMIS : &PathTracing::Trace,
                       this, std::placeholders::_1, std::placeholders::_2,
-                      std::placeholders::_3);
+                      std::placeholders::_3, std::placeholders::_4);
   }
 
-  virtual RenderPixel Li(const Ray& ray, const Scene* scene,
-                         Sampler* sampler) const override {
-    return func_(ray, scene, sampler);
+  virtual RenderPixel Li(const Ray& ray, const Scene* scene, Sampler* sampler,
+                         MemoryArena& arena) const override {
+    return func_(ray, scene, sampler, arena);
   }
 
  private:
-  RenderPixel TraceMIS(const Ray& ray, const Scene* scene, Sampler* sampler) {
+  RenderPixel TraceMIS(const Ray& ray, const Scene* scene, Sampler* sampler,
+                       MemoryArena& arena) {
     RenderPixel pixel{};
     Spectrum throughput{1.f};
     Ray path_ray = ray;
@@ -117,7 +121,7 @@ class PathTracing : public TiledIntegrator {
         return pixel;
       }
 
-      const auto sp = inct.material->Shade(inct);
+      const auto sp = inct.material->Shade(inct, arena);
       if (bounce == 0) {
         pixel.normal = sp.shading_normal;
         pixel.albedo = sp.bsdf->Albedo();
@@ -222,7 +226,8 @@ class PathTracing : public TiledIntegrator {
     return pixel;
   }
 
-  RenderPixel Trace(const Ray& ray, const Scene* scene, Sampler* sampler) {
+  RenderPixel Trace(const Ray& ray, const Scene* scene, Sampler* sampler,
+                    MemoryArena& arena) {
     RenderPixel pixel{};
     Spectrum throughput{1.f};
     Ray path_ray = ray;
@@ -244,7 +249,7 @@ class PathTracing : public TiledIntegrator {
         return pixel;
       }
 
-      const auto sp = inct.material->Shade(inct);
+      const auto sp = inct.material->Shade(inct, arena);
       if (bounce == 0) {
         pixel.normal = sp.shading_normal;
         pixel.albedo = sp.bsdf->Albedo();

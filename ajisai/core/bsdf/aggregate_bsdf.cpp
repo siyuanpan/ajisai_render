@@ -34,6 +34,12 @@ void AggregateBSDF::AddComponent(float weight, Rc<BSDFComponent> component) {
   components_.push_back(component);
 }
 
+bool AggregateBSDF::HasDiffuseComponent() const {
+  for (auto& com : components_) {
+    if (com->HasDiffuseComponent()) return true;
+  }
+}
+
 BSDFSampleResult AggregateBSDF::SampleAll(const Vector3f& wo, TransMode mode,
                                           const Vector3f& sam) const noexcept {
   // process black fringes

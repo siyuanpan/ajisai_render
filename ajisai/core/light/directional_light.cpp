@@ -52,6 +52,27 @@ class DirectionalLight : public Light {
         ref, ref + 2.f * radius * ref2light, {}, {}, radiance_, pdf};
   }
 
+  virtual LightEmitResult SampleEmit(Sampler* sampler) const noexcept override {
+    const Vector3f ref2light =
+        frame_.Local2World(UniformSampleCone(sampler->Next2D(), angle_cos_));
+
+    const float pdf_dir = UniformConePDF(angle_cos_);
+
+    auto radius = (aabb_.max() - aabb_.center()).length();
+    const Vector2f disk_sam = squareToUniformDiskConcentric(sampler->Next2D());
+    auto dir_coord = CoordinateSystem(ref2light);
+    const Vector3f pos =
+        aabb_.center() + (disk_sam.x() * dir_coord.x() +
+                          disk_sam.y() * dir_coord.y() + ref2light) *
+                             radius;
+
+    return LightEmitResult{
+        pos,     -ref2light, -ref2light.normalized(),
+        {},      radiance_,  1.f / (Constants<float>::pi() * radius * radius),
+        pdf_dir,
+    };
+  }
+
   virtual void Process(const Bounds3f& bounds) noexcept override {
     aabb_ = bounds;
   }

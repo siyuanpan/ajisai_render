@@ -22,6 +22,7 @@ DEALINGS IN THE SOFTWARE.
 #pragma once
 #include <ajisai/ajisai.h>
 #include <ajisai/core/texture2d/texture2d.h>
+#include <ajisai/utility/mem_arena.h>
 
 AJ_BEGIN
 
@@ -32,7 +33,8 @@ class Material {
  public:
   virtual ~Material() = default;
 
-  virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const = 0;
+  virtual ShadingPoint Shade(const PrimitiveIntersection& inct,
+                             MemoryArena& arena) const = 0;
 };
 
 AJISAI_API Rc<Material> CreateDiffuse(Rc<const Texture2D> albedo);

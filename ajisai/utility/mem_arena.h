@@ -21,34 +21,33 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/light/light.h>
-#include <ajisai/core/geometry/geometry.h>
-#include <ajisai/math/spectrum.h>
+#include <memory_resource>
 
 AJ_BEGIN
 
-class AreaLight : public Light {
+class MemoryArena {
  public:
-  AreaLight(const Geometry *geometry, Spectrum radiance, int32_t power);
+  explicit MemoryArena(size_t byte_size = 4096) : mbr_{byte_size} {}
 
-  virtual Spectrum Radiance(const Vector3f &pos, const Vector3f &nor,
-                            const Vector2f &uv,
-                            const Vector3f &light_to_out) const noexcept;
+  MemoryArena(const MemoryArena& arena) = delete;
+  MemoryArena& operator=(const MemoryArena& arena) = delete;
 
-  virtual const AreaLight *AsArea() const noexcept override { return this; }
+  template <typename T, typename... Args>
+  [[nodiscard]] T* Create(Args&&... args) {
+    // TODO: support object delete
+    // static_assert(std::is_trivially_destructible_v<T> &&
+    //               "arena now only support trivially data struct");
 
-  virtual LightSampleResult Sample(const Vector3f &ref,
-                                   Sampler *sampler) const noexcept override;
+    void* mem = mbr_.allocate(sizeof(T), alignof(T));
+    T* obj = new (mem) T(std::forward<Args>(args)...);
 
-  virtual LightEmitResult SampleEmit(Sampler *sampler) const noexcept override;
+    return obj;
+  }
 
-  virtual float Pdf(const Vector3f &ref, const Vector3f &pos,
-                    const Vector3f &normal) const noexcept;
+  void Release() { mbr_.release(); }
 
  private:
-  const Geometry *geometry_;
-  Spectrum radiance_;
-  int32_t power_;
+  std::pmr::monotonic_buffer_resource mbr_;
 };
 
 AJ_END

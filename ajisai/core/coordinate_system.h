@@ -51,6 +51,12 @@ class CoordinateSystem {
     return dx * v.x() + dy * v.y() + dz * v.z();
   }
 
+  Vector3f x() const { return dx; }
+
+  Vector3f y() const { return dy; }
+
+  Vector3f z() const { return dz; }
+
  private:
   Vector3f dx;
   Vector3f dy;

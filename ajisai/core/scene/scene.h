@@ -38,6 +38,11 @@ struct SceneArgs {
   Rc<Aggregate> aggregate;
 };
 
+struct SceneSampleLightResult {
+  Light* light;
+  float pdf;
+};
+
 class Scene {
  public:
   virtual ~Scene() = default;
@@ -49,7 +54,11 @@ class Scene {
 
   virtual std::span<const Light* const> Lights() const noexcept = 0;
 
+  virtual SceneSampleLightResult SampleLight(const float u) const noexcept = 0;
+
   virtual const EnvLight* GetEnvLight() const noexcept = 0;
+
+  virtual Bounds3f WorldBound() const noexcept = 0;
 };
 
 AJISAI_API Rc<Scene> CreateDefaultScene(const SceneArgs&);

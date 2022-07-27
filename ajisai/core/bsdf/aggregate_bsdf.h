@@ -33,6 +33,8 @@ class AggregateBSDF : public BSDF {
 
   virtual Spectrum Albedo() const override { return albedo_; }
 
+  virtual bool HasDiffuseComponent() const override;
+
   virtual BSDFSampleResult SampleAll(
       const Vector3f& wo, TransMode mode,
       const Vector3f& sam) const noexcept override;

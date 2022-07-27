@@ -21,34 +21,32 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 #include <ajisai/ajisai.h>
-#include <ajisai/core/light/light.h>
-#include <ajisai/core/geometry/geometry.h>
-#include <ajisai/math/spectrum.h>
+#include <functional>
 
 AJ_BEGIN
 
-class AreaLight : public Light {
- public:
-  AreaLight(const Geometry *geometry, Spectrum radiance, int32_t power);
+namespace detail {
 
-  virtual Spectrum Radiance(const Vector3f &pos, const Vector3f &nor,
-                            const Vector2f &uv,
-                            const Vector3f &light_to_out) const noexcept;
+inline size_t HashCombine(size_t a, size_t b) {
+  if constexpr (sizeof(size_t) == 4)
+    return a ^ (b + 0x9e3779b9 + (a << 6) + (a >> 2));
+  else
+    return a ^ (b + 0x9e3779b97f4a7c15 + (a << 6) + (a >> 2));
+}
 
-  virtual const AreaLight *AsArea() const noexcept override { return this; }
+inline size_t Hash(size_t h) { return h; }
 
-  virtual LightSampleResult Sample(const Vector3f &ref,
-                                   Sampler *sampler) const noexcept override;
+template <typename T, typename... U>
+size_t Hash(size_t h, const T& t, const U&... u) {
+  h = HashCombine(h, std::hash<T>()(t));
+  return Hash(h, u...);
+}
 
-  virtual LightEmitResult SampleEmit(Sampler *sampler) const noexcept override;
+}  // namespace detail
 
-  virtual float Pdf(const Vector3f &ref, const Vector3f &pos,
-                    const Vector3f &normal) const noexcept;
-
- private:
-  const Geometry *geometry_;
-  Spectrum radiance_;
-  int32_t power_;
-};
+template <typename T, typename... U>
+size_t Hash(const T& t, const U&... u) {
+  return detail::Hash(std::hash<T>()(t), u...);
+}
 
 AJ_END

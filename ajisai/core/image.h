@@ -35,13 +35,13 @@ class Image {
   constexpr Image(const Vector2i& dim = Vector2i(1))
       : dimension_(dim), texels_(dim[0] * dim[1]) {}
 
-  auto& operator()(int x, int y) {
+  T& operator()(int x, int y) {
     x = std::clamp(x, 0, dimension_[0] - 1);
     y = std::clamp(y, 0, dimension_[1] - 1);
     return texels_[x + y * dimension_[0]];
   }
 
-  auto operator()(int x, int y) const {
+  const T operator()(int x, int y) const {
     x = std::clamp(x, 0, dimension_[0] - 1);
     y = std::clamp(y, 0, dimension_[1] - 1);
     return texels_[x + y * dimension_[0]];

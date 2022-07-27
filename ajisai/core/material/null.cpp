@@ -34,6 +34,8 @@ class NullBsdf : public BSDF {
 
   virtual Spectrum Albedo() const override { return Spectrum{}; }
 
+  virtual bool HasDiffuseComponent() const override { return false; }
+
   virtual BSDFSampleResult Sample(const Vector3f& wo, TransMode mode,
                                   const Vector3f& sam,
                                   uint8_t type) const noexcept override {
@@ -55,8 +57,11 @@ class Null : public Material {
  public:
   explicit Null() {}
 
-  virtual ShadingPoint Shade(const PrimitiveIntersection& inct) const override {
-    BSDF* bsdf = new NullBsdf(inct.geometry_normal, inct.shading_normal);
+  virtual ShadingPoint Shade(const PrimitiveIntersection& inct,
+                             MemoryArena& arena) const override {
+    BSDF* bsdf =
+        arena.Create<NullBsdf>(inct.geometry_normal, inct.shading_normal);
+    // new NullBsdf(inct.geometry_normal, inct.shading_normal);
 
     ShadingPoint sp{};
     sp.bsdf = bsdf;

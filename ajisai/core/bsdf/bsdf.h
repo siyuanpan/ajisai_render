@@ -75,6 +75,8 @@ class BSDF {
 
   virtual Spectrum Albedo() const = 0;
 
+  virtual bool HasDiffuseComponent() const = 0;
+
   virtual BSDFSampleResult SampleAll(const Vector3f& wo, TransMode mode,
                                      const Vector3f& sam) const noexcept;
 
@@ -132,6 +134,8 @@ class BSDFComponent {
   BSDFComponent(uint8_t type) noexcept;
 
   virtual ~BSDFComponent() = default;
+
+  virtual bool HasDiffuseComponent() const = 0;
 
   virtual SampleResult Sample(const Vector3f& lwo, TransMode mode,
                               const Vector2f& sam) const noexcept = 0;

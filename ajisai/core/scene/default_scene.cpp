@@ -46,9 +46,18 @@ class DefaultScene : public Scene {
       lights_ptr_.push_back(light.get());
       light->Process(world_bound);
     }
+
+    pdf_table_.resize(lights_ptr_.size(), 1.f);
+    const float sum =
+        std::accumulate(pdf_table_.begin(), pdf_table_.end(), 0.f);
+    float ratio = 1.f / sum;
+    for (auto& p : pdf_table_) p *= ratio;
+    light_selector_.SetFunction(pdf_table_.data(), pdf_table_.size());
+
     primitives_ = args.primitives;
     lights_ = args.lights;
     aggregate_ = args.aggregate;
+    world_bound_ = world_bound;
   }
 
   virtual bool Intersect(const Ray& ray,
@@ -65,16 +74,32 @@ class DefaultScene : public Scene {
     return std::span<const Light* const>(ptr, lights_ptr_.size());
   }
 
+  virtual SceneSampleLightResult SampleLight(
+      const float u) const noexcept override {
+    const size_t idx = light_selector_.SampleDiscrete(u);
+    assert(u <= idx && idx < lights_ptr_.size());
+
+    SceneSampleLightResult ret{};
+    ret.light = lights_ptr_[idx];
+    ret.pdf = pdf_table_[idx];
+    return ret;
+  }
+
   virtual const EnvLight* GetEnvLight() const noexcept override {
     return env_light_;
   }
+
+  virtual Bounds3f WorldBound() const noexcept override { return world_bound_; }
 
  private:
   std::vector<Rc<Primitive>> primitives_;
   std::vector<Rc<Light>> lights_;
   Rc<Aggregate> aggregate_;
   std::vector<Light*> lights_ptr_;
-  EnvLight* env_light_;
+  EnvLight* env_light_ = nullptr;
+  Bounds3f world_bound_;
+  Distribution light_selector_;
+  std::vector<float> pdf_table_;
 };
 
 Rc<Scene> CreateDefaultScene(const SceneArgs& args) {
