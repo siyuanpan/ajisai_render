@@ -8,9 +8,9 @@
 ### Integrators
 
 * [x] Path Tracing with Multiple Importeance Sampling
+* [x] Stochastic Progressive Photon Mapping
 * [ ] Bidirectional Path Tracing with Multiple Importance Sampling
 * [ ] Multiplexed Metroplis Light Transport
-* [ ] Vulumetric Path Tracing
 
 ### Materials
 
