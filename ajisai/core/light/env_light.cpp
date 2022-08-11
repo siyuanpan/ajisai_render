@@ -98,7 +98,8 @@ LightSampleResult EnvLight::Sample(const Vector3f &ref,
                            -dir,
                            {},
                            texture_->SampleSpectrum(Vector2f{u, v}),
-                           pdf};
+                           pdf,
+                           pdf / (Constants<float>::pi() * radius * radius)};
 }
 
 LightEmitResult EnvLight::SampleEmit(Sampler *sampler) const noexcept {

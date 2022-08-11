@@ -37,6 +37,16 @@ class Camera {
 
   virtual Ray GenerateRay(const Vector2f& raster,
                           const Vector2f& sample) const = 0;
+
+  virtual bool ToRaster(const Vector2f& u, const Vector3f& pos,
+                        Vector3f* dir_to_camera, Vector2f* p_raster) const = 0;
+
+  // conversion factor from image plane area density to surface area density
+  virtual float ImageAreaToSurfaceArea(const Vector3f& dir_to_camera,
+                                       float cos_to_camera,
+                                       float distance_to_camera) const = 0;
+
+  virtual float ImageAreaToSolidAngle(const Vector3f& direction) const = 0;
 };
 
 AJISAI_API Rc<Camera> CreateThinLensCamera(

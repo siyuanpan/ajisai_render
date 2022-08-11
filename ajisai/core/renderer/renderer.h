@@ -99,4 +99,20 @@ struct SPPMRendererArgs {
 
 AJISAI_API Rc<Renderer> CreateSPPMRenderer(const SPPMRendererArgs&);
 
+struct VCMRendererArgs {
+  int iteration;
+  float base_radius;
+  float radius_alpha;
+
+  bool use_vm;
+  bool use_vc;
+
+  int min_path_length;
+  int max_path_length;
+
+  float cont_prob;
+};
+
+AJISAI_API Rc<Renderer> CreateVCMRenderer(const VCMRendererArgs&);
+
 AJ_END

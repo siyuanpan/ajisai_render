@@ -49,8 +49,12 @@ LightSampleResult AreaLight::Sample(const Vector3f &ref,
   const float pdf =
       pdf_area * dist2 / std::abs(dot(inct.geometry_normal, inct2ref));
 
-  return LightSampleResult{ref,     inct.pos,  inct.geometry_normal,
-                           inct.uv, radiance_, pdf};
+  const float emit_pdf = pdf_area *
+                         dot(inct.geometry_normal, inct2ref.normalized()) /
+                         Constants<float>::pi();
+
+  return LightSampleResult{
+      ref, inct.pos, inct.geometry_normal, inct.uv, radiance_, pdf, emit_pdf};
 }
 
 LightEmitResult AreaLight::SampleEmit(Sampler *sampler) const noexcept {
@@ -78,6 +82,19 @@ float AreaLight::Pdf(const Vector3f &ref, const Vector3f &pos,
   const float area_to_solid_angle_factor = dist2 / abscos;
 
   return area_pdf * area_to_solid_angle_factor;
+}
+
+void AreaLight::PdfBdpt(const Vector3f &direction, const Vector3f &pos,
+                        const Vector3f &normal, float *direct_pdf_a,
+                        float *emission_pdf_w) const noexcept {
+  const float area_pdf = geometry_->Pdf(pos + direction, pos);
+  if (direct_pdf_a) *direct_pdf_a = area_pdf;
+
+  if (emission_pdf_w) {
+    *emission_pdf_w =
+        std::max(0.f, dot(normal, direction)) / Constants<float>::pi();
+    *emission_pdf_w *= area_pdf;
+  }
 }
 
 AJ_END

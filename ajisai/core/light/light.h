@@ -39,6 +39,7 @@ struct LightSampleResult {
   Vector2f uv;
   Spectrum radiance;
   float pdf;
+  float emit_pdf;
 
   bool Valid() const noexcept { return pdf != 0.f; }
 
@@ -46,7 +47,7 @@ struct LightSampleResult {
 };
 
 inline const LightSampleResult kLightSampleResultNull = {
-    Vector3f{}, Vector3f{}, Vector3f{}, Vector2f{}, Spectrum{}, 0};
+    Vector3f{}, Vector3f{}, Vector3f{}, Vector2f{}, Spectrum{}, 0, 0};
 
 struct LightEmitResult {
   Vector3f pos;
@@ -72,6 +73,10 @@ class Light {
   virtual LightEmitResult SampleEmit(Sampler* sampler) const noexcept = 0;
 
   virtual void Process(const Bounds3f&) noexcept {}
+
+  virtual bool IsFinite() const noexcept = 0;
+
+  virtual bool IsDelta() const noexcept = 0;
 };
 
 AJISAI_API Rc<Light> CreateDirectionalLight(const Vector3f& dir,

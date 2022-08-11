@@ -45,6 +45,14 @@ class AreaLight : public Light {
   virtual float Pdf(const Vector3f &ref, const Vector3f &pos,
                     const Vector3f &normal) const noexcept;
 
+  virtual bool IsFinite() const noexcept override { return true; }
+
+  virtual bool IsDelta() const noexcept override { return false; }
+
+  void PdfBdpt(const Vector3f &direction, const Vector3f &pos,
+               const Vector3f &normal, float *direct_pdf_a = nullptr,
+               float *emission_pdf_w = nullptr) const noexcept;
+
  private:
   const Geometry *geometry_;
   Spectrum radiance_;

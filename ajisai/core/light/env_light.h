@@ -51,6 +51,10 @@ class EnvLight : public Light {
     aabb_ = bounds;
   }
 
+  virtual bool IsFinite() const noexcept override { return false; }
+
+  virtual bool IsDelta() const noexcept override { return false; }
+
  private:
   Rc<const Texture2D> texture_;
   float env_map_rot_ = 0.f;

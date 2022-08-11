@@ -88,6 +88,53 @@ class SPPMCreatorImpl {
   }
 };
 
+// struct VCMRendererArgs {
+//   int iteration;
+//   float base_radius;
+//   float radius_alpha;
+
+//   bool use_vm;
+//   bool use_vc;
+
+//   int min_path_length;
+//   int max_path_length;
+
+//   float cont_prob;
+// };
+
+class VCMCreatorImpl {
+ public:
+  static std::string Name() { return "vcm"; }
+
+  static Rc<Renderer> Create(const YAML::Node& node,
+                             const CreateFactory& factory) {
+    const int iteration = node["iteration"].as<int>(1);
+    const float radius = node["radius"].as<float>(0.003f);
+    const float alpha = node["alpha"].as<float>(0.75f);
+    const bool use_vm = node["use_vm"].as<bool>(true);
+    const bool use_vc = node["use_vc"].as<bool>(true);
+    const int min_path_length = node["min_path_length"].as<int>(0);
+    const int max_path_length = node["max_path_length"].as<int>(10);
+    const float cont_prob = node["cont_prob"].as<float>(0.9);
+
+    AJ_INFO("iteration : {}", iteration);
+    AJ_INFO("radius : {}", radius);
+    AJ_INFO("alpha : {}", alpha);
+    AJ_INFO("use_vm : {}", use_vm);
+    AJ_INFO("use_vc : {}", use_vc);
+    AJ_INFO("min_path_length : {}", min_path_length);
+    AJ_INFO("max_path_length : {}", max_path_length);
+    AJ_INFO("cont_prob : {}", cont_prob);
+
+    VCMRendererArgs args{
+        iteration, radius,          alpha,           use_vm,
+        use_vc,    min_path_length, max_path_length, cont_prob,
+    };
+
+    return CreateVCMRenderer(args);
+  }
+};
+
 template <class TRendererCreatorImpl>
 concept RendererCreatorImpl = requires(TRendererCreatorImpl) {
   { TRendererCreatorImpl::Name() } -> std::convertible_to<std::string>;
@@ -101,10 +148,12 @@ class RendererCreator : public TRendererCreatorImpl {};
 
 using PathTracingCreator = RendererCreator<PathTracingCreatorImpl>;
 using SPPMCreator = RendererCreator<SPPMCreatorImpl>;
+using VCMCreator = RendererCreator<VCMCreatorImpl>;
 
 void AddRendererFactory(Factory<Renderer>& factory) {
   factory.Add(PathTracingCreator::Name(), &PathTracingCreator::Create);
   factory.Add(SPPMCreator::Name(), &SPPMCreator::Create);
+  factory.Add(VCMCreator::Name(), &VCMCreator::Create);
 }
 
 AJ_END

@@ -48,8 +48,13 @@ class DirectionalLight : public Light {
     const float pdf = UniformConePDF(angle_cos_);
     auto radius = (aabb_.max() - aabb_.center()).length();
 
-    return LightSampleResult{
-        ref, ref + 2.f * radius * ref2light, {}, {}, radiance_, pdf};
+    return LightSampleResult{ref,
+                             ref + 2.f * radius * ref2light,
+                             {},
+                             {},
+                             radiance_,
+                             pdf,
+                             pdf / (Constants<float>::pi() * radius * radius)};
   }
 
   virtual LightEmitResult SampleEmit(Sampler* sampler) const noexcept override {
@@ -76,6 +81,10 @@ class DirectionalLight : public Light {
   virtual void Process(const Bounds3f& bounds) noexcept override {
     aabb_ = bounds;
   }
+
+  virtual bool IsFinite() const noexcept override { return false; }
+
+  virtual bool IsDelta() const noexcept override { return true; }
 
  private:
   Vector3f dir_;

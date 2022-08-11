@@ -82,7 +82,79 @@ class ThinLensCamera : public Camera {
                camera2world_.transformVector(ray.d)};
   }
 
+  virtual bool ToRaster(const Vector2f& u, const Vector3f& pos,
+                        Vector3f* dir_to_camera,
+                        Vector2f* p_raster) const override {
+    Vector3f cam_pos = camera2world_.transformPoint(Vector3f{0.f});
+    Vector3f cam_dir =
+        camera2world_.transformVector(Vector3f{0.f, 0.f, -1.f}).normalized();
+
+    Vector3f cam_coord = world2camera_.transformPoint(pos);
+    if (lens_radius_ > 0 && focal_distance_ > 0) {
+      auto lens = lens_radius_ * squareToUniformDiskConcentric(u);
+
+      auto origin = Vector3f{lens.x(), lens.y(), 0.f};
+      auto direction = (cam_coord - origin).normalized();
+
+      float ft = focal_distance_ / direction.z();
+      auto focus = origin + direction * ft;
+
+      auto raster = camera2raster_.transformPoint(focus);
+      if (!CheckRaster(raster)) return false;
+      *p_raster = raster.xy();
+
+      *dir_to_camera = camera2world_.transformPoint(origin) - pos;
+      if (dot(cam_dir, -(*dir_to_camera)) <= 0.f) return false;
+
+    } else {
+      auto raster = world2Raster_.transformPoint(pos);
+      if (!CheckRaster(raster)) return false;
+      *p_raster = raster.xy();
+
+      *dir_to_camera = cam_pos - pos;
+      if (dot(cam_dir, -(*dir_to_camera)) <= 0.f) return false;
+    }
+
+    return true;
+  }
+
+  virtual float ImageAreaToSurfaceArea(
+      const Vector3f& dir_to_camera, float cos_to_camera,
+      float distance_to_camera) const override {
+    Vector3f cam_dir =
+        camera2world_.transformVector(Vector3f{0.f, 0.f, -1.f}).normalized();
+    const float cos_at_camera = dot(cam_dir, -dir_to_camera.normalized());
+    const float image_point_to_camera_dist = focal_distance_ / cos_at_camera;
+    const float image_to_solid_angle_factor =
+        image_point_to_camera_dist * image_point_to_camera_dist / cos_at_camera;
+    const float image_to_surface_factor =
+        image_to_solid_angle_factor * std::abs(cos_to_camera) /
+        (distance_to_camera * distance_to_camera);
+
+    return image_to_surface_factor;
+  }
+
+  virtual float ImageAreaToSolidAngle(
+      const Vector3f& direction) const override {
+    Vector3f cam_dir =
+        camera2world_.transformVector(Vector3f{0.f, 0.f, -1.f}).normalized();
+    const float cos_at_camera = dot(cam_dir, direction.normalized());
+    const float image_point_to_camera_dist = focal_distance_ / cos_at_camera;
+    const float image_to_solid_angle_factor =
+        image_point_to_camera_dist * image_point_to_camera_dist / cos_at_camera;
+
+    return image_to_solid_angle_factor;
+  }
+
  private:
+  bool CheckRaster(const Vector3f& raster) const {
+    if (raster.x() < resolution_.x() && raster.x() >= 0.f &&
+        raster.y() < resolution_.y() && raster.y() >= 0.f) {
+      return true;
+    }
+    return false;
+  }
+
   Rc<const Filter> filter_;
   Vector2f resolution_;
   float lens_radius_, focal_distance_;
