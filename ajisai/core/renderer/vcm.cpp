@@ -220,7 +220,7 @@ class VCMRenderer : public Renderer {
         const auto bsdf_sample =
             sp.bsdf->SampleAll(inct.wr, TransMode::Radiance, sampler->Next3D());
 
-        if (bsdf_sample.f.IsBlack() || bsdf_sample.pdf < 0.f) break;
+        // if (bsdf_sample.f.IsBlack() || bsdf_sample.pdf < 0.f) break;
 
         {
           if (light_state.path_length > 1 || light_state.is_finite_light == 1) {
@@ -303,7 +303,7 @@ class VCMRenderer : public Renderer {
         const auto bsdf_sample =
             sp.bsdf->SampleAll(inct.wr, TransMode::Radiance, sampler->Next3D());
 
-        if (bsdf_sample.f.IsBlack() || bsdf_sample.pdf < 0.f) break;
+        // if (bsdf_sample.f.IsBlack() || bsdf_sample.pdf < 0.f) break;
 
         {
           float cos_in = std::abs(dot(inct.shading_normal, -ray.d));
@@ -371,7 +371,7 @@ class VCMRenderer : public Renderer {
 
             if (light_vertex.path_length + 1 + camera_state.path_length >
                 args_.max_path_length)
-              break;
+              continue;
 
             color += camera_state.throughput * light_vertex.throughput *
                      ConnectVertices(camera_state, light_vertex, scene, inct,
@@ -407,6 +407,9 @@ class VCMRenderer : public Renderer {
         }
 
         if (!SampleScattering(camera_state, sampler, sp.bsdf, inct)) break;
+
+        // std::cout << "camera_state.dVCM : " << camera_state.dVCM <<
+        // std::endl;
       }
 
       const int res_x = static_cast<int>(film->Dimension().x());
@@ -415,6 +418,9 @@ class VCMRenderer : public Renderer {
       const int y = path_idx / res_x;
 
       tile.AddSample(Vector2i{x, y}, color, 1.f);
+      //   film->AddSplat(color,
+      //                  Vector2f{static_cast<float>(x),
+      //                  static_cast<float>(y)});
     }
 
     film->MergeTile(tile);
@@ -425,6 +431,7 @@ class VCMRenderer : public Renderer {
     auto bsdf_sample_result = bsdf->SampleAll(
         -light_state.direction, TransMode::Radiance, sampler->Next3D());
     if (bsdf_sample_result.f.IsBlack()) return false;
+    light_state.direction = bsdf_sample_result.dir;
 
     float bsdf_dir_pdf = bsdf_sample_result.pdf;
     float bsdf_rev_pdf = bsdf_sample_result.pdf;
@@ -453,6 +460,8 @@ class VCMRenderer : public Renderer {
                         (light_state.dVM * Mis(bsdf_rev_pdf) +
                          light_state.dVCM * mis_vc_weight_factor_ + 1.f);
 
+      light_state.dVCM = 1.f / bsdf_dir_pdf;
+
       light_state.specular_path &= 0;
     }
 
@@ -479,7 +488,7 @@ class VCMRenderer : public Renderer {
     float camera_dir_pdf_w = bsdf->PdfAll(direction, inct.wr);
     float camera_rev_pdf_w = bsdf->PdfAll(inct.wr, direction);
 
-    if (camera_dir_pdf_w == 0.f || camera_rev_pdf_w == 0.f) return {};
+    // if (camera_dir_pdf_w == 0.f || camera_rev_pdf_w == 0.f) return {};
 
     camera_dir_pdf_w *= args_.cont_prob;
     camera_rev_pdf_w *= args_.cont_prob;
@@ -494,7 +503,7 @@ class VCMRenderer : public Renderer {
     float light_rev_pdf_w =
         light_vertex.bsdf->PdfAll(light_vertex.in_dir, -direction);
 
-    if (light_dir_pdf_w == 0.f || light_rev_pdf_w == 0.f) return {};
+    // if (light_dir_pdf_w == 0.f || light_rev_pdf_w == 0.f) return {};
 
     light_dir_pdf_w *= args_.cont_prob;
     light_rev_pdf_w *= args_.cont_prob;
@@ -523,9 +532,13 @@ class VCMRenderer : public Renderer {
         (mis_weight * geometry_term) * bsdf_eval * light_eval;
 
     if (contrib.IsBlack()) {
-      const Ray shadow_ray{inct.pos, direction};
-      if (scene->Occlude(shadow_ray)) return {};
+      return {};
+      //   const Ray shadow_ray{inct.pos, direction};
+      //   if (scene->Occlude(shadow_ray)) return {};
     }
+
+    const Ray shadow_ray{inct.pos, direction, Ray::Eps(), distance * 0.9f};
+    if (scene->Occlude(shadow_ray)) return {};
 
     return contrib;
   }
@@ -550,7 +563,7 @@ class VCMRenderer : public Renderer {
                           kBSDFAll & ~BSDFComponentType::eSpecular);
     float rev_pdf = bsdf->Pdf(inct.wr, dir_to_camera,
                               kBSDFAll & ~BSDFComponentType::eSpecular);
-    if (pdf == 0.f || rev_pdf == 0.f) return;
+    // if (pdf == 0.f || rev_pdf == 0.f) return;
 
     rev_pdf *= args_.cont_prob;
 
@@ -562,6 +575,17 @@ class VCMRenderer : public Renderer {
                           (mis_vm_weight_factor_ + light_state.dVCM +
                            light_state.dVC * Mis(rev_pdf));
 
+    // std::cout << "w_light : " << w_light << std::endl;
+    // std::cout << "image_to_surface_factor : " << image_to_surface_factor
+    //           << std::endl;
+    // std::cout << "light_sub_path_count_ : " << light_sub_path_count_
+    //           << std::endl;
+    // std::cout << "mis_vm_weight_factor_ : " << mis_vm_weight_factor_
+    //           << std::endl;
+    // std::cout << "light_state.dVCM : " << light_state.dVCM << std::endl;
+    // std::cout << "light_state.dVC : " << light_state.dVC << std::endl;
+    // std::cout << "rev_pdf : " << rev_pdf << std::endl;
+
     const float mis_weight = 1.f / (w_light + 1.f);
 
     const float surface_to_image_factor = 1.f / image_to_surface_factor;
@@ -570,7 +594,8 @@ class VCMRenderer : public Renderer {
                              (light_sub_path_count_ * surface_to_image_factor);
 
     if (!contrib.IsBlack()) {
-      const Ray shadow_ray{inct.pos, dir_to_camera};
+      const Ray shadow_ray{inct.pos, dir_to_camera, Ray::Eps(),
+                           distance * 0.9f};
       if (scene->Occlude(shadow_ray)) return;
 
       film->AddSplat(contrib, image_pos);
@@ -594,10 +619,10 @@ class VCMRenderer : public Renderer {
     if (bsdf_eval.IsBlack()) return {};
 
     float bsdf_pdf_w = bsdf->PdfAll(sample_result.Ref2Light(), inct.wr);
-    if (bsdf_pdf_w == 0.f) return {};
+    // if (bsdf_pdf_w == 0.f) return {};
 
     float bsdf_rev_pdf_w = bsdf->PdfAll(inct.wr, sample_result.Ref2Light());
-    if (bsdf_rev_pdf_w == 0.f) return {};
+    // if (bsdf_rev_pdf_w == 0.f) return {};
 
     bsdf_pdf_w *= light->IsDelta() ? 0.f : args_.cont_prob;
     bsdf_rev_pdf_w *= args_.cont_prob;
@@ -613,16 +638,37 @@ class VCMRenderer : public Renderer {
             (sample_result.pdf * cos_at_light)) *
         (mis_vm_weight_factor_ + state.dVCM + state.dVC * Mis(bsdf_rev_pdf_w));
 
+    // std::cout << "w_camera : " << w_camera << std::endl;
+    // std::cout << "sample_result.emit_pdf : " << sample_result.emit_pdf
+    //           << std::endl;
+    // std::cout << "cos_to_light : " << cos_to_light << std::endl;
+    // std::cout << "sample_result.pdf : " << sample_result.pdf << std::endl;
+    // std::cout << "cos_at_light : " << cos_at_light << std::endl;
+    // std::cout << "mis_vm_weight_factor_ : " << mis_vm_weight_factor_
+    //           << std::endl;
+    // std::cout << " state.dVCM : " << state.dVCM << std::endl;
+    // std::cout << "state.dVC : " << state.dVC << std::endl;
+    // std::cout << "bsdf_rev_pdf_w : " << bsdf_rev_pdf_w << std::endl;
+
     const float mis_weight = 1.f / (w_light + 1.f + w_camera);
 
     const Spectrum contrib =
         (mis_weight * cos_to_light / (light_pick_pdf * sample_result.pdf)) *
         (sample_result.radiance * bsdf_eval);
 
+    // std::cout << "contrib : " << contrib << std::endl;
+    // std::cout << "mis_weight : " << mis_weight << std::endl;
+    // std::cout << "w_camera : " << w_camera << std::endl;
+
     if (contrib.IsBlack()) {
-      const Ray shadow_ray{inct.pos, sample_result.Ref2Light()};
-      if (scene->Occlude(shadow_ray)) return {};
+      return {};
+      //   const Ray shadow_ray{inct.pos, sample_result.Ref2Light()};
+      //   if (scene->Occlude(shadow_ray)) return {};
     }
+
+    const Ray shadow_ray{inct.pos, sample_result.Ref2Light(), Ray::Eps(),
+                         (sample_result.pos - sample_result.ref).length()};
+    if (scene->Occlude(shadow_ray)) return {};
 
     return contrib;
   }
@@ -680,7 +726,8 @@ class VCMRenderer : public Renderer {
     state.path_length = 1;
     state.specular_path = 1;
 
-    state.dVCM = Mis(light_sub_path_count_ / camera_pdf);
+    // state.dVCM = Mis(light_sub_path_count_ / camera_pdf);
+    state.dVCM = Mis(1.f / camera_pdf);
     state.dVC = 0;
     state.dVM = 0;
 

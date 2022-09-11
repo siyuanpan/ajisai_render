@@ -33,7 +33,10 @@ struct Ray {
   Ray(const Vector3f& o, const Vector3f& d,
       float t_min = Ray::Eps(),  // 0.001 /*ray bias*/,
       float t_max = std::numeric_limits<float>::infinity())
-      : o(o), d(d.normalized()), t_min(t_min), t_max(t_max) {}
+      : o(o + d.normalized() * Ray::Eps()),
+        d(d.normalized()),
+        t_min(t_min),
+        t_max(t_max) {}
 
   auto CalcPoint(float t) const { return o + t * d; }
 
